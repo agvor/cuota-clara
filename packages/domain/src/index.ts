@@ -48,3 +48,9 @@ export {
   type PaymentSource,
   type ReconciliationAdjustment,
 } from './history/historical-state.js';
+export { createLoan, LoanValidationError, type CreateLoanInput, type Loan } from './loan/loan.js';
+export type {
+  LoanAggregate,
+  LoanRepository,
+  ProjectionScenarioSnapshot,
+} from './ports/loan-repository.js';

@@ -5,6 +5,7 @@
 | Término                          | Definición                                                                                         |
 | -------------------------------- | -------------------------------------------------------------------------------------------------- |
 | Préstamo (`Loan`)                | Contrato y estado real que contiene configuración y pagos históricos.                              |
+| Agregado de préstamo             | Préstamo con sus pagos históricos y snapshots de escenarios, unidad de persistencia.               |
 | Pago histórico (`PaymentRecord`) | Hecho real registrado manualmente o importado; nunca es resultado de una simulación.               |
 | Escenario (`ProjectionScenario`) | Hipótesis futura asociada a un préstamo. No modifica el préstamo ni su historial.                  |
 | Periodo de proyección            | Intervalo de pago calculado que contiene saldo inicial/final, interés, principal y cargos.         |
@@ -24,6 +25,7 @@
 
 - Todos los importes pertenecen a una moneda y precisan su escala decimal.
 - Una operación entre importes de monedas distintas falla de forma explícita.
+- Un agregado asocia pagos y escenarios a un único préstamo mediante su identificador.
 - Una fecha de pago no puede ser anterior al inicio del préstamo.
 - Ningún saldo, pago o cargo puede ser negativo, salvo un tipo de ajuste definido explícitamente.
 - El saldo final de cada periodo no puede ser menor que cero; el último pago se limita al importe necesario.

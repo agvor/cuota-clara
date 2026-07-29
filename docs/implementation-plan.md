@@ -10,13 +10,13 @@ Un ítem solo se marca `blocked` cuando describe la decisión o evidencia extern
 
 ## Épicas y orden
 
-| Épica                             | Resultado                                                                        | Historias       |
-| --------------------------------- | -------------------------------------------------------------------------------- | --------------- |
-| E1 · Motor financiero verificable | Cálculo fijo, estado histórico, pagos extra y transición a tasa variable manual. | US-001 a US-007 |
-| E2 · Importación y datos locales  | CSV previsualizado, validado y almacenamiento local abstraído.                   | US-008 a US-009 |
-| E3 · PWA y gestión de préstamos   | Aplicación instalable, CRUD y captura/importación de pagos.                      | US-010 a US-012 |
-| E4 · Escenarios y resultados      | Comparación, tabla de amortización y gráfico de saldo.                           | US-013 a US-014 |
-| E5 · Respaldo y publicación       | Recuperación de datos y operación offline completa.                              | US-015 a US-016 |
+| Épica                             | Resultado                                                                        | Historias                |
+| --------------------------------- | -------------------------------------------------------------------------------- | ------------------------ |
+| E1 · Motor financiero verificable | Cálculo fijo, estado histórico, pagos extra y transición a tasa variable manual. | US-001 a US-007          |
+| E2 · Importación y datos locales  | CSV previsualizado, validado y almacenamiento local abstraído.                   | US-008, US-008a y US-009 |
+| E3 · PWA y gestión de préstamos   | Aplicación instalable, CRUD y captura/importación de pagos.                      | US-010 a US-012          |
+| E4 · Escenarios y resultados      | Comparación, tabla de amortización y gráfico de saldo.                           | US-013 a US-014          |
+| E5 · Respaldo y publicación       | Recuperación de datos y operación offline completa.                              | US-015 a US-016          |
 
 El orden no es una excusa para omitir dependencias: el campo `dependsOn` de cada historia es autoritativo. Las historias avanzadas —pagos recurrentes, aporte objetivo al principal, fuentes de tasa de referencia, sincronización y premium— se crearán como nuevos ítems después de validar el MVP.
 

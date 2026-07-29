@@ -11,6 +11,7 @@ La documentación es parte del producto y se mantiene en el mismo cambio que el 
 | Motor de amortización inicial         | `domain/amortization-engine.md`             |
 | Estado histórico y reconciliación     | `domain/historical-state.md`                |
 | Transición a tasa variable manual     | `domain/manual-variable-rates.md`           |
+| Préstamo y puerto de repositorio      | `domain/loan-and-repository.md`             |
 | Importación CSV de pagos              | `import/payment-csv.md`                     |
 | Límites y componentes                 | `architecture.md`                           |
 | Decisiones irreversibles              | `adr/`                                      |

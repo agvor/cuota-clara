@@ -115,12 +115,26 @@
       ]
     },
     {
+      "id": "US-008a",
+      "epic": "E2 · Importación y datos locales",
+      "title": "Definir préstamo y puerto de repositorio",
+      "story": "Como equipo de desarrollo, quiero un contrato de préstamo y repositorio independiente de IndexedDB para persistir datos sin acoplar el dominio.",
+      "requirements": ["RF-001", "RF-002", "RNF-003", "RNF-010"],
+      "dependsOn": ["US-005"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "El dominio valida un préstamo mínimo con configuración financiera y saldo inicial.",
+        "El puerto de repositorio expresa operaciones de préstamo sin importar Dexie ni APIs del navegador.",
+        "Los contratos permiten asociar pagos y escenarios sin incluir su persistencia concreta."
+      ]
+    },
+    {
       "id": "US-009",
       "epic": "E2 · Importación y datos locales",
       "title": "Persistir préstamos mediante un puerto local",
       "story": "Como persona usuaria, quiero conservar mis préstamos en el dispositivo y recuperar mis datos al reiniciar.",
       "requirements": ["RF-001", "RF-011", "RNF-005", "RNF-010"],
-      "dependsOn": ["US-005"],
+      "dependsOn": ["US-008a"],
       "status": "ready",
       "acceptanceCriteria": [
         "La aplicación depende de interfaces de repositorio y no de Dexie directamente.",

@@ -14,8 +14,8 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 
 | ID     | Requisito                               | Criterios de aceptación iniciales                                                                                                                                           | Estado   |
 | ------ | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| RF-001 | Administrar préstamos independientes.   | Crear, editar, duplicar y eliminar con confirmación; la información de cada préstamo se mantiene aislada.                                                                   | Planeado |
-| RF-002 | Configurar el préstamo.                 | Se registran moneda, monto/saldo inicial, fechas, plazo, periodicidad, cuota ordinaria, cargos y política de redondeo.                                                      | Planeado |
+| RF-001 | Administrar préstamos independientes.   | Crear, editar, duplicar y eliminar con confirmación; la información de cada préstamo se mantiene aislada.                                                                   | En curso |
+| RF-002 | Configurar el préstamo.                 | Se registran moneda, monto/saldo inicial, fechas, plazo, periodicidad, cuota ordinaria, cargos y política de redondeo.                                                      | En curso |
 | RF-003 | Configurar plan de tasas.               | Se define una fase fija con tasa y periodo, seguida opcionalmente por una fase variable cuya regla, frecuencia de revisión y supuestos quedan explícitos.                   | En curso |
 | RF-004 | Calcular una proyección base.           | Para cada periodo se muestran saldo inicial/final, tasa, cuota, interés, principal, cargos y pago total. El resultado es determinista.                                      | En curso |
 | RF-005 | Registrar pagos históricos manualmente. | Se validan fecha, importes y desglose disponible; cada pago conserva su origen y notas.                                                                                     | En curso |
@@ -48,7 +48,7 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 | RNF-007 | Rendimiento.                      | Una proyección de hasta 600 periodos se calcula interactivamente en equipo convencional; se medirá antes de optimizar.   | Planeado |
 | RNF-008 | Accesibilidad y adaptación.       | Flujos principales utilizables con teclado y pantallas pequeñas; objetivo WCAG 2.1 AA.                                   | Planeado |
 | RNF-009 | Portabilidad.                     | Funciona en navegadores modernos de escritorio y móviles; la PWA es instalable.                                          | Planeado |
-| RNF-010 | Evolución freemium.               | Persistencia, identidad y sincronización se consumen mediante puertos; el dominio no conoce planes de pago.              | Planeado |
+| RNF-010 | Evolución freemium.               | Persistencia, identidad y sincronización se consumen mediante puertos; el dominio no conoce planes de pago.              | En curso |
 | RNF-011 | Calidad del cálculo.              | Cada regla financiera tiene pruebas unitarias y casos de referencia comparados con fuente contractual u hoja de cálculo. | Planeado |
 | RNF-012 | Seguridad de fórmulas.            | No hay ejecución de código arbitrario. Si se agregan fórmulas, usarán un lenguaje limitado validado.                     | Planeado |
 
