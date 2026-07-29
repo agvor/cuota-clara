@@ -351,6 +351,21 @@
         "El resumen conserva la cuota total configurada y muestra la cuota total inicial proyectada, con una discrepancia visible cuando corresponda.",
         "El detalle de amortización usa el mismo calendario que el resumen y el caso 115,000,000/360/900,000/150,000/8.5% verifica 360 cuotas y fecha final contractual."
       ]
+    },
+    {
+      "id": "US-025",
+      "epic": "E7 · Contrato y resultados legibles",
+      "title": "Hacer legibles y explorables tasas, cuotas y proyección",
+      "story": "Como persona usuaria, quiero introducir tasas en porcentaje y explorar la proyección con detalle para entender mi préstamo sin traducir cifras ni perderme en un calendario extenso.",
+      "requirements": ["RF-003", "RF-010", "RF-013", "RF-015", "RNF-008"],
+      "dependsOn": ["US-024"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "Todo campo editable de tasa acepta y muestra porcentaje (por ejemplo, 8.5 para 8.5%), mientras el dominio conserva su decimal canónico sin usar number para cálculos financieros.",
+        "El resumen del préstamo presenta cuota mensual total junto al seguro antes de la tabla financiera.",
+        "El gráfico bajo demanda tiene ejes y cuadrícula legibles, escala monetaria compacta, rango seleccionable y un punto resaltado con detalle accesible al pasar el cursor o enfocarlo.",
+        "La tabla de cuotas permite alternar el orden por fecha y reinicia su paginación al cambiar el orden."
+      ]
     }
   ]
 }

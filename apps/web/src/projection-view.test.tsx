@@ -34,6 +34,10 @@ describe('ProjectionView', () => {
     expect(
       screen.getByRole('table', { name: 'Historial y proyección de amortización' }),
     ).toBeVisible();
+    const firstPoint = screen.getAllByLabelText(/^Cuota \d+, \d{4}-\d{2}-\d{2}$/)[0];
+    if (!firstPoint) throw new Error('Se esperaba al menos un punto de proyección.');
+    fireEvent.pointerEnter(firstPoint);
+    expect(screen.getByText(/Cuota 1 · 2026-02-01/)).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Siguiente' })).not.toBeInTheDocument();
   });
 
@@ -51,6 +55,16 @@ describe('ProjectionView', () => {
     render(<ProjectionView loan={longLoan} payments={[]} />);
 
     expect(screen.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
+    const firstProjectedRowBefore = screen
+      .getAllByText('Proyección')[0]
+      ?.closest('tr')?.textContent;
+    fireEvent.click(screen.getByRole('button', { name: /Ordenar cuotas por fecha descendente/ }));
+    const firstProjectedRowAfter = screen.getAllByText('Proyección')[0]?.closest('tr')?.textContent;
+    expect(firstProjectedRowAfter).not.toBe(firstProjectedRowBefore);
+    expect(screen.getByRole('columnheader', { name: /Fecha/ })).toHaveAttribute(
+      'aria-sort',
+      'descending',
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
     expect(screen.getByText(/Página 2 de \d+/)).toBeVisible();
     expect(screen.getByRole('columnheader', { name: 'Saldo final' })).toBeVisible();

@@ -342,6 +342,25 @@ h1 {
   text-align: left;
 }
 
+.table-sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: inherit;
+  background: transparent;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.table-sort-button:hover {
+  color: #1d4ed8;
+}
+
 .projection-view td:nth-child(n + 3),
 .projection-view th:nth-child(n + 3) {
   text-align: right;
@@ -373,6 +392,20 @@ h1 {
   background: #fff;
 }
 
+.chart-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.chart-controls p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
 .balance-chart label {
   display: inline-grid;
   gap: 0.25rem;
@@ -392,20 +425,82 @@ h1 {
 .balance-chart svg {
   display: block;
   width: 100%;
-  min-height: 16rem;
+  min-height: 19rem;
   margin-top: 0.75rem;
   overflow: visible;
 }
 
 .chart-axis {
-  stroke: #475569;
-  stroke-width: 0.5;
+  stroke: #334155;
+  stroke-width: 1.25;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-grid {
+  stroke: #cbd5e1;
+  stroke-dasharray: 3 4;
+  stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
 
 .chart-label {
   fill: #334155;
-  font-size: 3px;
+  font-size: 12px;
+}
+
+.projection-line {
+  fill: none;
+  stroke: #1d4ed8;
+  stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-point-target {
+  fill: transparent;
+  cursor: crosshair;
+}
+
+.chart-point-target:focus {
+  outline: none;
+}
+
+.chart-point-highlight {
+  fill: #fff;
+  stroke: #1d4ed8;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-point-details {
+  min-height: 2.75rem;
+  margin: 0.75rem 0 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.35rem;
+  color: #0f172a;
+  background: #eff6ff;
+}
+
+.chart-point-details dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.45rem 0.75rem;
+  margin: 0.5rem 0 0;
+}
+
+.chart-point-details dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.chart-point-details dt {
+  color: #475569;
+}
+
+.chart-point-details dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 
 .balance-chart figcaption {
@@ -423,10 +518,6 @@ h1 {
   background: #1d4ed8;
   content: '';
   vertical-align: middle;
-}
-
-.legend.historical::before {
-  background: #15803d;
 }
 
 button {

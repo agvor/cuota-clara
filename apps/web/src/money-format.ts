@@ -45,6 +45,17 @@ export function formatDecimalMoney(
   return formatMoney(Money.from(amount, currency), roundingPolicy, locale);
 }
 
+/** Etiqueta compacta para ejes de gráficos; los detalles conservan el formato completo. */
+export function formatCompactMoney(amount: Money, roundingPolicy: RoundingPolicy): string {
+  if (!amount.isNegative() && !amount.isLessThan(Money.from('1000000', amount.currency))) {
+    return `${formatMoney(amount.divideBy('1000000'), { ...roundingPolicy, scale: 1 })} M`;
+  }
+  if (!amount.isNegative() && !amount.isLessThan(Money.from('1000', amount.currency))) {
+    return `${formatMoney(amount.divideBy('1000'), { ...roundingPolicy, scale: 1 })} mil`;
+  }
+  return formatMoney(amount, roundingPolicy);
+}
+
 function groupEveryThreeDigits(integer: string, group: string): string {
   return integer.replace(/\B(?=(\d{3})+(?!\d))/g, group);
 }

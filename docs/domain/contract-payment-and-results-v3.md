@@ -40,7 +40,7 @@ Para v3, la fecha final o cantidad total de cuotas es autoritativa. En cada per�
 1. Un único formateador monetario se usa en toda la PWA, con separadores de miles y decimales coherentes con el locale seleccionado (`es-CR` inicialmente), sin convertir el decimal financiero a `number`. Los campos editables conservan el literal canónico.
 2. El resumen inmediato usa una tabla compacta de importes: principal, interés, seguro y total; además muestra fecha/número de última cuota y saldo pendiente si existe.
 3. La página inicial del préstamo no ejecuta la tabla completa ni renderiza el gráfico. La acción **Ver detalle de amortización** los calcula bajo demanda.
-4. El gráfico tiene eje X temporal, eje Y monetario, nombre y descripción accesibles, y controles de rango. La tabla conserva cabecera, contraste, columnas numéricas alineadas y navegación de páginas.
+4. El gráfico tiene eje X temporal, eje Y monetario, cuadrícula, etiquetas compactas, nombre y descripción accesibles, controles de rango y detalle al enfocar o pasar el cursor por un punto. La tabla conserva cabecera, contraste, columnas numéricas alineadas, navegación de páginas y orden alternable por fecha.
 
 ## Secuencia de entrega
 
@@ -48,3 +48,4 @@ Para v3, la fecha final o cantidad total de cuotas es autoritativa. En cada per�
 - **US-022:** formato monetario universal y resumen inmediato. **Completado.**
 - **US-023:** detalle de amortización y gráfico ajustable bajo demanda. **Completado.**
 - **US-024:** preservar plazo contractual y exponer discrepancia de cuota. **Completado.**
+- **US-025:** presentar porcentajes legibles y exploración accesible de la proyección. **Completado.**

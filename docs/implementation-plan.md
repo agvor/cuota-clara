@@ -18,7 +18,7 @@ Un ítem solo se marca `blocked` cuando describe la decisión o evidencia extern
 | E4 · Escenarios y resultados        | Comparación, tabla de amortización y gráfico de saldo.                           | US-013 a US-014          |
 | E5 · Respaldo y publicación         | Recuperación de datos y operación offline completa.                              | US-015 a US-016          |
 | E6 · Contrato financiero v2         | Plazo, seguro, estimación y regla variable TBP+margen migrables.                 | US-017 a US-020          |
-| E7 · Contrato y resultados legibles | Cuota total con seguro, resumen financiero, plazo contractual y detalle visual.  | US-021 a US-024          |
+| E7 · Contrato y resultados legibles | Cuota total con seguro, resumen financiero, plazo contractual y detalle visual.  | US-021 a US-025          |
 
 El orden no es una excusa para omitir dependencias: el campo `dependsOn` de cada historia es autoritativo. US-017 solo depende del respaldo: la terminación de la experiencia PWA offline (US-016) no bloquea una migración de dominio/persistencia. Las decisiones ya adoptadas y las pendientes están en [`domain/loan-contract-v2.md`](domain/loan-contract-v2.md). Las historias avanzadas —pagos recurrentes, aporte objetivo al principal, fuentes de tasa de referencia, sincronización y premium— se crearán como nuevos ítems después de validar el MVP.
 

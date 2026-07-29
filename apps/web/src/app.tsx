@@ -18,6 +18,7 @@ import { BackupTools } from './backup-tools.js';
 import { EstimateSummary } from './estimate-summary.js';
 import { formatMoney } from './money-format.js';
 import { PaymentTools } from './payment-tools.js';
+import { decimalRateToPercent } from './percentage.js';
 import { ProjectionView } from './projection-view.js';
 import { ScenarioTools } from './scenario-tools.js';
 import './styles.css';
@@ -192,7 +193,7 @@ export function App({ repository }: AppProps) {
                         </div>
                         <div>
                           <dt>Tasa nominal anual</dt>
-                          <dd>{Number(loan.annualNominalRate) * 100}%</dd>
+                          <dd>{decimalRateToPercent(loan.annualNominalRate)}%</dd>
                         </div>
                       </dl>
                       {!loan.contract ? (
@@ -285,6 +286,17 @@ function LoanDetail({
           <div>
             <dt>Seguro mensual</dt>
             <dd>{formatMoney(loan.contract.monthlyInsurance, loan.roundingPolicy)}</dd>
+          </div>
+          <div>
+            <dt>Cuota mensual total</dt>
+            <dd>
+              {formatMoney(
+                loan.contract.version === 3
+                  ? loan.contract.monthlyTotalPayment
+                  : loan.contract.monthlyInstallment.add(loan.contract.monthlyInsurance),
+                loan.roundingPolicy,
+              )}
+            </dd>
           </div>
         </dl>
       ) : null}
@@ -392,8 +404,8 @@ function TbpScenarios({
         <article key={scenario.id}>
           <h3>{scenario.name}</h3>
           <p>
-            TBP {scenario.configuration.tbpInitialAnnualRate} + margen{' '}
-            {scenario.configuration.marginAnnualRate};{' '}
+            TBP {decimalRateToPercent(scenario.configuration.tbpInitialAnnualRate)}% + margen{' '}
+            {decimalRateToPercent(scenario.configuration.marginAnnualRate)}%;{' '}
             {scenario.configuration.evolution.replace('_', ' ')} cada{' '}
             {scenario.configuration.reviewFrequency}.
           </p>

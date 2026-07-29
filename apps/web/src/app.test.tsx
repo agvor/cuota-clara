@@ -80,6 +80,7 @@ describe('App', () => {
     expect(screen.getByRole('rowheader', { name: 'Principal estimado' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Interés estimado' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Total proyectado' })).toBeVisible();
+    expect(screen.getByText('Cuota mensual total')).toBeVisible();
     expect(screen.getByText('2056-01-15')).toBeVisible();
     expect(
       screen.queryByRole('img', { name: 'Evolución estimada del saldo' }),
@@ -111,8 +112,8 @@ describe('App', () => {
     fireEvent.change(screen.getByLabelText('Número total de cuotas'), {
       target: { value: '180' },
     });
-    fireEvent.change(screen.getByLabelText('Tasa nominal anual fija'), {
-      target: { value: '0.12' },
+    fireEvent.change(screen.getByLabelText('Tasa nominal anual fija (%)'), {
+      target: { value: '12' },
     });
     fireEvent.click(screen.getByLabelText('TBP + margen (predeterminada)'));
     expect(await screen.findByRole('heading', { name: 'Proyección inicial' })).toBeVisible();
@@ -138,6 +139,14 @@ describe('App', () => {
         ],
       }),
     );
+    const saved = vi.mocked(repository.saveAggregate).mock.calls[0]?.[0];
+    expect(saved?.loan).toMatchObject({
+      annualNominalRate: '0.12',
+      tbpMarginRatePlan: {
+        tbpInitialAnnualRate: '0.05',
+        marginAnnualRate: '0.02',
+      },
+    });
   });
 
   test('muestra la discrepancia de cuota sin alterar el plazo contractual', async () => {
@@ -156,8 +165,8 @@ describe('App', () => {
     fireEvent.change(screen.getByLabelText('Número total de cuotas'), {
       target: { value: '360' },
     });
-    fireEvent.change(screen.getByLabelText('Tasa nominal anual fija'), {
-      target: { value: '0.085' },
+    fireEvent.change(screen.getByLabelText('Tasa nominal anual fija (%)'), {
+      target: { value: '8.5' },
     });
 
     expect(await screen.findByText('2056-01-15')).toBeVisible();

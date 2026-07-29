@@ -7,11 +7,13 @@ import {
   type PaymentRecord,
 } from '@cuotaclara/domain';
 
-import { formatMoney } from './money-format.js';
+import { formatCompactMoney, formatMoney } from './money-format.js';
 
 const PAGE_SIZE = 24;
 const CHART_RANGES = [12, 60, 120] as const;
+const CHART = { left: 94, right: 770, top: 30, bottom: 276 } as const;
 
+type SortDirection = 'ascending' | 'descending';
 type DisplayProjectionPeriod = Readonly<{
   period: number;
   date: string;
@@ -21,12 +23,14 @@ type DisplayProjectionPeriod = Readonly<{
   payment: Loan['initialBalance'];
   closingBalance: Loan['initialBalance'];
 }>;
+type ChartPoint = Readonly<{ period: DisplayProjectionPeriod; x: number; y: number }>;
 
 export function ProjectionView({
   loan,
   payments,
 }: Readonly<{ loan: Loan; payments: readonly PaymentRecord[] }>) {
   const [page, setPage] = useState(0);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('ascending');
   const result = useMemo(() => {
     try {
       const periods: readonly DisplayProjectionPeriod[] = loan.contract
@@ -54,10 +58,22 @@ export function ProjectionView({
         <p role="alert">{result.error}</p>
       </section>
     );
-  const periods = result.periods;
+
+  const orderedPeriods = [...result.periods].sort((left, right) =>
+    sortDirection === 'ascending'
+      ? left.date.localeCompare(right.date)
+      : right.date.localeCompare(left.date),
+  );
   const start = page * PAGE_SIZE;
-  const visiblePeriods = periods.slice(start, start + PAGE_SIZE);
-  const pages = Math.ceil(periods.length / PAGE_SIZE);
+  const visiblePeriods = orderedPeriods.slice(start, start + PAGE_SIZE);
+  const pages = Math.ceil(orderedPeriods.length / PAGE_SIZE);
+  const nextSortDirection = sortDirection === 'ascending' ? 'descending' : 'ascending';
+
+  function toggleDateSort() {
+    setSortDirection(nextSortDirection);
+    setPage(0);
+  }
+
   return (
     <section className="projection-view" aria-labelledby="projection-title">
       <h3 id="projection-title">Evolución del saldo</h3>
@@ -65,14 +81,26 @@ export function ProjectionView({
         Los pagos históricos aparecen como registros reales; la proyección contractual se muestra
         por separado.
       </p>
-      <BalanceChart loan={loan} payments={payments} periods={periods} />
+      <BalanceChart loan={loan} periods={result.periods} />
       <div className="table-scroll">
         <table>
           <caption>Historial y proyección de amortización</caption>
           <thead>
             <tr>
               <th scope="col">Tipo</th>
-              <th scope="col">Fecha</th>
+              <th
+                scope="col"
+                aria-sort={sortDirection === 'ascending' ? 'ascending' : 'descending'}
+              >
+                <button
+                  className="table-sort-button"
+                  type="button"
+                  onClick={toggleDateSort}
+                  aria-label={`Ordenar cuotas por fecha ${nextSortDirection === 'ascending' ? 'ascendente' : 'descendente'}`}
+                >
+                  Fecha <span aria-hidden="true">{sortDirection === 'ascending' ? '↑' : '↓'}</span>
+                </button>
+              </th>
               <th scope="col">Pago</th>
               <th scope="col">Interés</th>
               <th scope="col">Principal</th>
@@ -138,14 +166,13 @@ export function ProjectionView({
 
 function BalanceChart({
   loan,
-  payments,
   periods,
 }: Readonly<{
   loan: Loan;
-  payments: readonly PaymentRecord[];
   periods: readonly DisplayProjectionPeriod[];
 }>) {
   const [range, setRange] = useState<number | 'all'>(60);
+  const [hoveredPeriod, setHoveredPeriod] = useState<DisplayProjectionPeriod>();
   const visiblePeriods = range === 'all' ? periods : periods.slice(-range);
   const startPeriod = visiblePeriods[0];
   const endPeriod = visiblePeriods.at(-1);
@@ -153,100 +180,190 @@ function BalanceChart({
 
   const maximumBalance = startPeriod.openingBalance;
   const maximumBalanceAsNumber = Math.max(Number(maximumBalance.toDecimalString()), 1);
-  const projectionPoints = toPoints(
-    visiblePeriods.map((period) => Number(period.closingBalance.toDecimalString())),
-    maximumBalanceAsNumber,
-  );
-  let historicalBalance = maximumBalanceAsNumber;
-  const historicalBalances = payments
-    .filter((payment) => payment.principalAmount)
-    .sort((left, right) => left.date.localeCompare(right.date))
-    .map((payment) => {
-      historicalBalance -= Number(payment.principalAmount?.toDecimalString() ?? '0');
-      historicalBalance -= Number(payment.extraPrincipalAmount?.toDecimalString() ?? '0');
-      return historicalBalance;
-    });
-  const rangedHistoricalBalances =
-    range === 'all' ? historicalBalances : historicalBalances.slice(-range);
-  const historicalPoints = rangedHistoricalBalances.length
-    ? toPoints(rangedHistoricalBalances, maximumBalanceAsNumber)
-    : '';
+  const points = toChartPoints(visiblePeriods, maximumBalanceAsNumber);
+  const hoveredPoint = points.find((point) => point.period.period === hoveredPeriod?.period);
+  const horizontalTicks = [0, 0.25, 0.5, 0.75, 1];
+  const temporalTicks = [0, 0.25, 0.5, 0.75, 1];
+
+  function inspectClosestPoint(clientX: number, chartLeft: number, chartWidth: number) {
+    const firstPoint = points[0];
+    if (!firstPoint || chartWidth === 0) return;
+    const x = ((clientX - chartLeft) / chartWidth) * 800;
+    let closestPoint = firstPoint;
+    for (const point of points) {
+      if (Math.abs(point.x - x) < Math.abs(closestPoint.x - x)) closestPoint = point;
+    }
+    if (closestPoint.period.period !== hoveredPeriod?.period) setHoveredPeriod(closestPoint.period);
+  }
 
   return (
     <figure className="balance-chart">
-      <label>
-        Rango del gráfico
-        <select
-          value={range}
-          onChange={(event) =>
-            setRange(event.target.value === 'all' ? 'all' : Number(event.target.value))
-          }
-        >
-          {CHART_RANGES.map((periodCount) => (
-            <option key={periodCount} value={periodCount}>
-              Últimos {periodCount} períodos
-            </option>
-          ))}
-          <option value="all">Todo el plazo</option>
-        </select>
-      </label>
+      <div className="chart-controls">
+        <label>
+          Rango del gráfico
+          <select
+            value={range}
+            onChange={(event) => {
+              setRange(event.target.value === 'all' ? 'all' : Number(event.target.value));
+              setHoveredPeriod(undefined);
+            }}
+          >
+            {CHART_RANGES.map((periodCount) => (
+              <option key={periodCount} value={periodCount}>
+                Últimos {periodCount} períodos
+              </option>
+            ))}
+            <option value="all">Todo el plazo</option>
+          </select>
+        </label>
+        <p>Desplaza el cursor sobre la línea para inspeccionar una cuota.</p>
+      </div>
       <svg
-        viewBox="0 0 100 100"
+        viewBox="0 0 800 330"
         role="img"
         aria-labelledby="balance-chart-title"
         aria-describedby="balance-chart-description"
+        onPointerLeave={() => setHoveredPeriod(undefined)}
+        onPointerMove={(event) => {
+          const bounds = event.currentTarget.getBoundingClientRect();
+          inspectClosestPoint(event.clientX, bounds.left, bounds.width);
+        }}
       >
         <title id="balance-chart-title">Evolución estimada del saldo</title>
         <desc id="balance-chart-description">
           Saldo proyectado desde {startPeriod.date} hasta {endPeriod.date}; el eje vertical usa la
           moneda del préstamo y el horizontal representa las fechas de las cuotas.
         </desc>
-        <line className="chart-axis" x1="12" x2="94" y1="86" y2="86" />
-        <line className="chart-axis" x1="12" x2="12" y1="10" y2="86" />
-        <text className="chart-label" x="11" y="12" textAnchor="end">
-          {formatMoney(maximumBalance, loan.roundingPolicy)}
-        </text>
-        <text className="chart-label" x="11" y="87" textAnchor="end">
-          {formatMoney(maximumBalance.subtract(maximumBalance), loan.roundingPolicy)}
-        </text>
-        <text className="chart-label" x="12" y="97">
-          {startPeriod.date}
-        </text>
-        <text className="chart-label" x="94" y="97" textAnchor="end">
-          {endPeriod.date}
-        </text>
-        <polyline
-          points={projectionPoints}
-          fill="none"
-          stroke="#1d4ed8"
-          strokeWidth="1.5"
-          vectorEffect="non-scaling-stroke"
+        {horizontalTicks.map((fraction) => {
+          const y = CHART.bottom - fraction * (CHART.bottom - CHART.top);
+          const value = maximumBalance.multiplyBy(fraction.toString());
+          return (
+            <g key={`horizontal-${fraction}`}>
+              <line className="chart-grid" x1={CHART.left} x2={CHART.right} y1={y} y2={y} />
+              <text className="chart-label" x={CHART.left - 10} y={y + 4} textAnchor="end">
+                {formatCompactMoney(value, loan.roundingPolicy)}
+              </text>
+            </g>
+          );
+        })}
+        {temporalTicks.map((fraction) => {
+          const index = Math.round(fraction * Math.max(visiblePeriods.length - 1, 0));
+          const period = visiblePeriods[index];
+          const x = CHART.left + fraction * (CHART.right - CHART.left);
+          if (!period) return null;
+          return (
+            <g key={`vertical-${fraction}`}>
+              <line
+                className="chart-grid vertical"
+                x1={x}
+                x2={x}
+                y1={CHART.top}
+                y2={CHART.bottom}
+              />
+              <text className="chart-label" x={x} y={CHART.bottom + 25} textAnchor="middle">
+                {formatChartDate(period.date)}
+              </text>
+            </g>
+          );
+        })}
+        <line
+          className="chart-axis"
+          x1={CHART.left}
+          x2={CHART.right}
+          y1={CHART.bottom}
+          y2={CHART.bottom}
         />
-        {historicalPoints ? (
-          <polyline
-            points={historicalPoints}
-            fill="none"
-            stroke="#15803d"
-            strokeWidth="1.5"
-            vectorEffect="non-scaling-stroke"
+        <line
+          className="chart-axis"
+          x1={CHART.left}
+          x2={CHART.left}
+          y1={CHART.top}
+          y2={CHART.bottom}
+        />
+        <polyline
+          className="projection-line"
+          points={points.map((point) => `${point.x},${point.y}`).join(' ')}
+        />
+        {points.map((point) => (
+          <circle
+            aria-label={`Cuota ${point.period.period}, ${point.period.date}`}
+            className="chart-point-target"
+            cx={point.x}
+            cy={point.y}
+            key={point.period.period}
+            r="8"
+            tabIndex={0}
+            onFocus={() => setHoveredPeriod(point.period)}
+            onPointerEnter={() => setHoveredPeriod(point.period)}
           />
+        ))}
+        {hoveredPoint ? (
+          <circle className="chart-point-highlight" cx={hoveredPoint.x} cy={hoveredPoint.y} r="5" />
         ) : null}
       </svg>
       <figcaption>
-        <span className="legend historical">Histórico</span>
-        <span className="legend projection">Proyección</span>
+        <span className="legend projection">Saldo proyectado</span>
+        <span>Los pagos reales se consultan en la tabla.</span>
       </figcaption>
+      <ChartPointDetails loan={loan} period={hoveredPeriod} />
     </figure>
   );
 }
 
-function toPoints(values: readonly number[], maximum: number): string {
-  const denominator = Math.max(values.length - 1, 1);
-  return values
-    .map((value, index) => {
-      const x = 12 + (index / denominator) * 82;
-      const y = 10 + (1 - Math.max(0, Math.min(value, maximum)) / maximum) * 76;
-      return `${x},${y}`;
-    })
-    .join(' ');
+function ChartPointDetails({
+  loan,
+  period,
+}: Readonly<{ loan: Loan; period: DisplayProjectionPeriod | undefined }>) {
+  if (!period)
+    return (
+      <p className="chart-point-details" aria-live="polite">
+        Selecciona un punto para ver el detalle de la cuota.
+      </p>
+    );
+  return (
+    <div className="chart-point-details" aria-live="polite">
+      <strong>
+        Cuota {period.period} · {period.date}
+      </strong>
+      <dl>
+        <div>
+          <dt>Pago</dt>
+          <dd>{formatMoney(period.payment, loan.roundingPolicy)}</dd>
+        </div>
+        <div>
+          <dt>Interés</dt>
+          <dd>{formatMoney(period.interest, loan.roundingPolicy)}</dd>
+        </div>
+        <div>
+          <dt>Principal</dt>
+          <dd>{formatMoney(period.principal, loan.roundingPolicy)}</dd>
+        </div>
+        <div>
+          <dt>Saldo</dt>
+          <dd>{formatMoney(period.closingBalance, loan.roundingPolicy)}</dd>
+        </div>
+      </dl>
+    </div>
+  );
+}
+
+function toChartPoints(
+  periods: readonly DisplayProjectionPeriod[],
+  maximumBalance: number,
+): readonly ChartPoint[] {
+  const denominator = Math.max(periods.length - 1, 1);
+  return periods.map((period, index) => ({
+    period,
+    x: CHART.left + (index / denominator) * (CHART.right - CHART.left),
+    y:
+      CHART.top +
+      (1 -
+        Math.max(0, Math.min(Number(period.closingBalance.toDecimalString()), maximumBalance)) /
+          maximumBalance) *
+        (CHART.bottom - CHART.top),
+  }));
+}
+
+function formatChartDate(date: string): string {
+  return date.slice(0, 7);
 }

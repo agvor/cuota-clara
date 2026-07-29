@@ -11,6 +11,7 @@ import {
 } from '@cuotaclara/domain';
 
 import { EstimateSummary } from './estimate-summary.js';
+import { decimalRateToPercent, percentToDecimal } from './percentage.js';
 
 export type LoanFormProps = Readonly<{
   loan?: Loan;
@@ -72,17 +73,17 @@ function initialValues(loan: Loan | undefined): FormValues {
         ? String(contract.term.totalInstallments)
         : '',
     endDate: contract && 'endDate' in contract.term ? contract.term.endDate : '',
-    annualNominalRate: loan?.annualNominalRate ?? '',
+    annualNominalRate: loan ? decimalRateToPercent(loan.annualNominalRate) : '',
     rateScheme,
     fixedPeriods: String(tbp?.fixedPeriods ?? loan?.variableRatePlan?.fixedPeriods ?? 12),
     reviewFrequency: tbp?.reviewFrequency ?? loan?.variableRatePlan?.reviewFrequency ?? 'annual',
-    tbpInitialAnnualRate: tbp?.tbpInitialAnnualRate ?? '0.05',
-    marginAnnualRate: tbp?.marginAnnualRate ?? '0.02',
+    tbpInitialAnnualRate: decimalRateToPercent(tbp?.tbpInitialAnnualRate ?? '0.05'),
+    marginAnnualRate: decimalRateToPercent(tbp?.marginAnnualRate ?? '0.02'),
     evolution: tbp?.evolution ?? 'estable',
-    variationPerReview: tbp?.variationPerReview ?? '0',
+    variationPerReview: decimalRateToPercent(tbp?.variationPerReview ?? '0'),
     variableRates:
       loan?.variableRatePlan?.variableRates
-        .map((rate) => `${rate.effectiveDate},${rate.annualNominalRate}`)
+        .map((rate) => `${rate.effectiveDate},${decimalRateToPercent(rate.annualNominalRate)}`)
         .join('\n') ?? '',
   };
 }
@@ -97,7 +98,7 @@ function parseVariableRates(value: string) {
         .map((part) => part.trim());
       if (!effectiveDate || !annualNominalRate || rest.length > 0)
         throw new Error('Cada tasa variable debe usar fecha,tasa.');
-      return { effectiveDate, annualNominalRate };
+      return { effectiveDate, annualNominalRate: percentToDecimal(annualNominalRate) };
     });
 }
 
@@ -113,7 +114,7 @@ function createConfiguredLoan(values: FormValues, id: string): Loan {
       values.termMode === 'installments'
         ? { totalInstallments: Number(values.totalInstallments) }
         : { endDate: values.endDate },
-    annualNominalRate: values.annualNominalRate,
+    annualNominalRate: percentToDecimal(values.annualNominalRate),
     roundingPolicy: { scale: 2, mode: 'half_up' },
     ...(values.rateScheme === 'tbp_margin'
       ? {
@@ -121,10 +122,10 @@ function createConfiguredLoan(values: FormValues, id: string): Loan {
             kind: 'tbp_margin_v1' as const,
             fixedPeriods: Number(values.fixedPeriods),
             reviewFrequency: values.reviewFrequency,
-            tbpInitialAnnualRate: values.tbpInitialAnnualRate,
-            marginAnnualRate: values.marginAnnualRate,
+            tbpInitialAnnualRate: percentToDecimal(values.tbpInitialAnnualRate),
+            marginAnnualRate: percentToDecimal(values.marginAnnualRate),
             evolution: values.evolution,
-            variationPerReview: values.variationPerReview,
+            variationPerReview: percentToDecimal(values.variationPerReview),
           },
         }
       : {}),
@@ -257,8 +258,8 @@ export function LoanForm({ loan, onCancel, onSave }: LoanFormProps) {
             />
           </label>
           <p className="field-hint">
-            Periodicidad: mensual (12 pagos por año). Las tasas se expresan como decimal anual; por
-            ejemplo, 0.12 = 12%.
+            Periodicidad: mensual (12 pagos por año). Todas las tasas se expresan como porcentaje
+            anual; por ejemplo, 8.5 significa 8.5%.
           </p>
           <div className="choice-group" role="radiogroup" aria-label="Definición de plazo">
             <label>
@@ -307,7 +308,7 @@ export function LoanForm({ loan, onCancel, onSave }: LoanFormProps) {
         <fieldset>
           <legend>Tasa de interés</legend>
           <label>
-            Tasa nominal anual fija
+            Tasa nominal anual fija (%)
             <input
               required
               inputMode="decimal"
@@ -396,7 +397,7 @@ function TbpFields({
     <div className="rate-fields">
       <p className="field-hint">Supuesto local reproducible: no se consulta la TBP en internet.</p>
       <label>
-        TBP promedio inicial (decimal anual)
+        TBP promedio inicial anual (%)
         <input
           required
           inputMode="decimal"
@@ -405,7 +406,7 @@ function TbpFields({
         />
       </label>
       <label>
-        Margen anual (decimal)
+        Margen anual (%)
         <input
           required
           inputMode="decimal"
@@ -449,7 +450,7 @@ function ManualRateFields({
     <div className="rate-fields">
       <ReviewFrequency values={values} update={update} />
       <label>
-        Tasas variables (una por línea: YYYY-MM-DD,0.08)
+        Tasas variables (una por línea: YYYY-MM-DD,8.5)
         <textarea
           required
           value={values.variableRates}
