@@ -1,0 +1,74 @@
+{
+  "caseId": "fixed-rate-monthly-v1",
+  "version": 1,
+  "title": "Amortización mensual de tasa fija con pago final ajustado",
+  "source": {
+    "type": "synthetic",
+    "isBankValidated": false,
+    "reference": "Caso manual creado para CuotaClara; no representa un contrato ni estado de cuenta bancario.",
+    "containsPersonalData": false
+  },
+  "inputs": {
+    "currency": "XXX",
+    "startDate": "2026-01-01",
+    "firstPaymentDate": "2026-02-01",
+    "paymentFrequency": "monthly",
+    "openingBalance": "1000.00",
+    "annualNominalRate": "0.12",
+    "periodsPerYear": 12,
+    "ordinaryPayment": "340.00",
+    "rounding": {
+      "scale": 2,
+      "mode": "half_up",
+      "stage": "interest_each_period"
+    },
+    "interestRule": "opening_balance * annual_nominal_rate / periods_per_year",
+    "paymentApplication": "interest_then_principal",
+    "finalPaymentPolicy": "limit_payment_to_outstanding_balance"
+  },
+  "expected": {
+    "periods": [
+      {
+        "period": 1,
+        "date": "2026-02-01",
+        "openingBalance": "1000.00",
+        "interest": "10.00",
+        "principal": "330.00",
+        "payment": "340.00",
+        "closingBalance": "670.00"
+      },
+      {
+        "period": 2,
+        "date": "2026-03-01",
+        "openingBalance": "670.00",
+        "interest": "6.70",
+        "principal": "333.30",
+        "payment": "340.00",
+        "closingBalance": "336.70"
+      },
+      {
+        "period": 3,
+        "date": "2026-04-01",
+        "openingBalance": "336.70",
+        "interest": "3.37",
+        "principal": "336.63",
+        "payment": "340.00",
+        "closingBalance": "0.07"
+      },
+      {
+        "period": 4,
+        "date": "2026-05-01",
+        "openingBalance": "0.07",
+        "interest": "0.00",
+        "principal": "0.07",
+        "payment": "0.07",
+        "closingBalance": "0.00"
+      }
+    ],
+    "totals": {
+      "interest": "20.07",
+      "principal": "1000.00",
+      "paid": "1020.07"
+    }
+  }
+}

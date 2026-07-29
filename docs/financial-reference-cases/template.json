@@ -1,0 +1,47 @@
+{
+  "caseId": "descriptive-case-id-v1",
+  "version": 1,
+  "title": "Descripción breve de la regla",
+  "source": {
+    "type": "synthetic | contract | bank_statement",
+    "isBankValidated": false,
+    "reference": "Origen o explicación sin información sensible",
+    "containsPersonalData": false
+  },
+  "inputs": {
+    "currency": "XXX",
+    "startDate": "YYYY-MM-DD",
+    "firstPaymentDate": "YYYY-MM-DD",
+    "paymentFrequency": "monthly",
+    "openingBalance": "0.00",
+    "annualNominalRate": "0.00",
+    "periodsPerYear": 12,
+    "ordinaryPayment": "0.00",
+    "rounding": {
+      "scale": 2,
+      "mode": "half_up",
+      "stage": "interest_each_period"
+    },
+    "interestRule": "documented_formula",
+    "paymentApplication": "interest_then_principal",
+    "finalPaymentPolicy": "limit_payment_to_outstanding_balance"
+  },
+  "expected": {
+    "periods": [
+      {
+        "period": 1,
+        "date": "YYYY-MM-DD",
+        "openingBalance": "0.00",
+        "interest": "0.00",
+        "principal": "0.00",
+        "payment": "0.00",
+        "closingBalance": "0.00"
+      }
+    ],
+    "totals": {
+      "interest": "0.00",
+      "principal": "0.00",
+      "paid": "0.00"
+    }
+  }
+}

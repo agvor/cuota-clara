@@ -8,7 +8,7 @@
       "story": "Como responsable del producto, quiero casos de referencia documentados para verificar el motor contra reglas y resultados conocidos.",
       "requirements": ["RNF-001", "RNF-002", "RNF-011"],
       "dependsOn": [],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "Existe una plantilla de caso con entradas, supuestos, fuente, periodos y resultados esperados.",
         "Se registra al menos un caso fijo sintético y se declara que no reemplaza una validación bancaria real.",
@@ -22,7 +22,7 @@
       "story": "Como persona usuaria, quiero que los importes y redondeos se calculen de forma consistente para confiar en la proyección.",
       "requirements": ["RNF-001", "RNF-002"],
       "dependsOn": ["US-001"],
-      "status": "planned",
+      "status": "ready",
       "acceptanceCriteria": [
         "El dominio expone tipos de dinero y política de redondeo sin usar number para cálculo financiero.",
         "Se prueban al menos redondeo a dos decimales, empate y acumulación de operaciones.",
