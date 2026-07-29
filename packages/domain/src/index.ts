@@ -21,10 +21,13 @@ export {
 } from './interest/fixed-rate.js';
 export {
   AmortizationValidationError,
+  compareFixedRateAmortizations,
   generateFixedRateAmortization,
+  type FixedRateAmortizationComparison,
   type FixedRateAmortizationInput,
   type FixedRateAmortizationPeriod,
   type FixedRateAmortizationResult,
+  type OneTimeExtraPayment,
 } from './amortization/fixed-rate.js';
 export {
   createPaymentRecord,

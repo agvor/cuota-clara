@@ -27,6 +27,7 @@
 - Ningún saldo, pago o cargo puede ser negativo, salvo un tipo de ajuste definido explícitamente.
 - El saldo final de cada periodo no puede ser menor que cero; el último pago se limita al importe necesario.
 - El motor inicial rechaza una cuota que no reduzca principal; no modela amortización negativa todavía.
+- El pago extraordinario único se aplica después de la cuota ordinaria y se limita al saldo restante.
 - Un periodo histórico se identifica como tal y no se recalcula silenciosamente a partir de una proyección.
 - Una reconciliación conserva tanto el saldo calculado como el saldo reportado; no reescribe pagos históricos.
 - Toda tasa usada contiene su fuente o supuesto, fecha de vigencia y versión de la regla.
