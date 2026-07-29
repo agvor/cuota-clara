@@ -10,6 +10,7 @@ import type {
 
 import { LoanForm } from './loan-form.js';
 import { PaymentTools } from './payment-tools.js';
+import { ProjectionView } from './projection-view.js';
 import { ScenarioTools } from './scenario-tools.js';
 import './styles.css';
 
@@ -281,6 +282,9 @@ function LoanDetail({
           scenarios={aggregate.scenarios}
           onSaveScenario={onSaveScenario}
         />
+      ) : null}
+      {aggregate?.loan.id === loan.id ? (
+        <ProjectionView loan={loan} payments={aggregate.payments} />
       ) : null}
     </section>
   );

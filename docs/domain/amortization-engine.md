@@ -27,3 +27,5 @@ El resumen contiene fecha de finalización, total de interés, principal y pago.
 - No representa aún atrasos, pagos parciales ni cambios de cuota.
 
 El caso [`fixed-rate-monthly-v1`](../../packages/domain/test/fixtures/fixed-rate-monthly-v1.json) es su referencia de regresión actual.
+
+`projectLoanAmortization` adapta la configuración de un `Loan` al motor y genera el calendario contractual inicial para frecuencias que dividen doce. La presentación usa ese resultado para la tabla y el gráfico, sin repetir cálculos financieros.

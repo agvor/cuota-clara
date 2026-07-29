@@ -9,3 +9,5 @@ La PWA actual precachea sus recursos de construcción. Las pruebas de instalaci�
 Desde el detalle de un préstamo se registran y corrigen pagos manuales, o se importa un CSV tras revisar sus filas, duplicados y meses faltantes. La confirmación no admite una previsualización con errores y los pagos se persisten dentro del agregado del préstamo seleccionado.
 
 También se pueden guardar escenarios de pago extraordinario único. La comparación muestra base y alternativa —fecha final, plazo, total pagado e interés ahorrado— y usa un calendario contractual explícito; el escenario nunca modifica pagos reales ni la configuración del préstamo.
+
+La vista de evolución presenta una tabla paginada y un gráfico SVG ligero. Los registros históricos y las filas proyectadas están marcados por separado; el cálculo de la proyección lo produce el dominio, no la interfaz.

@@ -205,7 +205,7 @@
       "story": "Como persona usuaria, quiero visualizar la evolución de mi deuda y distinguir historia de proyección.",
       "requirements": ["RF-004", "RF-010", "RNF-008"],
       "dependsOn": ["US-012", "US-013"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "La tabla permite consultar amortizaciones extensas sin degradación perceptible.",
         "El gráfico de saldo diferencia pagos históricos y proyecciones.",

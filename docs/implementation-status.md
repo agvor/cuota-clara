@@ -2,14 +2,14 @@
 
 > Generado desde `docs/backlog.json` el 2026-07-28. No editar manualmente.
 
-**Siguiente ítem habilitado:** US-014 — Mostrar tabla y evolución de saldo
+**Siguiente ítem habilitado:** ninguno; revisar dependencias o bloqueos.
 
 | Épica | Planeado | Listo | En curso | Bloqueado | Completado |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | E1 · Motor financiero verificable | 0 | 0 | 0 | 0 | 7 |
 | E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 3 |
 | E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 3 |
-| E4 · Escenarios y resultados | 0 | 1 | 0 | 0 | 1 |
+| E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 2 |
 | E5 · Respaldo y publicación | 2 | 0 | 0 | 0 | 0 |
 
 ## Historias
@@ -30,6 +30,6 @@
 | US-011 | E3 · PWA y gestión de préstamos | Crear y editar un préstamo | Completado | US-007, US-010 |
 | US-012 | E3 · PWA y gestión de préstamos | Registrar e importar pagos desde la interfaz | Completado | US-008, US-010 |
 | US-013 | E4 · Escenarios y resultados | Comparar escenario base y pago extraordinario | Completado | US-006, US-011 |
-| US-014 | E4 · Escenarios y resultados | Mostrar tabla y evolución de saldo | Listo | US-012, US-013 |
+| US-014 | E4 · Escenarios y resultados | Mostrar tabla y evolución de saldo | Completado | US-012, US-013 |
 | US-015 | E5 · Respaldo y publicación | Respaldar y restaurar datos locales | Planeado | US-009, US-011 |
 | US-016 | E5 · Respaldo y publicación | Completar experiencia offline e instalación | Planeado | US-014, US-015 |

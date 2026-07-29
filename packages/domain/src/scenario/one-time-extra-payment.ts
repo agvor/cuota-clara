@@ -81,16 +81,7 @@ export function compareLoanWithOneTimeExtraPayment(input: {
     throw new ScenarioValidationError('El pago extraordinario debe usar la moneda del préstamo.');
   }
   const periodEndDates = generatePeriodEndDates(input.loan.startDate, input.loan.periodsPerYear);
-  const base = generateFixedRateAmortization({
-    openingBalance: input.loan.initialBalance,
-    annualNominalRate: input.loan.annualNominalRate,
-    periodsPerYear: input.loan.periodsPerYear,
-    ordinaryPayment: input.loan.ordinaryPayment,
-    startDate: input.loan.startDate,
-    periodEndDates,
-    roundingPolicy: input.loan.roundingPolicy,
-    ...(input.loan.variableRatePlan ? { variableRatePlan: input.loan.variableRatePlan } : {}),
-  });
+  const base = projectLoanAmortization(input.loan);
   const alternative = generateFixedRateAmortization({
     openingBalance: input.loan.initialBalance,
     annualNominalRate: input.loan.annualNominalRate,
@@ -106,6 +97,19 @@ export function compareLoanWithOneTimeExtraPayment(input: {
     base,
     alternative,
     comparison: compareFixedRateAmortizations(base, alternative),
+  });
+}
+
+export function projectLoanAmortization(loan: Loan): FixedRateAmortizationResult {
+  return generateFixedRateAmortization({
+    openingBalance: loan.initialBalance,
+    annualNominalRate: loan.annualNominalRate,
+    periodsPerYear: loan.periodsPerYear,
+    ordinaryPayment: loan.ordinaryPayment,
+    startDate: loan.startDate,
+    periodEndDates: generatePeriodEndDates(loan.startDate, loan.periodsPerYear),
+    roundingPolicy: loan.roundingPolicy,
+    ...(loan.variableRatePlan ? { variableRatePlan: loan.variableRatePlan } : {}),
   });
 }
 
