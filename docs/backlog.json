@@ -163,7 +163,7 @@
       "story": "Como persona usuaria, quiero configurar un préstamo y sus tasas para obtener una proyección válida.",
       "requirements": ["RF-001", "RF-002", "RF-003"],
       "dependsOn": ["US-007", "US-010"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "El formulario valida campos obligatorios, moneda, fechas, cuota y configuración fija-variable.",
         "Crear, editar, duplicar y eliminar requieren las confirmaciones apropiadas.",
@@ -177,7 +177,7 @@
       "story": "Como persona usuaria, quiero registrar pagos manuales o importar un CSV desde el préstamo seleccionado.",
       "requirements": ["RF-005", "RF-006", "RF-007"],
       "dependsOn": ["US-008", "US-010"],
-      "status": "planned",
+      "status": "ready",
       "acceptanceCriteria": [
         "Se puede registrar, corregir y revisar un pago histórico manual.",
         "El asistente CSV muestra previsualización antes de confirmar.",

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 
-import type { Loan, LoanRepository } from '@cuotaclara/domain';
+import type { Loan, LoanAggregate, LoanRepository } from '@cuotaclara/domain';
 
+import { LoanForm } from './loan-form.js';
 import './styles.css';
 
 export type AppProps = Readonly<{
@@ -25,6 +26,12 @@ function formatMoney(loan: Loan, amount: Loan['initialBalance']): string {
 export function App({ repository }: AppProps) {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [selectedLoanId, setSelectedLoanId] = useState<string>();
+  const [formLoan, setFormLoan] = useState<Loan | null | undefined>(undefined);
+
+  async function reloadLoans() {
+    const loans = await repository.listLoans();
+    setState({ status: 'ready', loans });
+  }
 
   useEffect(() => {
     let active = true;
@@ -40,6 +47,40 @@ export function App({ repository }: AppProps) {
       active = false;
     };
   }, [repository]);
+
+  async function saveLoan(loan: Loan) {
+    const existing = await repository.loadAggregate(loan.id);
+    const aggregate: LoanAggregate = {
+      loan,
+      payments: existing?.payments ?? [],
+      scenarios: existing?.scenarios ?? [],
+    };
+    await repository.saveAggregate(aggregate);
+    await reloadLoans();
+    setSelectedLoanId(loan.id);
+    setFormLoan(undefined);
+  }
+
+  async function duplicateLoan(loan: Loan) {
+    if (!window.confirm(`¿Duplicar el préstamo “${loan.name}” sin sus pagos ni escenarios?`))
+      return;
+    const duplicate = { ...loan, id: crypto.randomUUID(), name: `${loan.name} (copia)` };
+    await repository.saveAggregate({ loan: duplicate, payments: [], scenarios: [] });
+    await reloadLoans();
+    setSelectedLoanId(duplicate.id);
+  }
+
+  async function deleteLoan(loan: Loan) {
+    if (
+      !window.confirm(
+        `¿Eliminar “${loan.name}” y sus pagos y escenarios? Esta acción no se puede deshacer.`,
+      )
+    )
+      return;
+    await repository.deleteLoan(loan.id);
+    await reloadLoans();
+    setSelectedLoanId(undefined);
+  }
 
   return (
     <div className="app-shell">
@@ -62,6 +103,9 @@ export function App({ repository }: AppProps) {
           <p className="section-introduction">
             Consulta cada préstamo por separado y conserva los datos en este dispositivo.
           </p>
+          <button type="button" onClick={() => setFormLoan(null)}>
+            Crear préstamo
+          </button>
           {state.status === 'loading' ? <p aria-live="polite">Cargando préstamos…</p> : null}
           {state.status === 'error' ? (
             <p role="alert">
@@ -69,6 +113,13 @@ export function App({ repository }: AppProps) {
             </p>
           ) : null}
           {state.status === 'ready' && state.loans.length === 0 ? <EmptyLoans /> : null}
+          {formLoan !== undefined ? (
+            <LoanForm
+              {...(formLoan ? { loan: formLoan } : {})}
+              onCancel={() => setFormLoan(undefined)}
+              onSave={saveLoan}
+            />
+          ) : null}
           {state.status === 'ready' && state.loans.length > 0 ? (
             <>
               <ul className="loan-list" aria-label="Préstamos guardados">
@@ -98,7 +149,12 @@ export function App({ repository }: AppProps) {
                 ))}
               </ul>
               {selectedLoanId ? (
-                <LoanDetail loan={state.loans.find((loan) => loan.id === selectedLoanId)} />
+                <LoanDetail
+                  loan={state.loans.find((loan) => loan.id === selectedLoanId)}
+                  onEdit={() => setFormLoan(state.loans.find((loan) => loan.id === selectedLoanId))}
+                  onDuplicate={duplicateLoan}
+                  onDelete={deleteLoan}
+                />
               ) : null}
             </>
           ) : null}
@@ -116,12 +172,22 @@ function EmptyLoans() {
   return (
     <div className="empty-state">
       <h2>Aún no hay préstamos</h2>
-      <p>La creación de préstamos estará disponible en el siguiente paso de la implementación.</p>
+      <p>Usa “Crear préstamo” para registrar tu primera configuración financiera.</p>
     </div>
   );
 }
 
-function LoanDetail({ loan }: Readonly<{ loan: Loan | undefined }>) {
+function LoanDetail({
+  loan,
+  onEdit,
+  onDuplicate,
+  onDelete,
+}: Readonly<{
+  loan: Loan | undefined;
+  onEdit: () => void;
+  onDuplicate: (loan: Loan) => Promise<void>;
+  onDelete: (loan: Loan) => Promise<void>;
+}>) {
   if (!loan) return null;
   return (
     <section className="loan-detail" aria-labelledby="loan-detail-title" aria-live="polite">
@@ -130,6 +196,17 @@ function LoanDetail({ loan }: Readonly<{ loan: Loan | undefined }>) {
         Inicio: <time dateTime={loan.startDate}>{loan.startDate}</time>
       </p>
       <p>Periodicidad: {loan.periodsPerYear} pagos por año.</p>
+      <div className="form-actions">
+        <button type="button" onClick={onEdit}>
+          Editar préstamo
+        </button>
+        <button type="button" onClick={() => void onDuplicate(loan)}>
+          Duplicar préstamo
+        </button>
+        <button type="button" onClick={() => void onDelete(loan)}>
+          Eliminar préstamo
+        </button>
+      </div>
     </section>
   );
 }

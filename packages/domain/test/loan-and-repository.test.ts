@@ -37,4 +37,23 @@ describe('Loan', () => {
       }),
     ).toThrow(LoanValidationError);
   });
+
+  test('conserva una configuración variable manual validada', () => {
+    const loan = createLoan({
+      id: 'loan-001',
+      name: 'Hipoteca principal',
+      startDate: '2026-01-01',
+      initialBalance: Money.from('100000.00', 'CRC'),
+      ordinaryPayment: Money.from('1000.00', 'CRC'),
+      annualNominalRate: '0.12',
+      periodsPerYear: 12,
+      roundingPolicy,
+      variableRatePlan: {
+        fixedPeriods: 12,
+        reviewFrequency: 'annual',
+        variableRates: [{ effectiveDate: '2027-01-01', annualNominalRate: '0.08' }],
+      },
+    });
+    expect(loan.variableRatePlan?.fixedPeriods).toBe(12);
+  });
 });

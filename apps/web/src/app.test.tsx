@@ -2,12 +2,14 @@
 
 import '@testing-library/jest-dom/vitest';
 
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, test, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { createLoan, Money, type LoanRepository } from '@cuotaclara/domain';
 
 import { App } from './app.js';
+
+afterEach(cleanup);
 
 function createRepository(loans: Awaited<ReturnType<LoanRepository['listLoans']>>): LoanRepository {
   return {
@@ -42,5 +44,34 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Hipoteca principal' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Ver préstamo' }));
     expect(screen.getByRole('heading', { name: 'Resumen de Hipoteca principal' })).toBeVisible();
+  });
+
+  test('guarda una configuración fija-variable en un agregado nuevo', async () => {
+    const repository = createRepository([]);
+    render(<App repository={repository} />);
+    await screen.findByRole('heading', { name: 'Aún no hay préstamos' });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear préstamo' }));
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Préstamo mixto' } });
+    fireEvent.change(screen.getByLabelText('Fecha de inicio'), { target: { value: '2026-01-01' } });
+    fireEvent.change(screen.getByLabelText('Saldo inicial'), { target: { value: '100000.00' } });
+    fireEvent.change(screen.getByLabelText('Cuota ordinaria'), { target: { value: '1000.00' } });
+    fireEvent.change(screen.getByLabelText('Tasa nominal anual (ejemplo: 0.12)'), {
+      target: { value: '0.12' },
+    });
+    fireEvent.click(screen.getByLabelText('Después de una fase fija, usar tasa variable manual'));
+    fireEvent.change(screen.getByLabelText('Tasas variables (una por línea: YYYY-MM-DD,0.08)'), {
+      target: { value: '2027-01-01,0.08' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar préstamo' }));
+
+    await waitFor(() => expect(repository.saveAggregate).toHaveBeenCalledTimes(1));
+    expect(repository.saveAggregate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        loan: expect.objectContaining({
+          name: 'Préstamo mixto',
+          variableRatePlan: expect.objectContaining({ fixedPeriods: 12 }),
+        }),
+      }),
+    );
   });
 });
