@@ -10,6 +10,8 @@ import {
   type ProjectionScenarioSnapshot,
 } from '@cuotaclara/domain';
 
+import { formatDecimalMoney, formatMoney } from './money-format.js';
+
 export function ScenarioTools({
   loan,
   scenarios,
@@ -122,21 +124,26 @@ function ComparisonResult({
         </div>
         <div>
           <dt>Interés ahorrado</dt>
-          <dd>
-            {comparison.comparison.interestSaved.toFixed(loan.roundingPolicy)}{' '}
-            {loan.initialBalance.currency}
-          </dd>
+          <dd>{formatMoney(comparison.comparison.interestSaved, loan.roundingPolicy)}</dd>
         </div>
         <div>
           <dt>Total pagado base</dt>
           <dd>
-            {comparison.base.summary.totalPaid} {loan.initialBalance.currency}
+            {formatDecimalMoney(
+              comparison.base.summary.totalPaid,
+              loan.initialBalance.currency,
+              loan.roundingPolicy,
+            )}
           </dd>
         </div>
         <div>
           <dt>Total pagado alternativa</dt>
           <dd>
-            {comparison.alternative.summary.totalPaid} {loan.initialBalance.currency}
+            {formatDecimalMoney(
+              comparison.alternative.summary.totalPaid,
+              loan.initialBalance.currency,
+              loan.roundingPolicy,
+            )}
           </dd>
         </div>
       </dl>

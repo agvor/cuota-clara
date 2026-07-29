@@ -1,6 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { createTbpMarginScenario, isTbpMarginScenario } from '@cuotaclara/domain';
+import {
+  createTbpMarginScenario,
+  estimateLoanContract,
+  isTbpMarginScenario,
+} from '@cuotaclara/domain';
 import type {
   Loan,
   LoanAggregate,
@@ -11,6 +15,8 @@ import type {
 
 import { LoanForm } from './loan-form.js';
 import { BackupTools } from './backup-tools.js';
+import { EstimateSummary } from './estimate-summary.js';
+import { formatMoney } from './money-format.js';
 import { PaymentTools } from './payment-tools.js';
 import { ProjectionView } from './projection-view.js';
 import { ScenarioTools } from './scenario-tools.js';
@@ -24,15 +30,6 @@ type LoadState =
   | Readonly<{ status: 'loading' }>
   | Readonly<{ status: 'ready'; loans: readonly Loan[] }>
   | Readonly<{ status: 'error' }>;
-
-function formatMoney(loan: Loan, amount: Loan['initialBalance']): string {
-  return new Intl.NumberFormat('es-CR', {
-    style: 'currency',
-    currency: amount.currency,
-    minimumFractionDigits: loan.roundingPolicy.scale,
-    maximumFractionDigits: loan.roundingPolicy.scale,
-  }).format(Number(amount.toFixed(loan.roundingPolicy)));
-}
 
 export function App({ repository }: AppProps) {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
@@ -180,16 +177,16 @@ export function App({ repository }: AppProps) {
                       <dl>
                         <div>
                           <dt>Saldo inicial</dt>
-                          <dd>{formatMoney(loan, loan.initialBalance)}</dd>
+                          <dd>{formatMoney(loan.initialBalance, loan.roundingPolicy)}</dd>
                         </div>
                         <div>
                           <dt>Cuota mensual</dt>
                           <dd>
                             {formatMoney(
-                              loan,
                               loan.contract?.version === 3
                                 ? loan.contract.monthlyTotalPayment
                                 : loan.ordinaryPayment,
+                              loan.roundingPolicy,
                             )}
                           </dd>
                         </div>
@@ -287,10 +284,11 @@ function LoanDetail({
           </div>
           <div>
             <dt>Seguro mensual</dt>
-            <dd>{formatMoney(loan, loan.contract.monthlyInsurance)}</dd>
+            <dd>{formatMoney(loan.contract.monthlyInsurance, loan.roundingPolicy)}</dd>
           </div>
         </dl>
       ) : null}
+      {loan.contract ? <ContractEstimateSummary loan={loan} /> : null}
       <div className="form-actions">
         <button type="button" onClick={onEdit}>
           Editar préstamo
@@ -325,6 +323,19 @@ function LoanDetail({
       ) : null}
     </section>
   );
+}
+
+function ContractEstimateSummary({ loan }: Readonly<{ loan: Loan }>) {
+  const result = useMemo(() => {
+    try {
+      return { estimate: estimateLoanContract(loan) };
+    } catch (cause) {
+      return { error: cause instanceof Error ? cause.message : 'No se pudo estimar el préstamo.' };
+    }
+  }, [loan]);
+
+  if ('error' in result) return <p role="alert">{result.error}</p>;
+  return <EstimateSummary loan={loan} estimate={result.estimate} />;
 }
 
 function saveTbpScenario(

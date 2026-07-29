@@ -3,6 +3,8 @@ import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { previewPaymentCsv } from '@cuotaclara/import-csv';
 import { createPaymentRecord, Money, type Loan, type PaymentRecord } from '@cuotaclara/domain';
 
+import { formatMoney } from './money-format.js';
+
 type PaymentToolsProps = Readonly<{
   loan: Loan;
   payments: readonly PaymentRecord[];
@@ -65,7 +67,7 @@ export function PaymentTools({
             .map((record) => (
               <li key={record.id}>
                 <time dateTime={record.date}>{record.date}</time> ·{' '}
-                {record.totalAmount.toFixed(loan.roundingPolicy)} {record.totalAmount.currency}
+                {formatMoney(record.totalAmount, loan.roundingPolicy)}
                 <button type="button" onClick={() => setPayment(record)}>
                   Corregir
                 </button>

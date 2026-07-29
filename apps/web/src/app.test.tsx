@@ -5,7 +5,13 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
-import { createLoan, createLoanV2, Money, type LoanRepository } from '@cuotaclara/domain';
+import {
+  createLoan,
+  createLoanV2,
+  createLoanV3,
+  Money,
+  type LoanRepository,
+} from '@cuotaclara/domain';
 
 import { App } from './app.js';
 
@@ -44,6 +50,37 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Hipoteca principal' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Ver préstamo' }));
     expect(screen.getByRole('heading', { name: 'Resumen de Hipoteca principal' })).toBeVisible();
+  });
+
+  test('muestra importes grandes formateados y el resumen financiero contractual', async () => {
+    const loan = createLoanV3({
+      id: 'loan-summary',
+      name: 'Hipoteca formateada',
+      startDate: '2026-01-15',
+      originalPrincipal: Money.from('115000000', 'CRC'),
+      monthlyTotalPayment: Money.from('1000000', 'CRC'),
+      monthlyInsurance: Money.from('150000', 'CRC'),
+      term: { totalInstallments: 360 },
+      annualNominalRate: '0.085',
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+    });
+    const repository = createRepository([loan]);
+    vi.mocked(repository.loadAggregate).mockResolvedValue({ loan, payments: [], scenarios: [] });
+    render(<App repository={repository} />);
+
+    expect(
+      await screen.findByText((content) => content.replaceAll('\u00a0', ' ') === '₡115 000 000,00'),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver préstamo' }));
+
+    expect(
+      await screen.findByRole('heading', { name: 'Resumen financiero estimado' }),
+    ).toBeVisible();
+    expect(screen.getByRole('rowheader', { name: 'Última cuota estimada' })).toBeVisible();
+    expect(screen.getByRole('rowheader', { name: 'Principal estimado' })).toBeVisible();
+    expect(screen.getByRole('rowheader', { name: 'Interés estimado' })).toBeVisible();
+    expect(screen.getByRole('rowheader', { name: 'Total proyectado' })).toBeVisible();
+    expect(screen.getByText('2056-01-15')).toBeVisible();
   });
 
   test('guarda contrato v3 con cuota total, estimación y escenario TBP en un agregado nuevo', async () => {
@@ -90,6 +127,32 @@ describe('App', () => {
         ],
       }),
     );
+  });
+
+  test('muestra el error de cuota base insuficiente antes de guardar', async () => {
+    render(<App repository={createRepository([])} />);
+    await screen.findByRole('heading', { name: 'Aún no hay préstamos' });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear préstamo' }));
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Cuota insuficiente' } });
+    fireEvent.change(screen.getByLabelText('Fecha de inicio'), { target: { value: '2026-01-15' } });
+    fireEvent.change(screen.getByLabelText('Monto original'), { target: { value: '115000000' } });
+    fireEvent.change(screen.getByLabelText('Cuota mensual total, incluido seguro'), {
+      target: { value: '900000' },
+    });
+    fireEvent.change(screen.getByLabelText('Seguro mensual, incluido en la cuota total'), {
+      target: { value: '150000' },
+    });
+    fireEvent.change(screen.getByLabelText('Número total de cuotas'), {
+      target: { value: '360' },
+    });
+    fireEvent.change(screen.getByLabelText('Tasa nominal anual fija'), {
+      target: { value: '0.085' },
+    });
+
+    expect(
+      await screen.findByText(/cuota base derivada de cuota total menos seguro/i),
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Guardar préstamo' })).toBeDisabled();
   });
 
   test('identifica préstamos sin contrato como heredados', async () => {

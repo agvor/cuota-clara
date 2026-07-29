@@ -10,6 +10,8 @@ import {
   type VariableRateReviewFrequency,
 } from '@cuotaclara/domain';
 
+import { EstimateSummary } from './estimate-summary.js';
+
 export type LoanFormProps = Readonly<{
   loan?: Loan;
   onCancel: () => void;
@@ -139,10 +141,6 @@ function createConfiguredLoan(values: FormValues, id: string): Loan {
   });
 }
 
-function formatMoney(amount: Loan['initialBalance'], loan: Loan): string {
-  return `${amount.toFixed(loan.roundingPolicy)} ${amount.currency}`;
-}
-
 function EstimatePreview({
   estimate,
   loan,
@@ -150,45 +148,7 @@ function EstimatePreview({
   return (
     <section className="estimate-preview" aria-live="polite" aria-labelledby="estimate-title">
       <h3 id="estimate-title">Proyección inicial</h3>
-      <p>Estimación local; no es una promesa ni liquidación bancaria.</p>
-      <dl>
-        <div>
-          <dt>Última cuota</dt>
-          <dd>{estimate.finalInstallmentDate}</dd>
-        </div>
-        <div>
-          <dt>Cuotas estimadas</dt>
-          <dd>{estimate.estimatedInstallments}</dd>
-        </div>
-        <div>
-          <dt>Principal</dt>
-          <dd>{formatMoney(estimate.estimatedPrincipal, loan)}</dd>
-        </div>
-        <div>
-          <dt>Interés</dt>
-          <dd>{formatMoney(estimate.estimatedInterest, loan)}</dd>
-        </div>
-        <div>
-          <dt>Seguro</dt>
-          <dd>{formatMoney(estimate.estimatedInsurance, loan)}</dd>
-        </div>
-        <div>
-          <dt>Total desembolsado</dt>
-          <dd>{formatMoney(estimate.estimatedTotal, loan)}</dd>
-        </div>
-      </dl>
-      {estimate.hasAdjustedFinalInstallment ? (
-        <p>
-          La cuota final proyectada es {formatMoney(estimate.finalInstallment, loan)} más seguro de{' '}
-          {formatMoney(estimate.finalInsurance, loan)}.
-        </p>
-      ) : null}
-      {estimate.status === 'remaining_balance' ? (
-        <p role="alert">
-          Al terminar el plazo quedaría un saldo de {formatMoney(estimate.remainingPrincipal, loan)}
-          .
-        </p>
-      ) : null}
+      <EstimateSummary loan={loan} estimate={estimate} heading="Resumen financiero estimado" />
     </section>
   );
 }

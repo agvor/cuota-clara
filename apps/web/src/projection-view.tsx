@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 
 import { projectLoanAmortization, type Loan, type PaymentRecord } from '@cuotaclara/domain';
 
+import { formatMoney } from './money-format.js';
+
 const PAGE_SIZE = 24;
 
 export function ProjectionView({
@@ -55,9 +57,17 @@ export function ProjectionView({
               <tr key={`historical-${payment.id}`}>
                 <td>Histórico</td>
                 <td>{payment.date}</td>
-                <td>{payment.totalAmount.toFixed(loan.roundingPolicy)}</td>
-                <td>{payment.interestAmount?.toFixed(loan.roundingPolicy) ?? '—'}</td>
-                <td>{payment.principalAmount?.toFixed(loan.roundingPolicy) ?? 'Pendiente'}</td>
+                <td>{formatMoney(payment.totalAmount, loan.roundingPolicy)}</td>
+                <td>
+                  {payment.interestAmount
+                    ? formatMoney(payment.interestAmount, loan.roundingPolicy)
+                    : '—'}
+                </td>
+                <td>
+                  {payment.principalAmount
+                    ? formatMoney(payment.principalAmount, loan.roundingPolicy)
+                    : 'Pendiente'}
+                </td>
                 <td>—</td>
               </tr>
             ))}
@@ -65,10 +75,10 @@ export function ProjectionView({
               <tr key={`projection-${period.period}`}>
                 <td>Proyección</td>
                 <td>{period.date}</td>
-                <td>{period.payment.toFixed(loan.roundingPolicy)}</td>
-                <td>{period.interest.toFixed(loan.roundingPolicy)}</td>
-                <td>{period.principal.toFixed(loan.roundingPolicy)}</td>
-                <td>{period.closingBalance.toFixed(loan.roundingPolicy)}</td>
+                <td>{formatMoney(period.payment, loan.roundingPolicy)}</td>
+                <td>{formatMoney(period.interest, loan.roundingPolicy)}</td>
+                <td>{formatMoney(period.principal, loan.roundingPolicy)}</td>
+                <td>{formatMoney(period.closingBalance, loan.roundingPolicy)}</td>
               </tr>
             ))}
           </tbody>

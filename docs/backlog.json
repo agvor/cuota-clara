@@ -317,7 +317,7 @@
       "story": "Como persona usuaria, quiero leer cada importe y el costo total de mi préstamo sin descifrar cifras largas.",
       "requirements": ["RF-013", "RF-015", "RNF-001", "RNF-008"],
       "dependsOn": ["US-021"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "Un formateador monetario común presenta separadores de miles y decimales en resúmenes, formularios, tablas y gráficos sin perder precisión decimal.",
         "El detalle inmediato del préstamo muestra fecha final, cuotas, principal, interés, seguro, total y saldo pendiente mediante una tabla compacta.",
@@ -331,7 +331,7 @@
       "story": "Como persona usuaria, quiero abrir el detalle de cuotas solo cuando lo necesito y explorar un gráfico legible.",
       "requirements": ["RF-004", "RF-010", "RF-015", "RNF-007", "RNF-008"],
       "dependsOn": ["US-022"],
-      "status": "planned",
+      "status": "ready",
       "acceptanceCriteria": [
         "El resumen no calcula ni renderiza tabla/gráfico hasta que la persona solicita el detalle.",
         "La tabla alinea importes, conserva cabeceras accesibles y pagina resultados extensos.",

@@ -5,15 +5,15 @@
 | Hito | Planeado | En curso | Completado |
 | --- | ---: | ---: | ---: |
 | Estrategias avanzadas | 1 | 0 | 0 |
-| MVP local | 1 | 14 | 2 |
+| MVP local | 0 | 14 | 3 |
 | Motor verificable | 2 | 6 | 0 |
 | Producto público | 0 | 1 | 0 |
 
 | Estado | Cantidad |
 | --- | ---: |
-| Planeado | 4 |
+| Planeado | 3 |
 | En curso | 21 |
-| Completado | 2 |
+| Completado | 3 |
 
 ## Detalle
 
@@ -33,7 +33,7 @@
 | RF-012 | MVP local | En curso |
 | RF-013 | MVP local | En curso |
 | RF-014 | MVP local | Completado |
-| RF-015 | MVP local | Planeado |
+| RF-015 | MVP local | Completado |
 | RNF-001 | Motor verificable | En curso |
 | RNF-002 | Motor verificable | En curso |
 | RNF-003 | Motor verificable | En curso |

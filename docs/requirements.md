@@ -28,7 +28,7 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 | RF-012 | Operar sin conexión.                    | Las funciones MVP funcionan después de instalar/cargar la PWA, sin cuenta ni red.                                                                                           | En curso   |
 | RF-013 | Estimar costo y fecha contractual.      | Antes de confirmar el préstamo se estiman fecha final, cuotas, principal, interés, seguro y total desembolsado; usa cuota total y límites explícitos.                       | En curso   |
 | RF-014 | Configurar escenario de TBP+margen.     | La fase variable permite TBP promedio configurable, margen, frecuencia y evolución estable/alza/baja reproducible por escenario, sin consultar red.                         | Completado |
-| RF-015 | Presentar resumen financiero legible.   | Todos los importes usan formato monetario localizado y el préstamo muestra fecha final, total pagado, principal e interés antes del detalle.                                | Planeado   |
+| RF-015 | Presentar resumen financiero legible.   | Todos los importes de lectura usan formato monetario localizado y el préstamo muestra fecha final, total pagado, principal e interés antes del detalle.                     | Completado |
 
 ### Precisiones del modelo de tasa
 
@@ -38,6 +38,7 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 - Un cambio de tasa conserva cuota. El plazo declarado no se altera: la estimación muestra el saldo pendiente o la cuota final reducida.
 - La cuota mensual ingresada es el total exigible e incluye seguro. La cuota base que amortiza principal e interés es `cuota total − seguro`; el seguro no se financia ni se aplica a principal.
 - Con `N` cuotas mensuales, la última fecha programada es la fecha de inicio desplazada exactamente `N` meses, conservando el día ancla cuando exista. Por ejemplo, 360 cuotas equivalen a 30 años.
+- Los importes de lectura se presentan en `es-CR` con símbolo de moneda, separadores de miles y escala contractual. Los campos editables conservan el literal decimal canónico para no alterar la entrada ni la precisión.
 - No se asume que una proyección coincida con un banco sin validar su convención de días, fechas, redondeo, seguros y aplicación de pagos.
 
 ## Requisitos no funcionales
