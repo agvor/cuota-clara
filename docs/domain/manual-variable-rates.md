@@ -1,6 +1,6 @@
 # Tasa fija seguida de tasa variable manual
 
-## Modelo inicial
+## Modelo actual y evolución propuesta
 
 Un préstamo puede declarar un número de periodos iniciales de tasa fija y, después, una serie manual fechada de tasas nominales anuales. La serie contiene fecha efectiva, tasa y frecuencia de revisión declarada (`monthly`, `quarterly`, `semiannual` o `annual`).
 
@@ -10,4 +10,4 @@ Para cada periodo variable el motor selecciona la última tasa cuya fecha efecti
 
 La primera implementación conserva la cuota ordinaria al cambiar la tasa. Como consecuencia, cambia el principal aplicado por periodo y el plazo/pago final estimado. Esta política queda visible en cada periodo mediante la fase (`fixed` o `variable`) y la tasa anual aplicada.
 
-No se modelan todavía tasas de referencia, márgenes, cambios de cuota, interpolación ni actualización automática desde red. Esos modelos se añadirán únicamente con reglas contractuales y casos de referencia propios.
+La regla manual seguirá disponible por compatibilidad. La siguiente regla propuesta es **TBP+margen**, local y determinista: TBP promedio inicial configurable por escenario más margen contractual, con evolución estable/alza/baja y variación por revisión. No se consultará una fuente externa en el MVP. Véase [`loan-contract-v2.md`](loan-contract-v2.md) para parámetros, unidades y decisiones pendientes.

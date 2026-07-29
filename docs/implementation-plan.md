@@ -17,8 +17,9 @@ Un ítem solo se marca `blocked` cuando describe la decisión o evidencia extern
 | E3 · PWA y gestión de préstamos   | Aplicación instalable, CRUD y captura/importación de pagos.                      | US-010 a US-012          |
 | E4 · Escenarios y resultados      | Comparación, tabla de amortización y gráfico de saldo.                           | US-013 a US-014          |
 | E5 · Respaldo y publicación       | Recuperación de datos y operación offline completa.                              | US-015 a US-016          |
+| E6 · Contrato financiero v2       | Plazo, seguro, estimación y regla variable TBP+margen migrables.                 | US-017 a US-020          |
 
-El orden no es una excusa para omitir dependencias: el campo `dependsOn` de cada historia es autoritativo. Las historias avanzadas —pagos recurrentes, aporte objetivo al principal, fuentes de tasa de referencia, sincronización y premium— se crearán como nuevos ítems después de validar el MVP.
+El orden no es una excusa para omitir dependencias: el campo `dependsOn` de cada historia es autoritativo. Antes de tomar `US-017`, resolver las preguntas de producto de [`domain/loan-contract-v2.md`](domain/loan-contract-v2.md); son decisiones financieras, no detalles de implementación. Las historias avanzadas —pagos recurrentes, aporte objetivo al principal, fuentes de tasa de referencia, sincronización y premium— se crearán como nuevos ítems después de validar el MVP.
 
 ## Definition of Ready
 

@@ -5,6 +5,8 @@
 | Término                          | Definición                                                                                         |
 | -------------------------------- | -------------------------------------------------------------------------------------------------- |
 | Préstamo (`Loan`)                | Contrato y estado real que contiene configuración y pagos históricos.                              |
+| Plazo contractual                | Fecha final o cantidad total de cuotas que limita la proyección; no se infiere silenciosamente.    |
+| Seguro mensual                   | Cargo periódico separado de cuota, principal e interés.                                            |
 | Agregado de préstamo             | Préstamo con sus pagos históricos y snapshots de escenarios, unidad de persistencia.               |
 | Pago histórico (`PaymentRecord`) | Hecho real registrado manualmente o importado; nunca es resultado de una simulación.               |
 | Escenario (`ProjectionScenario`) | Hipótesis futura asociada a un préstamo. No modifica el préstamo ni su historial.                  |
@@ -13,6 +15,9 @@
 | Fase fija                        | Intervalo explícito en el que la tasa anual se conoce y no cambia.                                 |
 | Fase variable                    | Intervalo posterior cuya tasa se determina por una regla versionada y una frecuencia de revisión.  |
 | Serie manual de tasas            | Lista de tasas efectivas desde fechas concretas, introducida por la persona usuaria.               |
+| TBP (tasa básica pasiva)         | Tasa de referencia anual usada como supuesto local configurable; no se consulta desde red en MVP.  |
+| Margen                           | Tasa anual contractual que se suma a la TBP para resolver la tasa variable.                        |
+| Evolución de TBP                 | Hipótesis estable, alza progresiva o baja progresiva aplicada por revisión a la TBP del escenario. |
 | Frecuencia de revisión           | Cadencia declarada en que una regla variable puede actualizar su tasa.                             |
 | Reconciliación                   | Ajuste explícito que explica la diferencia entre saldo calculado y saldo informado por la entidad. |
 | Pago extraordinario              | Importe adicional aplicado al principal bajo una regla contractual declarada.                      |
@@ -36,3 +41,6 @@
 - Toda tasa usada contiene su fuente o supuesto, fecha de vigencia y versión de la regla.
 - Un periodo variable sin tasa manual vigente es inválido; el motor no infiere ni reutiliza tasas silenciosamente.
 - Un pago importado conserva archivo/origen, fila de procedencia y resultado de validación para trazabilidad.
+- Un contrato v2 declara plazo por fecha final o número total de cuotas y separa monto original de saldo reconciliado.
+- El seguro mensual no reduce principal ni genera interés mientras no exista una regla contractual que disponga lo contrario.
+- Una regla TBP+margen conserva TBP inicial, margen, frecuencia, evolución y versión; no consulta ni infiere una tasa externa.

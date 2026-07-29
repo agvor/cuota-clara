@@ -15,9 +15,9 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 | ID     | Requisito                               | Criterios de aceptación iniciales                                                                                                                                           | Estado   |
 | ------ | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | RF-001 | Administrar préstamos independientes.   | Crear, editar, duplicar y eliminar con confirmación; la información de cada préstamo se mantiene aislada.                                                                   | En curso |
-| RF-002 | Configurar el préstamo.                 | Se registran moneda, monto/saldo inicial, fechas, plazo, periodicidad, cuota ordinaria, cargos y política de redondeo.                                                      | En curso |
-| RF-003 | Configurar plan de tasas.               | Se define una fase fija con tasa y periodo, seguida opcionalmente por una fase variable cuya regla, frecuencia de revisión y supuestos quedan explícitos.                   | En curso |
-| RF-004 | Calcular una proyección base.           | Para cada periodo se muestran saldo inicial/final, tasa, cuota, interés, principal, cargos y pago total. El resultado es determinista.                                      | En curso |
+| RF-002 | Configurar el préstamo.                 | Se registran moneda, monto original, fecha inicial, fecha final o total de cuotas, cuota mensual, seguro mensual, periodicidad y política de redondeo.                      | En curso |
+| RF-003 | Configurar plan de tasas.               | Se define fase fija por cuotas y fase variable posterior con regla versionada: serie manual o TBP+margen, frecuencia de revisión y supuestos explícitos.                    | En curso |
+| RF-004 | Calcular una proyección base.           | Para cada periodo se muestran saldo inicial/final, tasa, cuota, seguro, interés, principal y pago total. El resultado es determinista.                                      | En curso |
 | RF-005 | Registrar pagos históricos manualmente. | Se validan fecha, importes y desglose disponible; cada pago conserva su origen y notas.                                                                                     | En curso |
 | RF-006 | Importar registro de pagos en CSV.      | Se acepta una plantilla CSV, se muestra una previsualización con errores, duplicados e inconsistencias antes de guardar. La importación no altera datos hasta confirmación. | En curso |
 | RF-007 | Reconstruir y reconciliar el estado.    | El sistema distingue pagos históricos de proyecciones, calcula el saldo a la fecha de corte y permite un ajuste de reconciliación trazable.                                 | En curso |
@@ -26,13 +26,16 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 | RF-010 | Visualizar resultados.                  | Se muestra tabla paginada o virtualizada y gráfico de evolución de saldo; pagos históricos y proyecciones se distinguen.                                                    | Planeado |
 | RF-011 | Persistir y respaldar datos locales.    | Los datos sobreviven reinicios, se pueden exportar a una copia de respaldo e importar tras validación.                                                                      | En curso |
 | RF-012 | Operar sin conexión.                    | Las funciones MVP funcionan después de instalar/cargar la PWA, sin cuenta ni red.                                                                                           | En curso |
+| RF-013 | Estimar costo y fecha contractual.      | Antes de confirmar el préstamo se estiman fecha final, cuotas, principal, interés, seguro y total desembolsado; supuestos y límites se muestran explícitamente.             | Planeado |
+| RF-014 | Configurar escenario de TBP+margen.     | La fase variable permite TBP promedio configurable, margen, frecuencia y evolución estable/alza/baja reproducible por escenario, sin consultar red.                         | Planeado |
 
 ### Precisiones del modelo de tasa
 
-- La fase fija tiene una fecha de inicio y un número de periodos o fecha final inequívocos.
-- La fase variable declara una regla versionada: por ejemplo, serie manual de tasas, referencia más margen o valor fijo de supuesto. El MVP implementará primero una **serie manual fechada**, porque es reproducible y no depende de una fuente externa.
+- El contrato declara fecha final o número total de cuotas; no se infiere un plazo sin que la persona usuaria lo confirme.
+- La fase fija tiene un número de cuotas inequívoco. La fase variable declara una regla versionada: serie manual fechada o **TBP+margen** con TBP promedio configurable por escenario y sin consulta de red.
 - La frecuencia de revisión es distinta de la periodicidad de pago y debe estar representada explícitamente.
-- La decisión de si un cambio de tasa mantiene cuota o plazo será una política configurable. El primer comportamiento implementado será **mantener la cuota y recalcular el plazo**, salvo que el contrato de referencia exija otra política.
+- La decisión de si un cambio de tasa mantiene cuota o plazo será una política configurable. La propuesta inicial conserva cuota y recalcula plazo, pendiente de confirmación contractual.
+- El seguro mensual se muestra separado; la propuesta inicial no lo financia ni lo aplica a principal.
 - No se asume que una proyección coincida con un banco sin validar su convención de días, fechas, redondeo, seguros y aplicación de pagos.
 
 ## Requisitos no funcionales
@@ -55,7 +58,7 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 ## Entregas
 
 1. **Motor verificable:** préstamo de tasa fija, amortización, dinero decimal, redondeo y pagos extraordinarios únicos.
-2. **MVP local:** CRUD, pagos manuales, CSV con previsualización, tasa fija→variable por serie manual, escenarios básicos, IndexedDB, gráfico y respaldo.
+2. **MVP local:** CRUD, pagos manuales, CSV con previsualización, tasa fija→variable por serie manual o TBP+margen local, escenarios básicos, IndexedDB, gráfico y respaldo.
 3. **Estrategias avanzadas:** pagos recurrentes y aporte objetivo al principal, más reglas de tasa variable y comparación ampliada.
 4. **Producto público:** PWA pulida, accesibilidad, guía inicial y exportación CSV.
 5. **Premium opcional:** cuentas, sincronización, informes y optimización, únicamente tras validar valor y privacidad.

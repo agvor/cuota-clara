@@ -13,6 +13,7 @@ La documentación es parte del producto y se mantiene en el mismo cambio que el 
 | Transición a tasa variable manual              | `domain/manual-variable-rates.md`            |
 | Escenarios con pago extraordinario único       | `domain/one-time-extra-payment-scenarios.md` |
 | Préstamo y puerto de repositorio               | `domain/loan-and-repository.md`              |
+| Contrato v2, seguro y escenarios TBP+margen    | `domain/loan-contract-v2.md`                 |
 | Importación CSV de pagos                       | `import/payment-csv.md`                      |
 | Persistencia local, migraciones y recuperación | `infrastructure/local-persistence.md`        |
 | Respaldo y restauración                        | `backup.md`                                  |

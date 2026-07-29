@@ -17,7 +17,7 @@ Web/PWA (apps/web)
 packages/domain        IndexedDB local
   ├─ préstamos          (adaptador reemplazable)
   ├─ pagos históricos
-  ├─ interés y redondeo
+  ├─ interés, TBP y redondeo
   └─ amortización
 ```
 
@@ -60,6 +60,7 @@ Préstamo + pagos históricos + fecha de corte + escenario
 
 - Dependencias dirigidas hacia el dominio; los adaptadores dependen de interfaces del núcleo.
 - Las decisiones de días, tasa, cuota ante cambios y redondeo son políticas explícitas e inyectables.
+- Las referencias de tasa, incluido TBP+margen, son supuestos versionados de escenario; una futura fuente externa será un adaptador opcional y nunca una dependencia del cálculo local.
 - El resultado guarda versiones de motor y políticas para poder explicarlo y repetirlo.
 - Las transacciones de importación, restauración y borrado se confirman y son recuperables cuando sea posible.
 

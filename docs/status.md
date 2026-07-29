@@ -1,17 +1,17 @@
 # Estado de requisitos
 
-> Generado desde `docs/traceability.json` el 2026-07-28. No editar manualmente.
+> Generado desde `docs/traceability.json` el 2026-07-29. No editar manualmente.
 
 | Hito | Planeado | En curso | Completado |
 | --- | ---: | ---: | ---: |
 | Estrategias avanzadas | 1 | 0 | 0 |
-| MVP local | 1 | 13 | 0 |
+| MVP local | 3 | 13 | 0 |
 | Motor verificable | 2 | 6 | 0 |
 | Producto público | 0 | 1 | 0 |
 
 | Estado | Cantidad |
 | --- | ---: |
-| Planeado | 4 |
+| Planeado | 6 |
 | En curso | 20 |
 | Completado | 0 |
 
@@ -31,6 +31,8 @@
 | RF-010 | MVP local | Planeado |
 | RF-011 | MVP local | En curso |
 | RF-012 | MVP local | En curso |
+| RF-013 | MVP local | Planeado |
+| RF-014 | MVP local | Planeado |
 | RNF-001 | Motor verificable | En curso |
 | RNF-002 | Motor verificable | En curso |
 | RNF-003 | Motor verificable | En curso |

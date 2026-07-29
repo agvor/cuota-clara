@@ -2,7 +2,7 @@
 
 ## Préstamo mínimo
 
-`Loan` contiene identificador, nombre, fecha inicial, saldo inicial, cuota ordinaria, tasa nominal anual, períodos por año y política de redondeo. Puede incluir una fase variable manual: períodos fijos, frecuencia de revisión y tasas fechadas. Su creación valida moneda común entre saldo y cuota, importes positivos y la configuración fija-variable mediante las mismas reglas que el motor.
+La implementación actual de `Loan` contiene identificador, nombre, fecha inicial, saldo inicial, cuota ordinaria, tasa nominal anual, períodos por año y política de redondeo. Puede incluir una fase variable manual. Ese contrato es insuficiente para el plazo y seguro requeridos; el diseño propuesto está en [`loan-contract-v2.md`](loan-contract-v2.md) y debe reemplazarlo mediante migración explícita, no por valores inventados.
 
 Este contrato representa la configuración del préstamo; los pagos históricos y escenarios viven en el agregado asociado para que una proyección no modifique la realidad contractual.
 

@@ -1,0 +1,70 @@
+# Modelo contractual de préstamo v2 (propuesto)
+
+Este documento prepara la sustitución del modelo mínimo actual. No describe comportamiento implementado todavía ni autoriza inferir datos que la persona usuaria no haya proporcionado.
+
+## Datos del contrato
+
+La próxima versión del préstamo deberá distinguir estos datos, todos en moneda decimal del préstamo:
+
+| Dato                                       | Regla propuesta                                                                        | Propósito                                                                            |
+| ------------------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Fecha de inicio                            | Obligatoria, ISO.                                                                      | Primer día del contrato y ancla del calendario.                                      |
+| Fecha final **o** cantidad total de cuotas | Al menos uno obligatorio; si se informan ambos deben ser coherentes con el calendario. | Define el plazo contractual.                                                         |
+| Monto original                             | Positivo.                                                                              | Principal originalmente financiado; no se confunde con saldo histórico reconciliado. |
+| Tasa nominal anual inicial                 | Decimal anual no negativo.                                                             | Tasa de la fase fija.                                                                |
+| Cuota mensual contractual                  | Positiva.                                                                              | Pago ordinario que amortiza principal e interés.                                     |
+| Seguro mensual                             | No negativo; por defecto `0`.                                                          | Cargo mensual separado, no aplicado a principal.                                     |
+| Periodicidad                               | El primer alcance será mensual (`12` pagos/año).                                       | Evita inventar un calendario para contratos no mensuales.                            |
+
+El seguro mensual se mostrará separado. La primera regla propuesta es que no financia principal ni devenga interés; el total de desembolsos proyectado será **principal + interés + seguro**. Comisiones u otros cargos no se introducirán hasta tener una regla contractual específica.
+
+## Plan de interés fijo→variable
+
+El contrato tendrá una fase fija definida por número de cuotas y una fase variable para el resto del plazo. La fase variable elegirá una regla versionada:
+
+1. **TBP + margen (predeterminada):** tasa nominal anual = tasa básica pasiva configurada en el escenario + margen anual del contrato.
+2. **Serie manual fechada:** conserva compatibilidad con la capacidad actual de introducir tasas explícitas.
+
+La tasa básica pasiva no se consultará desde red en el MVP. Cada escenario conserva su supuesto inicial y evolución, por lo que el cálculo es reproducible:
+
+| Parámetro de escenario TBP | Regla propuesta                                                              |
+| -------------------------- | ---------------------------------------------------------------------------- |
+| TBP promedio inicial       | Decimal anual configurable por escenario.                                    |
+| Evolución                  | `estable`, `alza_progresiva` o `baja_progresiva`.                            |
+| Variación por revisión     | Cambio en **puntos porcentuales anuales** por revisión; es `0` para estable. |
+| Frecuencia de revisión     | Mensual, trimestral, semestral o anual; independiente de la cuota.           |
+| Margen                     | Decimal anual fijo del contrato, sumado a TBP.                               |
+
+Ejemplo: TBP inicial `0.05`, margen `0.02`, alza progresiva de `0.001` trimestral ⇒ primera tasa variable `0.07`, luego `0.071`, `0.072`, etc. La variación se expresa en puntos porcentuales, no como multiplicación relativa de la TBP. Si el producto necesita la otra interpretación, se añadirá como una regla distinta y versionada.
+
+## Estimación inicial obligatoria
+
+Antes de guardar o editar un préstamo, la UI deberá presentar una estimación etiquetada como proyección, no como promesa bancaria:
+
+- fecha de última cuota estimada;
+- cantidad total de cuotas estimada;
+- principal total proyectado;
+- interés total proyectado;
+- seguro total proyectado;
+- total de desembolsos, igual a la suma de los tres importes anteriores.
+
+Si la cuota no cubre el interés y seguro aplicables, no se produce una estimación: se muestra un error contractual explícito. Cuando la fecha final o el número de cuotas limita el plazo, cualquier saldo remanente o pago final distinto debe mostrarse, nunca ajustarse silenciosamente.
+
+## Supuestos que requieren confirmación de producto
+
+1. ¿La cuota mensual indicada excluye siempre el seguro? Esta propuesta asume que sí.
+2. ¿El seguro es constante, o puede cambiar por periodo? Esta propuesta inicial lo fija mensual.
+3. ¿La variación de TBP debe ser en puntos porcentuales por revisión (propuesta) o porcentual relativa?
+4. Ante cambio de tasa variable, ¿se conserva cuota y cambia plazo (propuesta actual) o se recalcula cuota manteniendo fecha final?
+5. ¿El margen TBP+margen se registra como tasa anual nominal, como puntos porcentuales o ambos? La propuesta lo trata como decimal anual sumable.
+
+## Migración de datos existentes
+
+Los préstamos ya guardados no contienen plazo contractual ni seguro. Una migración no puede inventarlos:
+
+1. conservar el préstamo v1 y permitir exportarlo;
+2. al abrirlo, solicitar fecha final o cantidad de cuotas y seguro mensual antes de habilitar la nueva proyección;
+3. guardar la procedencia/migración y no alterar pagos históricos ni escenarios existentes;
+4. versionar respaldo y esquema de IndexedDB antes de escribir el contrato v2.
+
+La compatibilidad de una serie manual existente se mantiene como regla variable `manual_series_v1`; TBP+margen será una regla nueva y no una reinterpretación automática de datos previos.
