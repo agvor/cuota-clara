@@ -6,6 +6,7 @@ apps/
 packages/
   domain/              Núcleo financiero reutilizable y sin dependencias web
   import-csv/          Adaptador de parseo y previsualización de CSV
+  local-storage/       Implementación Dexie del puerto de préstamos
 docs/
   adr/                 Decisiones de arquitectura
   domain/              Glosario, invariantes y contratos del dominio
@@ -17,4 +18,4 @@ tooling/               Automatizaciones de desarrollo y documentación
   skills/              Habilidades locales, autocontenidas
 ```
 
-Cuando se agregue infraestructura local, se ubicará inicialmente en `apps/web/src/infrastructure/`, detrás de los puertos definidos por el dominio o la capa de aplicación. Si ese código se vuelve reutilizable, se extraerá a un paquete con un ADR que justifique el cambio.
+La infraestructura de persistencia ya es reutilizable y por eso vive en `packages/local-storage`, detrás del puerto del dominio. Los detalles exclusivos de interfaz permanecen en `apps/web/src/infrastructure/` cuando se cree la PWA.

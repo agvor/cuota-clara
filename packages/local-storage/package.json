@@ -1,0 +1,16 @@
+{
+  "name": "@cuotaclara/local-storage",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@cuotaclara/domain": "workspace:*",
+    "dexie": "^4.4.4"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "^6.2.5"
+  }
+}

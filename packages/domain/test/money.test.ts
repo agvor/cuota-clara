@@ -15,6 +15,7 @@ describe('Money', () => {
     const total = Money.from('0.10', 'CRC').add(Money.from('0.20', 'CRC'));
 
     expect(total.toFixed(twoDecimalHalfUp)).toBe('0.30');
+    expect(total.toDecimalString()).toBe('0.3');
   });
 
   test('rechaza operaciones entre monedas distintas', () => {

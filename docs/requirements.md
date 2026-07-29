@@ -24,7 +24,7 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 | RF-008 | Configurar pagos extraordinarios.       | Se soportan pagos únicos y un importe mensual fijo que reduce plazo; no modifica el historial real.                                                                         | En curso |
 | RF-009 | Comparar escenarios.                    | Se comparan al menos escenario base y un escenario alternativo por fecha final, plazo restante, pago total, interés y ahorro.                                               | En curso |
 | RF-010 | Visualizar resultados.                  | Se muestra tabla paginada o virtualizada y gráfico de evolución de saldo; pagos históricos y proyecciones se distinguen.                                                    | Planeado |
-| RF-011 | Persistir y respaldar datos locales.    | Los datos sobreviven reinicios, se pueden exportar a una copia de respaldo e importar tras validación.                                                                      | Planeado |
+| RF-011 | Persistir y respaldar datos locales.    | Los datos sobreviven reinicios, se pueden exportar a una copia de respaldo e importar tras validación.                                                                      | En curso |
 | RF-012 | Operar sin conexión.                    | Las funciones MVP funcionan después de instalar/cargar la PWA, sin cuenta ni red.                                                                                           | Planeado |
 
 ### Precisiones del modelo de tasa
@@ -43,7 +43,7 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 | RNF-002 | Determinismo y trazabilidad.      | Igual entrada y versión del motor producen igual salida; una proyección conserva versión y supuestos.                    | En curso |
 | RNF-003 | Separación arquitectónica.        | El motor de dominio no depende de React, IndexedDB, red ni gráficos.                                                     | En curso |
 | RNF-004 | Integridad histórica.             | Una simulación no puede mutar pagos históricos ni el préstamo real.                                                      | En curso |
-| RNF-005 | Privacidad local-first.           | El MVP no transmite datos financieros a un servidor.                                                                     | Planeado |
+| RNF-005 | Privacidad local-first.           | El MVP no transmite datos financieros a un servidor.                                                                     | En curso |
 | RNF-006 | Importación segura y recuperable. | La importación valida antes de confirmar y los respaldos se validan antes de restaurar.                                  | En curso |
 | RNF-007 | Rendimiento.                      | Una proyección de hasta 600 periodos se calcula interactivamente en equipo convencional; se medirá antes de optimizar.   | Planeado |
 | RNF-008 | Accesibilidad y adaptación.       | Flujos principales utilizables con teclado y pantallas pequeñas; objetivo WCAG 2.1 AA.                                   | Planeado |

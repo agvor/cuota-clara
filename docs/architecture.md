@@ -23,16 +23,17 @@ packages/domain        IndexedDB local
 
 ## Módulos y límites
 
-| Módulo                            | Responsabilidad                                                    | No puede conocer                               |
-| --------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------- |
-| `packages/domain`                 | Tipos, invariantes, políticas, motor de amortización y resultados. | UI, navegador, almacenamiento, HTTP.           |
-| Aplicación web                    | Orquesta casos de uso, convierte datos de UI y presenta errores.   | Detalles internos de algoritmos.               |
-| Infraestructura local             | Implementa repositorios, migraciones, CSV, respaldo y PWA.         | Reglas financieras duplicadas.                 |
-| Futuro servicio de sincronización | Sincroniza datos consentidos mediante puertos.                     | Motor financiero como fuente de verdad remota. |
+| Módulo                            | Responsabilidad                                                    | No puede conocer                                |
+| --------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------- |
+| `packages/domain`                 | Tipos, invariantes, políticas, motor de amortización y resultados. | UI, navegador, almacenamiento, HTTP.            |
+| `packages/local-storage`          | Adaptador Dexie, esquema local y migraciones de `LoanRepository`.  | Reglas financieras, UI y planes de suscripción. |
+| Aplicación web                    | Orquesta casos de uso, convierte datos de UI y presenta errores.   | Detalles internos de algoritmos.                |
+| Infraestructura local             | Implementa repositorios, migraciones, CSV, respaldo y PWA.         | Reglas financieras duplicadas.                  |
+| Futuro servicio de sincronización | Sincroniza datos consentidos mediante puertos.                     | Motor financiero como fuente de verdad remota.  |
 
 ## Persistencia y evolución freemium
 
-El código de aplicación dependerá de puertos como `LoanRepository`, `BackupService` y, en el futuro, `SyncService`. IndexedDB será el adaptador MVP. Cuentas, sincronización y funciones premium se agregan como adaptadores y políticas de aplicación; los cálculos y datos locales no dependen de una suscripción.
+El código de aplicación dependerá de puertos como `LoanRepository`, `BackupService` y, en el futuro, `SyncService`. `@cuotaclara/local-storage` es el adaptador IndexedDB del MVP. Cuentas, sincronización y funciones premium se agregan como adaptadores y políticas de aplicación; los cálculos y datos locales no dependen de una suscripción.
 
 ## Flujo de importación de pagos
 

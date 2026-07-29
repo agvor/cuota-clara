@@ -17,7 +17,7 @@
 | Pruebas               | Vitest, Testing Library y Playwright    | Unidades de dominio, componentes y recorridos críticos.                               |
 | Calidad               | ESLint, Prettier y TypeScript           | Reglas uniformes y verificables en CI.                                                |
 
-Las versiones concretas se fijarán en el primer cambio que instale dependencias y se registrarán en el lockfile; no se inventan versiones en la documentación.
+Las versiones concretas se fijan al instalar dependencias y se registran en el lockfile. La persistencia local usa Dexie 4.4.4 y sus pruebas usan `fake-indexeddb` 6.2.5; las demás dependencias se incorporarán cuando se implemente el módulo que las necesita.
 
 Las herramientas base de desarrollo ya están fijadas en `package.json` y `pnpm-lock.yaml`: Vitest para pruebas, ESLint y TypeScript para análisis estático, Prettier para formato y Commitlint para la convención de commits.
 

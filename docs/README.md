@@ -4,20 +4,21 @@ La documentación es parte del producto y se mantiene en el mismo cambio que el 
 
 ## Fuentes de verdad
 
-| Tema                                  | Fuente                                      |
-| ------------------------------------- | ------------------------------------------- |
-| Alcance y comportamiento              | `requirements.md`                           |
-| Conceptos y reglas del dominio        | `domain/glossary.md`                        |
-| Motor de amortización inicial         | `domain/amortization-engine.md`             |
-| Estado histórico y reconciliación     | `domain/historical-state.md`                |
-| Transición a tasa variable manual     | `domain/manual-variable-rates.md`           |
-| Préstamo y puerto de repositorio      | `domain/loan-and-repository.md`             |
-| Importación CSV de pagos              | `import/payment-csv.md`                     |
-| Límites y componentes                 | `architecture.md`                           |
-| Decisiones irreversibles              | `adr/`                                      |
-| Estado de requisitos                  | `traceability.json` → `status.md`           |
-| Plan y estado de implementación       | `backlog.json` → `implementation-status.md` |
-| Dependencias y criterios de selección | `technologies.md`                           |
+| Tema                                           | Fuente                                      |
+| ---------------------------------------------- | ------------------------------------------- |
+| Alcance y comportamiento                       | `requirements.md`                           |
+| Conceptos y reglas del dominio                 | `domain/glossary.md`                        |
+| Motor de amortización inicial                  | `domain/amortization-engine.md`             |
+| Estado histórico y reconciliación              | `domain/historical-state.md`                |
+| Transición a tasa variable manual              | `domain/manual-variable-rates.md`           |
+| Préstamo y puerto de repositorio               | `domain/loan-and-repository.md`             |
+| Importación CSV de pagos                       | `import/payment-csv.md`                     |
+| Persistencia local, migraciones y recuperación | `infrastructure/local-persistence.md`       |
+| Límites y componentes                          | `architecture.md`                           |
+| Decisiones irreversibles                       | `adr/`                                      |
+| Estado de requisitos                           | `traceability.json` → `status.md`           |
+| Plan y estado de implementación                | `backlog.json` → `implementation-status.md` |
+| Dependencias y criterios de selección          | `technologies.md`                           |
 
 `status.md` e `implementation-status.md` se generan desde sus fuentes JSON; nunca se editan a mano. Ejecuta `pnpm docs:sync` tras cambiar el estado de una entrega. `pnpm docs:check` comprueba que los informes generados sigan coherentes. La automatización evita desalineación mecánica; actualizar el contenido de una decisión sigue siendo responsabilidad de quien hace el cambio.
 

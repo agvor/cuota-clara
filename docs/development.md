@@ -54,7 +54,7 @@ El comando ejecuta, en este orden:
 | `docs:check` | El estado generado coincide con la trazabilidad.                   |
 | `format`     | Prettier detecta formato no uniforme.                              |
 | `lint`       | ESLint detecta errores, patrones inseguros y problemas de calidad. |
-| `typecheck`  | TypeScript estricto valida los contratos del dominio.              |
+| `typecheck`  | TypeScript estricto valida los contratos de todos los paquetes.    |
 | `test`       | Vitest ejecuta pruebas unitarias y de regresión.                   |
 
 Para desarrollar, usar `pnpm test:watch`. Las pruebas de navegador y de accesibilidad se añadirán cuando exista la PWA; entonces también serán obligatorias para los cambios de interfaz.

@@ -128,6 +128,11 @@ export class Money {
     return this.round(policy).value.toFixed(policy.scale);
   }
 
+  /** Representación decimal exacta para persistencia; no aplica redondeo contractual. */
+  toDecimalString(): string {
+    return this.value.toFixed();
+  }
+
   isZero(): boolean {
     return this.value.isZero();
   }
