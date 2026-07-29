@@ -56,6 +56,10 @@ Préstamo + pagos históricos + fecha de corte + escenario
   → periodos y resumen trazables
 ```
 
+## Presentación de resultados planificada
+
+La PWA separará el resumen inmediato del detalle de amortización. El resumen consume una estimación ya calculada y muestra los importes clave; la solicitud explícita de la persona usuaria inicia el cálculo/visualización de tabla y gráfico. Ese límite evita trabajo visual innecesario y permite que los ejes, rango y accesibilidad del gráfico evolucionen sin acoplarlos al dominio. El formato monetario será un servicio de presentación común: el dominio entrega `Money` y la PWA decide locale y símbolos sin alterar el valor decimal.
+
 ## Reglas de diseño
 
 - Dependencias dirigidas hacia el dominio; los adaptadores dependen de interfaces del núcleo.

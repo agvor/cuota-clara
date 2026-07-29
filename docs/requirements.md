@@ -15,7 +15,7 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 | ID     | Requisito                               | Criterios de aceptación iniciales                                                                                                                                           | Estado     |
 | ------ | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
 | RF-001 | Administrar préstamos independientes.   | Crear, editar, duplicar y eliminar con confirmación; la información de cada préstamo se mantiene aislada.                                                                   | En curso   |
-| RF-002 | Configurar el préstamo.                 | Se registran moneda, monto original, fecha inicial, fecha final o total de cuotas, cuota mensual, seguro mensual, periodicidad y política de redondeo.                      | Completado |
+| RF-002 | Configurar el préstamo.                 | Se registran moneda, monto original, fecha inicial, fecha final o total de cuotas, **cuota mensual total** y seguro mensual; la cuota base se deriva como total − seguro.   | En curso   |
 | RF-003 | Configurar plan de tasas.               | Se define fase fija por cuotas y fase variable posterior con regla versionada: serie manual o TBP+margen, frecuencia de revisión y supuestos explícitos.                    | Completado |
 | RF-004 | Calcular una proyección base.           | Para cada periodo se muestran saldo inicial/final, tasa, cuota, seguro, interés, principal y pago total. El resultado es determinista.                                      | En curso   |
 | RF-005 | Registrar pagos históricos manualmente. | Se validan fecha, importes y desglose disponible; cada pago conserva su origen y notas.                                                                                     | En curso   |
@@ -23,11 +23,12 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 | RF-007 | Reconstruir y reconciliar el estado.    | El sistema distingue pagos históricos de proyecciones, calcula el saldo a la fecha de corte y permite un ajuste de reconciliación trazable.                                 | En curso   |
 | RF-008 | Configurar pagos extraordinarios.       | Se soportan pagos únicos y un importe mensual fijo que reduce plazo; no modifica el historial real.                                                                         | En curso   |
 | RF-009 | Comparar escenarios.                    | Se comparan al menos escenario base y un escenario alternativo por fecha final, plazo restante, pago total, interés y ahorro.                                               | En curso   |
-| RF-010 | Visualizar resultados.                  | Se muestra tabla paginada o virtualizada y gráfico de evolución de saldo; pagos históricos y proyecciones se distinguen.                                                    | Planeado   |
+| RF-010 | Visualizar resultados.                  | El resumen se muestra primero; tabla paginada y gráfico con ejes se solicitan bajo demanda y distinguen pagos históricos de proyecciones.                                   | En curso   |
 | RF-011 | Persistir y respaldar datos locales.    | Los datos sobreviven reinicios, se pueden exportar a una copia de respaldo e importar tras validación.                                                                      | En curso   |
 | RF-012 | Operar sin conexión.                    | Las funciones MVP funcionan después de instalar/cargar la PWA, sin cuenta ni red.                                                                                           | En curso   |
-| RF-013 | Estimar costo y fecha contractual.      | Antes de confirmar el préstamo se estiman fecha final, cuotas, principal, interés, seguro y total desembolsado; supuestos y límites se muestran explícitamente.             | Completado |
+| RF-013 | Estimar costo y fecha contractual.      | Antes de confirmar el préstamo se estiman fecha final, cuotas, principal, interés, seguro y total desembolsado; usa cuota total y límites explícitos.                       | En curso   |
 | RF-014 | Configurar escenario de TBP+margen.     | La fase variable permite TBP promedio configurable, margen, frecuencia y evolución estable/alza/baja reproducible por escenario, sin consultar red.                         | Completado |
+| RF-015 | Presentar resumen financiero legible.   | Todos los importes usan formato monetario localizado y el préstamo muestra fecha final, total pagado, principal e interés antes del detalle.                                | Planeado   |
 
 ### Precisiones del modelo de tasa
 
@@ -35,7 +36,8 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 - La fase fija tiene un número de cuotas inequívoco. La fase variable declara una regla versionada: serie manual fechada o **TBP+margen** con TBP promedio configurable por escenario y sin consulta de red.
 - La frecuencia de revisión es distinta de la periodicidad de pago y debe estar representada explícitamente.
 - Un cambio de tasa conserva cuota. El plazo declarado no se altera: la estimación muestra el saldo pendiente o la cuota final reducida.
-- El seguro mensual se muestra separado; la propuesta inicial no lo financia ni lo aplica a principal.
+- La cuota mensual ingresada es el total exigible e incluye seguro. La cuota base que amortiza principal e interés es `cuota total − seguro`; el seguro no se financia ni se aplica a principal.
+- Con `N` cuotas mensuales, la última fecha programada es la fecha de inicio desplazada exactamente `N` meses, conservando el día ancla cuando exista. Por ejemplo, 360 cuotas equivalen a 30 años.
 - No se asume que una proyección coincida con un banco sin validar su convención de días, fechas, redondeo, seguros y aplicación de pagos.
 
 ## Requisitos no funcionales

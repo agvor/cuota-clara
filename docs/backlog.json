@@ -295,6 +295,48 @@
         "La estimación se actualiza antes de confirmar y distingue principal, interés, seguro y total.",
         "Los contratos y escenarios v1 se presentan como datos heredados hasta que la persona usuaria complete la migración."
       ]
+    },
+    {
+      "id": "US-021",
+      "epic": "E7 · Contrato y resultados legibles",
+      "title": "Migrar a cuota total incluida con seguro",
+      "story": "Como persona usuaria, quiero ingresar la cuota total que debo pagar, incluido seguro, para que la amortización use la cuota base correcta y no presente un plan imposible.",
+      "requirements": ["RF-002", "RF-013", "RNF-001", "RNF-002", "RNF-006", "RNF-011"],
+      "dependsOn": ["US-020"],
+      "status": "ready",
+      "acceptanceCriteria": [
+        "El contrato guarda cuota total y seguro, deriva cuota base como total menos seguro y rechaza una cuota base no positiva o que no cubra interés.",
+        "Con N cuotas mensuales, la última fecha es inicio + N meses; 360 cuotas verifican exactamente 30 años y el ancla de día tiene casos de referencia.",
+        "La migración y el respaldo no reinterpretan contratos v2, pagos ni escenarios; el caso 115,000,000/360/900,000/150,000/8.5% falla de forma trazable por cuota base insuficiente."
+      ]
+    },
+    {
+      "id": "US-022",
+      "epic": "E7 · Contrato y resultados legibles",
+      "title": "Mostrar resumen y dinero con formato universal",
+      "story": "Como persona usuaria, quiero leer cada importe y el costo total de mi préstamo sin descifrar cifras largas.",
+      "requirements": ["RF-013", "RF-015", "RNF-001", "RNF-008"],
+      "dependsOn": ["US-021"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "Un formateador monetario común presenta separadores de miles y decimales en resúmenes, formularios, tablas y gráficos sin perder precisión decimal.",
+        "El detalle inmediato del préstamo muestra fecha final, cuotas, principal, interés, seguro, total y saldo pendiente mediante una tabla compacta.",
+        "Las pruebas de interfaz cubren importes grandes, moneda y el mensaje de cuota insuficiente."
+      ]
+    },
+    {
+      "id": "US-023",
+      "epic": "E7 · Contrato y resultados legibles",
+      "title": "Consultar amortización y gráfico bajo demanda",
+      "story": "Como persona usuaria, quiero abrir el detalle de cuotas solo cuando lo necesito y explorar un gráfico legible.",
+      "requirements": ["RF-004", "RF-010", "RF-015", "RNF-007", "RNF-008"],
+      "dependsOn": ["US-022"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "El resumen no calcula ni renderiza tabla/gráfico hasta que la persona solicita el detalle.",
+        "La tabla alinea importes, conserva cabeceras accesibles y pagina resultados extensos.",
+        "El gráfico tiene ejes temporal y monetario, etiquetas accesibles y control de rango sin ocultar datos."
+      ]
     }
   ]
 }

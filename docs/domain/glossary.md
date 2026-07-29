@@ -6,7 +6,9 @@
 | -------------------------------- | -------------------------------------------------------------------------------------------------- |
 | Préstamo (`Loan`)                | Contrato y estado real que contiene configuración y pagos históricos.                              |
 | Plazo contractual                | Fecha final o cantidad total de cuotas que limita la proyección; no se infiere silenciosamente.    |
-| Seguro mensual                   | Cargo periódico separado de cuota, principal e interés.                                            |
+| Cuota mensual total              | Importe exigible que la persona configura; incluye la cuota base y el seguro mensual.              |
+| Cuota base                       | Parte de la cuota total restante tras restar el seguro; amortiza principal e interés.              |
+| Seguro mensual                   | Cargo periódico incluido en la cuota total, separado de principal e interés.                       |
 | Estimación contractual           | Proyección no bancaria de cuotas, costo y saldo según contrato v2 y supuestos declarados.          |
 | Agregado de préstamo             | Préstamo con sus pagos históricos y snapshots de escenarios, unidad de persistencia.               |
 | Pago histórico (`PaymentRecord`) | Hecho real registrado manualmente o importado; nunca es resultado de una simulación.               |
@@ -43,7 +45,7 @@
 - Un periodo variable sin tasa manual vigente es inválido; el motor no infiere ni reutiliza tasas silenciosamente.
 - Un pago importado conserva archivo/origen, fila de procedencia y resultado de validación para trazabilidad.
 - Un contrato v2 declara plazo por fecha final o número total de cuotas y separa monto original de saldo reconciliado.
-- El seguro mensual no reduce principal ni genera interés mientras no exista una regla contractual que disponga lo contrario.
+- La cuota base equivale a cuota mensual total menos seguro y debe ser positiva; el seguro no reduce principal ni genera interés mientras no exista una regla contractual que disponga lo contrario.
 - Una estimación que alcanza el plazo con saldo pendiente lo muestra; no inventa cuotas posteriores.
 - Una regla `tbp_margin_v1` conserva TBP inicial, margen, frecuencia, evolución, variación y versión; no consulta ni infiere una tasa externa.
 - La TBP no baja de cero; la cuota se conserva en el cambio de tasa y el saldo pendiente se expone al final del plazo declarado.

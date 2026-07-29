@@ -39,3 +39,7 @@ Su caso de referencia sintético es [`contract-estimate-monthly-insurance-v1`](.
 El caso [`fixed-rate-monthly-v1`](../../packages/domain/test/fixtures/fixed-rate-monthly-v1.json) es su referencia de regresión actual.
 
 `projectLoanAmortization` adapta la configuración de un `Loan` al motor y genera el calendario contractual inicial para frecuencias que dividen doce. La presentación usa ese resultado para la tabla y el gráfico, sin repetir cálculos financieros.
+
+## Cambio acordado, aún no implementado
+
+ADR-0006 reemplaza la semántica v2 de cuota base por cuota total incluida con seguro. US-021 migrará el contrato y hará que el motor derive la cuota disponible para principal e interés antes de calcular la amortización. El motor actual no debe usarse para afirmar que un total de cuota que incluye seguro es amortizable hasta que exista esa migración y sus casos de referencia.
