@@ -43,6 +43,8 @@ CSV → parseo regional → filas normalizadas → validación y detección de d
 
 La previsualización es obligatoria. Las filas rechazadas no se persisten y la importación confirmada conserva su procedencia.
 
+El adaptador reutilizable `packages/import-csv` convierte texto CSV en una previsualización de `PaymentRecord`; no depende de IndexedDB ni puede confirmar la importación.
+
 ## Flujo de proyección
 
 ```text

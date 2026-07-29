@@ -2,12 +2,12 @@
 
 > Generado desde `docs/backlog.json` el 2026-07-28. No editar manualmente.
 
-**Siguiente ítem habilitado:** US-008 — Validar y previsualizar un CSV de pagos
+**Siguiente ítem habilitado:** US-009 — Persistir préstamos mediante un puerto local
 
 | Épica | Planeado | Listo | En curso | Bloqueado | Completado |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | E1 · Motor financiero verificable | 0 | 0 | 0 | 0 | 7 |
-| E2 · Importación y datos locales | 1 | 1 | 0 | 0 | 0 |
+| E2 · Importación y datos locales | 0 | 1 | 0 | 0 | 1 |
 | E3 · PWA y gestión de préstamos | 3 | 0 | 0 | 0 | 0 |
 | E4 · Escenarios y resultados | 2 | 0 | 0 | 0 | 0 |
 | E5 · Respaldo y publicación | 2 | 0 | 0 | 0 | 0 |
@@ -23,8 +23,8 @@
 | US-005 | E1 · Motor financiero verificable | Reconstruir estado desde pagos históricos | Completado | US-004 |
 | US-006 | E1 · Motor financiero verificable | Aplicar pagos extraordinarios únicos | Completado | US-004 |
 | US-007 | E1 · Motor financiero verificable | Resolver tasa fija seguida de serie variable manual | Completado | US-004 |
-| US-008 | E2 · Importación y datos locales | Validar y previsualizar un CSV de pagos | Listo | US-005 |
-| US-009 | E2 · Importación y datos locales | Persistir préstamos mediante un puerto local | Planeado | US-005 |
+| US-008 | E2 · Importación y datos locales | Validar y previsualizar un CSV de pagos | Completado | US-005 |
+| US-009 | E2 · Importación y datos locales | Persistir préstamos mediante un puerto local | Listo | US-005 |
 | US-010 | E3 · PWA y gestión de préstamos | Crear la PWA y navegar préstamos | Planeado | US-009 |
 | US-011 | E3 · PWA y gestión de préstamos | Crear y editar un préstamo | Planeado | US-007, US-010 |
 | US-012 | E3 · PWA y gestión de préstamos | Registrar e importar pagos desde la interfaz | Planeado | US-008, US-010 |

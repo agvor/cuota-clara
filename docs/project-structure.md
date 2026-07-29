@@ -5,6 +5,7 @@ apps/
   web/                 PWA y adaptadores de presentación
 packages/
   domain/              Núcleo financiero reutilizable y sin dependencias web
+  import-csv/          Adaptador de parseo y previsualización de CSV
 docs/
   adr/                 Decisiones de arquitectura
   domain/              Glosario, invariantes y contratos del dominio

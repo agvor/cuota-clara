@@ -19,7 +19,7 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 | RF-003 | Configurar plan de tasas.               | Se define una fase fija con tasa y periodo, seguida opcionalmente por una fase variable cuya regla, frecuencia de revisión y supuestos quedan explícitos.                   | En curso |
 | RF-004 | Calcular una proyección base.           | Para cada periodo se muestran saldo inicial/final, tasa, cuota, interés, principal, cargos y pago total. El resultado es determinista.                                      | En curso |
 | RF-005 | Registrar pagos históricos manualmente. | Se validan fecha, importes y desglose disponible; cada pago conserva su origen y notas.                                                                                     | En curso |
-| RF-006 | Importar registro de pagos en CSV.      | Se acepta una plantilla CSV, se muestra una previsualización con errores, duplicados e inconsistencias antes de guardar. La importación no altera datos hasta confirmación. | Planeado |
+| RF-006 | Importar registro de pagos en CSV.      | Se acepta una plantilla CSV, se muestra una previsualización con errores, duplicados e inconsistencias antes de guardar. La importación no altera datos hasta confirmación. | En curso |
 | RF-007 | Reconstruir y reconciliar el estado.    | El sistema distingue pagos históricos de proyecciones, calcula el saldo a la fecha de corte y permite un ajuste de reconciliación trazable.                                 | En curso |
 | RF-008 | Configurar pagos extraordinarios.       | Se soportan pagos únicos y un importe mensual fijo que reduce plazo; no modifica el historial real.                                                                         | En curso |
 | RF-009 | Comparar escenarios.                    | Se comparan al menos escenario base y un escenario alternativo por fecha final, plazo restante, pago total, interés y ahorro.                                               | En curso |
@@ -44,7 +44,7 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 | RNF-003 | Separación arquitectónica.        | El motor de dominio no depende de React, IndexedDB, red ni gráficos.                                                     | En curso |
 | RNF-004 | Integridad histórica.             | Una simulación no puede mutar pagos históricos ni el préstamo real.                                                      | En curso |
 | RNF-005 | Privacidad local-first.           | El MVP no transmite datos financieros a un servidor.                                                                     | Planeado |
-| RNF-006 | Importación segura y recuperable. | La importación valida antes de confirmar y los respaldos se validan antes de restaurar.                                  | Planeado |
+| RNF-006 | Importación segura y recuperable. | La importación valida antes de confirmar y los respaldos se validan antes de restaurar.                                  | En curso |
 | RNF-007 | Rendimiento.                      | Una proyección de hasta 600 periodos se calcula interactivamente en equipo convencional; se medirá antes de optimizar.   | Planeado |
 | RNF-008 | Accesibilidad y adaptación.       | Flujos principales utilizables con teclado y pantallas pequeñas; objetivo WCAG 2.1 AA.                                   | Planeado |
 | RNF-009 | Portabilidad.                     | Funciona en navegadores modernos de escritorio y móviles; la PWA es instalable.                                          | Planeado |

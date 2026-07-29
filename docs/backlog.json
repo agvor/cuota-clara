@@ -107,7 +107,7 @@
       "story": "Como persona usuaria, quiero importar mi registro de pagos sin corromper el préstamo por filas erróneas.",
       "requirements": ["RF-006", "RNF-006"],
       "dependsOn": ["US-005"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "Existe plantilla CSV y normalización explícita de fecha, decimal y separador regional.",
         "La previsualización reporta filas válidas, errores, duplicados y periodos faltantes.",
@@ -121,7 +121,7 @@
       "story": "Como persona usuaria, quiero conservar mis préstamos en el dispositivo y recuperar mis datos al reiniciar.",
       "requirements": ["RF-001", "RF-011", "RNF-005", "RNF-010"],
       "dependsOn": ["US-005"],
-      "status": "planned",
+      "status": "ready",
       "acceptanceCriteria": [
         "La aplicación depende de interfaces de repositorio y no de Dexie directamente.",
         "El adaptador IndexedDB persiste préstamo, pagos y escenarios de forma transaccional.",

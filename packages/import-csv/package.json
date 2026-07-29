@@ -1,0 +1,13 @@
+{
+  "name": "@cuotaclara/import-csv",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@cuotaclara/domain": "workspace:*",
+    "papaparse": "^5.5.4"
+  }
+}
