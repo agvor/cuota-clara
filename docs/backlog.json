@@ -331,7 +331,7 @@
       "story": "Como persona usuaria, quiero abrir el detalle de cuotas solo cuando lo necesito y explorar un gráfico legible.",
       "requirements": ["RF-004", "RF-010", "RF-015", "RNF-007", "RNF-008"],
       "dependsOn": ["US-022"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "El resumen no calcula ni renderiza tabla/gráfico hasta que la persona solicita el detalle.",
         "La tabla alinea importes, conserva cabeceras accesibles y pagina resultados extensos.",

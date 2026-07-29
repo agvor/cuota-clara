@@ -81,6 +81,17 @@ describe('App', () => {
     expect(screen.getByRole('rowheader', { name: 'Interés estimado' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Total proyectado' })).toBeVisible();
     expect(screen.getByText('2056-01-15')).toBeVisible();
+    expect(
+      screen.queryByRole('img', { name: 'Evolución estimada del saldo' }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle de amortización' }));
+
+    expect(screen.getByRole('img', { name: 'Evolución estimada del saldo' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Ocultar detalle de amortización' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
   });
 
   test('guarda contrato v3 con cuota total, estimación y escenario TBP en un agregado nuevo', async () => {

@@ -2,7 +2,7 @@
 
 > Generado desde `docs/backlog.json` el 2026-07-29. No editar manualmente.
 
-**Siguiente ítem habilitado:** US-023 — Consultar amortización y gráfico bajo demanda
+**Siguiente ítem habilitado:** ninguno; revisar dependencias o bloqueos.
 
 | Épica | Planeado | Listo | En curso | Bloqueado | Completado |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -12,7 +12,7 @@
 | E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 2 |
 | E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 1 |
 | E6 · Contrato financiero v2 | 0 | 0 | 0 | 0 | 4 |
-| E7 · Contrato y resultados legibles | 0 | 1 | 0 | 0 | 2 |
+| E7 · Contrato y resultados legibles | 0 | 0 | 0 | 0 | 3 |
 
 ## Historias
 
@@ -41,4 +41,4 @@
 | US-020 | E6 · Contrato financiero v2 | Configurar contrato y escenario TBP desde la PWA | Completado | US-018, US-019 |
 | US-021 | E7 · Contrato y resultados legibles | Migrar a cuota total incluida con seguro | Completado | US-020 |
 | US-022 | E7 · Contrato y resultados legibles | Mostrar resumen y dinero con formato universal | Completado | US-021 |
-| US-023 | E7 · Contrato y resultados legibles | Consultar amortización y gráfico bajo demanda | Listo | US-022 |
+| US-023 | E7 · Contrato y resultados legibles | Consultar amortización y gráfico bajo demanda | Completado | US-022 |

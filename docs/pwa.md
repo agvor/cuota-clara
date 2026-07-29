@@ -8,7 +8,7 @@ El formulario crea contratos v3 mensuales: muestra monto original, cuota total i
 
 Toda salida monetaria de la PWA usa un único formateador de `es-CR`: conserva el decimal redondeado contractual y añade símbolo de moneda, miles y decimales sin convertir el importe a `number`. Los campos editables siguen mostrando el literal decimal canónico para no modificar la entrada. El detalle del préstamo presenta de inmediato una tabla compacta con fecha final estimada, cuotas, principal, interés, seguro, total y saldo pendiente cuando aplique.
 
-La próxima revisión de la PWA separará la tabla de amortización y el gráfico bajo demanda. Véase [`domain/contract-payment-and-results-v3.md`](domain/contract-payment-and-results-v3.md).
+La tabla de amortización y el gráfico se montan solo al seleccionar **Ver detalle de amortización**. El gráfico ofrece rangos de 12, 60, 120 períodos o todo el plazo, con ejes temporal y monetario, nombre y descripción accesibles. Véase [`domain/contract-payment-and-results-v3.md`](domain/contract-payment-and-results-v3.md).
 
 La PWA precachea la página, manifiesto, iconos y recursos de construcción. Después de la primera visita, la página raíz puede servirse mediante el service worker sin red. La verificación de actualización de caché y de recuperación ante datos locales inválidos requiere una prueba de navegador con Chromium y sigue pendiente dentro de `US-016`.
 
@@ -16,4 +16,4 @@ Desde el detalle de un préstamo se registran y corrigen pagos manuales, o se im
 
 También se pueden guardar escenarios de pago extraordinario único. La comparación muestra base y alternativa —fecha final, plazo, total pagado e interés ahorrado— y usa un calendario contractual explícito; el escenario nunca modifica pagos reales ni la configuración del préstamo.
 
-La vista de evolución presenta una tabla paginada y un gráfico SVG ligero. Los registros históricos y las filas proyectadas están marcados por separado; el cálculo de la proyección lo produce el dominio, no la interfaz.
+La vista de evolución presenta una tabla paginada y un gráfico SVG ligero bajo demanda. Los registros históricos y las filas proyectadas están marcados por separado; el cálculo de la proyección lo produce el dominio, no la interfaz.

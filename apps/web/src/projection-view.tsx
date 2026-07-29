@@ -5,6 +5,7 @@ import { projectLoanAmortization, type Loan, type PaymentRecord } from '@cuotacl
 import { formatMoney } from './money-format.js';
 
 const PAGE_SIZE = 24;
+const CHART_RANGES = [12, 60, 120] as const;
 
 export function ProjectionView({
   loan,
@@ -23,7 +24,7 @@ export function ProjectionView({
   if ('error' in result)
     return (
       <section className="projection-view">
-        <h2>Proyección</h2>
+        <h3>Proyección</h3>
         <p role="alert">{result.error}</p>
       </section>
     );
@@ -33,7 +34,7 @@ export function ProjectionView({
   const pages = Math.ceil(periods.length / PAGE_SIZE);
   return (
     <section className="projection-view" aria-labelledby="projection-title">
-      <h2 id="projection-title">Evolución del saldo</h2>
+      <h3 id="projection-title">Evolución del saldo</h3>
       <p>
         Los pagos históricos aparecen como registros reales; la proyección contractual se muestra
         por separado.
@@ -54,7 +55,7 @@ export function ProjectionView({
           </thead>
           <tbody>
             {payments.map((payment) => (
-              <tr key={`historical-${payment.id}`}>
+              <tr className="historical-row" key={`historical-${payment.id}`}>
                 <td>Histórico</td>
                 <td>{payment.date}</td>
                 <td>{formatMoney(payment.totalAmount, loan.roundingPolicy)}</td>
@@ -72,7 +73,7 @@ export function ProjectionView({
               </tr>
             ))}
             {visiblePeriods.map((period) => (
-              <tr key={`projection-${period.period}`}>
+              <tr className="projection-row" key={`projection-${period.period}`}>
                 <td>Proyección</td>
                 <td>{period.date}</td>
                 <td>{formatMoney(period.payment, loan.roundingPolicy)}</td>
@@ -118,29 +119,76 @@ function BalanceChart({
   payments: readonly PaymentRecord[];
   periods: ReturnType<typeof projectLoanAmortization>['periods'];
 }>) {
-  const maxBalance = Number(loan.initialBalance.toFixed(loan.roundingPolicy));
-  const projectionPoints = periods
-    .map(
-      (period, index) =>
-        `${(index / Math.max(periods.length - 1, 1)) * 100},${100 - (Number(period.closingBalance.toFixed(loan.roundingPolicy)) / maxBalance) * 100}`,
-    )
-    .join(' ');
-  let historicalBalance = maxBalance;
-  const knownHistoricalPayments = payments
+  const [range, setRange] = useState<number | 'all'>(60);
+  const visiblePeriods = range === 'all' ? periods : periods.slice(-range);
+  const startPeriod = visiblePeriods[0];
+  const endPeriod = visiblePeriods.at(-1);
+  if (!startPeriod || !endPeriod) return null;
+
+  const maximumBalance = startPeriod.openingBalance;
+  const maximumBalanceAsNumber = Math.max(Number(maximumBalance.toDecimalString()), 1);
+  const projectionPoints = toPoints(
+    visiblePeriods.map((period) => Number(period.closingBalance.toDecimalString())),
+    maximumBalanceAsNumber,
+  );
+  let historicalBalance = maximumBalanceAsNumber;
+  const historicalBalances = payments
     .filter((payment) => payment.principalAmount)
-    .sort((left, right) => left.date.localeCompare(right.date));
-  const historicalPoints = knownHistoricalPayments
-    .map((payment, index) => {
-      historicalBalance -= Number(payment.principalAmount?.toFixed(loan.roundingPolicy) ?? '0');
-      historicalBalance -= Number(
-        payment.extraPrincipalAmount?.toFixed(loan.roundingPolicy) ?? '0',
-      );
-      return `${(index / Math.max(knownHistoricalPayments.length - 1, 1)) * 100},${100 - (Math.max(historicalBalance, 0) / maxBalance) * 100}`;
-    })
-    .join(' ');
+    .sort((left, right) => left.date.localeCompare(right.date))
+    .map((payment) => {
+      historicalBalance -= Number(payment.principalAmount?.toDecimalString() ?? '0');
+      historicalBalance -= Number(payment.extraPrincipalAmount?.toDecimalString() ?? '0');
+      return historicalBalance;
+    });
+  const rangedHistoricalBalances =
+    range === 'all' ? historicalBalances : historicalBalances.slice(-range);
+  const historicalPoints = rangedHistoricalBalances.length
+    ? toPoints(rangedHistoricalBalances, maximumBalanceAsNumber)
+    : '';
+
   return (
     <figure className="balance-chart">
-      <svg viewBox="0 0 100 100" role="img" aria-label="Evolución estimada del saldo">
+      <label>
+        Rango del gráfico
+        <select
+          value={range}
+          onChange={(event) =>
+            setRange(event.target.value === 'all' ? 'all' : Number(event.target.value))
+          }
+        >
+          {CHART_RANGES.map((periodCount) => (
+            <option key={periodCount} value={periodCount}>
+              Últimos {periodCount} períodos
+            </option>
+          ))}
+          <option value="all">Todo el plazo</option>
+        </select>
+      </label>
+      <svg
+        viewBox="0 0 100 100"
+        role="img"
+        aria-labelledby="balance-chart-title"
+        aria-describedby="balance-chart-description"
+      >
+        <title id="balance-chart-title">Evolución estimada del saldo</title>
+        <desc id="balance-chart-description">
+          Saldo proyectado desde {startPeriod.date} hasta {endPeriod.date}; el eje vertical usa la
+          moneda del préstamo y el horizontal representa las fechas de las cuotas.
+        </desc>
+        <line className="chart-axis" x1="12" x2="94" y1="86" y2="86" />
+        <line className="chart-axis" x1="12" x2="12" y1="10" y2="86" />
+        <text className="chart-label" x="11" y="12" textAnchor="end">
+          {formatMoney(maximumBalance, loan.roundingPolicy)}
+        </text>
+        <text className="chart-label" x="11" y="87" textAnchor="end">
+          {formatMoney(maximumBalance.subtract(maximumBalance), loan.roundingPolicy)}
+        </text>
+        <text className="chart-label" x="12" y="97">
+          {startPeriod.date}
+        </text>
+        <text className="chart-label" x="94" y="97" textAnchor="end">
+          {endPeriod.date}
+        </text>
         <polyline
           points={projectionPoints}
           fill="none"
@@ -164,4 +212,15 @@ function BalanceChart({
       </figcaption>
     </figure>
   );
+}
+
+function toPoints(values: readonly number[], maximum: number): string {
+  const denominator = Math.max(values.length - 1, 1);
+  return values
+    .map((value, index) => {
+      const x = 12 + (index / denominator) * 82;
+      const y = 10 + (1 - Math.max(0, Math.min(value, maximum)) / maximum) * 76;
+      return `${x},${y}`;
+    })
+    .join(' ');
 }

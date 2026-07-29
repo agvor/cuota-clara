@@ -1,6 +1,6 @@
 # ADR-0006: Cuota total, calendario contractual y resultados bajo demanda
 
-- Estado: aceptado; US-021 y US-022 implementados, US-023 pendiente
+- Estado: aceptado; US-021 a US-023 implementados
 - Fecha: 2026-07-29
 
 ## Contexto

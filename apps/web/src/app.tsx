@@ -319,8 +319,32 @@ function LoanDetail({
       ) : null}
       {aggregate?.loan.id === loan.id ? <TbpScenarios scenarios={aggregate.scenarios} /> : null}
       {aggregate?.loan.id === loan.id ? (
-        <ProjectionView loan={loan} payments={aggregate.payments} />
+        <AmortizationDetail loan={loan} payments={aggregate.payments} />
       ) : null}
+    </section>
+  );
+}
+
+function AmortizationDetail({
+  loan,
+  payments,
+}: Readonly<{ loan: Loan; payments: readonly PaymentRecord[] }>) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <section className="amortization-detail" aria-labelledby="amortization-detail-title">
+      <h3 id="amortization-detail-title">Detalle de amortización</h3>
+      <p>Abre la tabla paginada y el gráfico solo cuando necesites revisar cada cuota.</p>
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls="amortization-projection"
+        onClick={() => setIsOpen((current) => !current)}
+      >
+        {isOpen ? 'Ocultar detalle de amortización' : 'Ver detalle de amortización'}
+      </button>
+      <div id="amortization-projection" hidden={!isOpen}>
+        {isOpen ? <ProjectionView loan={loan} payments={payments} /> : null}
+      </div>
     </section>
   );
 }

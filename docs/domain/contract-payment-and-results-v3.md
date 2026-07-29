@@ -35,11 +35,11 @@ La cuota base no cubre ese interés inicial. US-021 emite un error contractual t
 
 1. Un único formateador monetario se usa en toda la PWA, con separadores de miles y decimales coherentes con el locale seleccionado (`es-CR` inicialmente), sin convertir el decimal financiero a `number`. Los campos editables conservan el literal canónico.
 2. El resumen inmediato usa una tabla compacta de importes: principal, interés, seguro y total; además muestra fecha/número de última cuota y saldo pendiente si existe.
-3. La página inicial del préstamo no ejecuta la tabla completa ni renderiza el gráfico. Una acción **Ver detalle de amortización** los calcula bajo demanda.
-4. El gráfico debe tener eje X temporal, eje Y monetario, etiquetas accesibles y controles de rango; la tabla debe conservar cabecera, contraste, columnas numéricas alineadas y navegación de páginas.
+3. La página inicial del préstamo no ejecuta la tabla completa ni renderiza el gráfico. La acción **Ver detalle de amortización** los calcula bajo demanda.
+4. El gráfico tiene eje X temporal, eje Y monetario, nombre y descripción accesibles, y controles de rango. La tabla conserva cabecera, contraste, columnas numéricas alineadas y navegación de páginas.
 
 ## Secuencia de entrega
 
 - **US-021:** contrato total, migración y casos de referencia. **Completado en dominio y persistencia.**
 - **US-022:** formato monetario universal y resumen inmediato. **Completado.**
-- **US-023:** detalle de amortización y gráfico ajustable bajo demanda.
+- **US-023:** detalle de amortización y gráfico ajustable bajo demanda. **Completado.**

@@ -137,7 +137,8 @@ h1 {
 .loan-form,
 .scenario-tools,
 .projection-view,
-.tbp-scenarios {
+.tbp-scenarios,
+.amortization-detail {
   margin-top: 1rem;
   padding: 1.25rem;
   border: 1px solid #cbd5e1;
@@ -289,6 +290,135 @@ h1 {
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 1rem;
+}
+
+.amortization-detail > p {
+  max-width: 46rem;
+  color: #475569;
+}
+
+.projection-view {
+  margin-top: 1rem;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.projection-view table {
+  width: 100%;
+  min-width: 48rem;
+  border-collapse: collapse;
+}
+
+.projection-view caption {
+  padding: 0.75rem;
+  color: #334155;
+  text-align: left;
+  font-weight: 700;
+}
+
+.projection-view th,
+.projection-view td {
+  padding: 0.55rem 0.75rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.projection-view thead th {
+  border-top: 0;
+  background: #e0f2fe;
+  color: #0f172a;
+  text-align: left;
+}
+
+.projection-view td:nth-child(n + 3),
+.projection-view th:nth-child(n + 3) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.projection-view .historical-row {
+  background: #f0fdf4;
+}
+
+.projection-view .projection-row:nth-child(even) {
+  background: #f8fafc;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.balance-chart {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.balance-chart label {
+  display: inline-grid;
+  gap: 0.25rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+.balance-chart select {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #64748b;
+  border-radius: 0.35rem;
+  color: #0f172a;
+  background: #fff;
+  font: inherit;
+}
+
+.balance-chart svg {
+  display: block;
+  width: 100%;
+  min-height: 16rem;
+  margin-top: 0.75rem;
+  overflow: visible;
+}
+
+.chart-axis {
+  stroke: #475569;
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-label {
+  fill: #334155;
+  font-size: 3px;
+}
+
+.balance-chart figcaption {
+  display: flex;
+  gap: 1rem;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.legend::before {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.2rem;
+  margin-right: 0.35rem;
+  background: #1d4ed8;
+  content: '';
+  vertical-align: middle;
+}
+
+.legend.historical::before {
+  background: #15803d;
 }
 
 button {

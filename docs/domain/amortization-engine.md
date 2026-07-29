@@ -40,4 +40,4 @@ El caso [`fixed-rate-monthly-v1`](../../packages/domain/test/fixtures/fixed-rate
 
 `projectLoanAmortization` adapta la configuración de un `Loan` al motor y genera el calendario contractual inicial para frecuencias que dividen doce. La presentación usa ese resultado para la tabla y el gráfico, sin repetir cálculos financieros.
 
-La vista de tabla y gráfico bajo demanda sigue pendiente en US-023; el dominio conserva el cálculo completo y determinista sin conocimiento de la interfaz.
+La PWA monta la vista de tabla y gráfico solo al solicitar el detalle de amortización. El dominio conserva el cálculo completo y determinista sin conocimiento de esa interacción visual.
