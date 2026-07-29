@@ -2,11 +2,11 @@
 
 > Generado desde `docs/backlog.json` el 2026-07-28. No editar manualmente.
 
-**Siguiente ítem habilitado:** US-005 — Reconstruir estado desde pagos históricos
+**Siguiente ítem habilitado:** US-006 — Aplicar pagos extraordinarios únicos
 
 | Épica | Planeado | Listo | En curso | Bloqueado | Completado |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| E1 · Motor financiero verificable | 2 | 1 | 0 | 0 | 4 |
+| E1 · Motor financiero verificable | 1 | 1 | 0 | 0 | 5 |
 | E2 · Importación y datos locales | 2 | 0 | 0 | 0 | 0 |
 | E3 · PWA y gestión de préstamos | 3 | 0 | 0 | 0 | 0 |
 | E4 · Escenarios y resultados | 2 | 0 | 0 | 0 | 0 |
@@ -20,8 +20,8 @@
 | US-002 | E1 · Motor financiero verificable | Representar dinero y redondeo de forma decimal | Completado | US-001 |
 | US-003 | E1 · Motor financiero verificable | Resolver una tasa fija por periodo | Completado | US-002 |
 | US-004 | E1 · Motor financiero verificable | Generar amortización de cuota periódica fija | Completado | US-003 |
-| US-005 | E1 · Motor financiero verificable | Reconstruir estado desde pagos históricos | Listo | US-004 |
-| US-006 | E1 · Motor financiero verificable | Aplicar pagos extraordinarios únicos | Planeado | US-004 |
+| US-005 | E1 · Motor financiero verificable | Reconstruir estado desde pagos históricos | Completado | US-004 |
+| US-006 | E1 · Motor financiero verificable | Aplicar pagos extraordinarios únicos | Listo | US-004 |
 | US-007 | E1 · Motor financiero verificable | Resolver tasa fija seguida de serie variable manual | Planeado | US-004 |
 | US-008 | E2 · Importación y datos locales | Validar y previsualizar un CSV de pagos | Planeado | US-005 |
 | US-009 | E2 · Importación y datos locales | Persistir préstamos mediante un puerto local | Planeado | US-005 |

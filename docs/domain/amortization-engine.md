@@ -19,7 +19,7 @@ El resumen contiene fecha de finalización, total de interés, principal y pago.
 
 ## Límites conocidos
 
-- No incorpora pagos históricos, pagos extraordinarios, seguros, comisiones ni tasas variables.
+- No incorpora pagos extraordinarios, seguros, comisiones ni tasas variables.
 - No decide ni genera el calendario de pagos; esa política se incorporará de forma explícita cuando exista evidencia contractual.
 - No representa aún atrasos, pagos parciales ni cambios de cuota.
 

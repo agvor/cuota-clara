@@ -26,3 +26,14 @@ export {
   type FixedRateAmortizationPeriod,
   type FixedRateAmortizationResult,
 } from './amortization/fixed-rate.js';
+export {
+  createPaymentRecord,
+  createReconciliationAdjustment,
+  HistoricalStateError,
+  reconstructHistoricalState,
+  type CreatePaymentRecordInput,
+  type HistoricalState,
+  type PaymentRecord,
+  type PaymentSource,
+  type ReconciliationAdjustment,
+} from './history/historical-state.js';

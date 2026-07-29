@@ -64,7 +64,7 @@
       "story": "Como persona usuaria, quiero registrar pagos reales y obtener un saldo de corte explicable.",
       "requirements": ["RF-005", "RF-007", "RNF-004"],
       "dependsOn": ["US-004"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "Los pagos históricos tienen fecha, importes conocidos, origen y notas.",
         "La reconstrucción separa periodos históricos de proyecciones futuras.",
@@ -78,7 +78,7 @@
       "story": "Como persona usuaria, quiero simular un pago adicional único y medir su efecto sobre el plazo e interés.",
       "requirements": ["RF-008", "RF-009", "RNF-004"],
       "dependsOn": ["US-004"],
-      "status": "planned",
+      "status": "ready",
       "acceptanceCriteria": [
         "El pago extra se aplica al principal en una fecha/periodo válido.",
         "El escenario conserva inalterados préstamo e historial.",

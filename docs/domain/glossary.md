@@ -28,5 +28,6 @@
 - El saldo final de cada periodo no puede ser menor que cero; el último pago se limita al importe necesario.
 - El motor inicial rechaza una cuota que no reduzca principal; no modela amortización negativa todavía.
 - Un periodo histórico se identifica como tal y no se recalcula silenciosamente a partir de una proyección.
+- Una reconciliación conserva tanto el saldo calculado como el saldo reportado; no reescribe pagos históricos.
 - Toda tasa usada contiene su fuente o supuesto, fecha de vigencia y versión de la regla.
 - Un pago importado conserva archivo/origen, fila de procedencia y resultado de validación para trazabilidad.
