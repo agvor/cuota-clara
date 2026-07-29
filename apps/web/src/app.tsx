@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { createTbpMarginScenario, isTbpMarginScenario } from '@cuotaclara/domain';
 import type {
   Loan,
   LoanAggregate,
@@ -61,10 +62,11 @@ export function App({ repository }: AppProps) {
 
   async function saveLoan(loan: Loan) {
     const existing = await repository.loadAggregate(loan.id);
+    const scenarios = saveTbpScenario(loan, existing?.scenarios ?? []);
     const aggregate: LoanAggregate = {
       loan,
       payments: existing?.payments ?? [],
-      scenarios: existing?.scenarios ?? [],
+      scenarios,
     };
     await repository.saveAggregate(aggregate);
     await reloadLoans();
@@ -189,6 +191,11 @@ export function App({ repository }: AppProps) {
                           <dd>{Number(loan.annualNominalRate) * 100}%</dd>
                         </div>
                       </dl>
+                      <p className={loan.contract ? 'contract-status' : 'inherited-notice'}>
+                        {loan.contract
+                          ? 'Contrato v2 configurado'
+                          : 'Préstamo heredado: falta plazo y seguro'}
+                      </p>
                       <button type="button" onClick={() => void selectLoan(loan.id)}>
                         Ver préstamo
                       </button>
@@ -257,6 +264,28 @@ function LoanDetail({
         Inicio: <time dateTime={loan.startDate}>{loan.startDate}</time>
       </p>
       <p>Periodicidad: {loan.periodsPerYear} pagos por año.</p>
+      {!loan.contract ? (
+        <p className="inherited-notice" role="status">
+          Este préstamo es heredado. Puedes consultarlo, pero completa plazo y seguro al editarlo
+          para habilitar su estimación contractual.
+        </p>
+      ) : null}
+      {loan.contract ? (
+        <dl className="contract-summary">
+          <div>
+            <dt>Plazo</dt>
+            <dd>
+              {'endDate' in loan.contract.term
+                ? loan.contract.term.endDate
+                : `${loan.contract.term.totalInstallments} cuotas`}
+            </dd>
+          </div>
+          <div>
+            <dt>Seguro mensual</dt>
+            <dd>{formatMoney(loan, loan.contract.monthlyInsurance)}</dd>
+          </div>
+        </dl>
+      ) : null}
       <div className="form-actions">
         <button type="button" onClick={onEdit}>
           Editar préstamo
@@ -285,9 +314,51 @@ function LoanDetail({
           onSaveScenario={onSaveScenario}
         />
       ) : null}
+      {aggregate?.loan.id === loan.id ? <TbpScenarios scenarios={aggregate.scenarios} /> : null}
       {aggregate?.loan.id === loan.id ? (
         <ProjectionView loan={loan} payments={aggregate.payments} />
       ) : null}
+    </section>
+  );
+}
+
+function saveTbpScenario(
+  loan: Loan,
+  scenarios: readonly ProjectionScenarioSnapshot[],
+): readonly ProjectionScenarioSnapshot[] {
+  if (!loan.tbpMarginRatePlan) return scenarios;
+  const current = scenarios.find(isTbpMarginScenario);
+  const scenario = createTbpMarginScenario({
+    id: current?.id ?? crypto.randomUUID(),
+    loanId: loan.id,
+    name: current?.name ?? 'Supuesto TBP + margen',
+    createdAt: current?.createdAt ?? new Date().toISOString(),
+    plan: loan.tbpMarginRatePlan,
+  });
+  return current
+    ? scenarios.map((item) => (item.id === current.id ? scenario : item))
+    : [...scenarios, scenario];
+}
+
+function TbpScenarios({
+  scenarios,
+}: Readonly<{ scenarios: readonly ProjectionScenarioSnapshot[] }>) {
+  const tbpScenarios = scenarios.filter(isTbpMarginScenario);
+  if (!tbpScenarios.length) return null;
+  return (
+    <section className="tbp-scenarios" aria-labelledby="tbp-scenarios-title">
+      <h2 id="tbp-scenarios-title">Supuestos TBP guardados</h2>
+      {tbpScenarios.map((scenario) => (
+        <article key={scenario.id}>
+          <h3>{scenario.name}</h3>
+          <p>
+            TBP {scenario.configuration.tbpInitialAnnualRate} + margen{' '}
+            {scenario.configuration.marginAnnualRate};{' '}
+            {scenario.configuration.evolution.replace('_', ' ')} cada{' '}
+            {scenario.configuration.reviewFrequency}.
+          </p>
+        </article>
+      ))}
     </section>
   );
 }

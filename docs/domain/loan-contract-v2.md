@@ -1,6 +1,6 @@
 # Modelo contractual de préstamo v2
 
-US-017 implementa el núcleo contractual, su serialización y la migración compatible. US-018 implementa la estimación de costo y fecha en el dominio. La captura desde la interfaz y la regla TBP siguen planificadas en US-019 y US-020. Ninguna ruta infiere datos que la persona usuaria no haya proporcionado.
+US-017 implementa el núcleo contractual, su serialización y la migración compatible. US-018 implementa la estimación de costo y fecha; US-019 la regla TBP; y US-020 expone ambas capacidades en la PWA. Ninguna ruta infiere datos que la persona usuaria no haya proporcionado.
 
 ## Datos del contrato
 
@@ -41,7 +41,7 @@ La primera cuota variable usa la TBP inicial. La evolución se aplica después d
 
 ## Estimación inicial obligatoria
 
-`estimateLoanContract` produce la estimación etiquetada como proyección, no como promesa bancaria. US-020 la mostrará antes de guardar o editar un préstamo:
+`estimateLoanContract` produce la estimación etiquetada como proyección, no como promesa bancaria. La PWA la muestra antes de permitir guardar o editar un préstamo:
 
 - fecha de última cuota estimada;
 - cantidad total de cuotas estimada;

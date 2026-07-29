@@ -46,22 +46,28 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Resumen de Hipoteca principal' })).toBeVisible();
   });
 
-  test('guarda una configuración fija-variable en un agregado nuevo', async () => {
+  test('guarda contrato v2, estimación y escenario TBP en un agregado nuevo', async () => {
     const repository = createRepository([]);
     render(<App repository={repository} />);
     await screen.findByRole('heading', { name: 'Aún no hay préstamos' });
     fireEvent.click(screen.getByRole('button', { name: 'Crear préstamo' }));
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Préstamo mixto' } });
     fireEvent.change(screen.getByLabelText('Fecha de inicio'), { target: { value: '2026-01-01' } });
-    fireEvent.change(screen.getByLabelText('Saldo inicial'), { target: { value: '100000.00' } });
-    fireEvent.change(screen.getByLabelText('Cuota ordinaria'), { target: { value: '1000.00' } });
-    fireEvent.change(screen.getByLabelText('Tasa nominal anual (ejemplo: 0.12)'), {
+    fireEvent.change(screen.getByLabelText('Monto original'), { target: { value: '100000.00' } });
+    fireEvent.change(screen.getByLabelText('Cuota mensual, sin seguro'), {
+      target: { value: '1100.00' },
+    });
+    fireEvent.change(screen.getByLabelText('Seguro mensual, separado'), {
+      target: { value: '15.00' },
+    });
+    fireEvent.change(screen.getByLabelText('Número total de cuotas'), {
+      target: { value: '180' },
+    });
+    fireEvent.change(screen.getByLabelText('Tasa nominal anual fija'), {
       target: { value: '0.12' },
     });
-    fireEvent.click(screen.getByLabelText('Después de una fase fija, usar tasa variable manual'));
-    fireEvent.change(screen.getByLabelText('Tasas variables (una por línea: YYYY-MM-DD,0.08)'), {
-      target: { value: '2027-01-01,0.08' },
-    });
+    fireEvent.click(screen.getByLabelText('TBP + margen (predeterminada)'));
+    expect(await screen.findByRole('heading', { name: 'Proyección inicial' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Guardar préstamo' }));
 
     await waitFor(() => expect(repository.saveAggregate).toHaveBeenCalledTimes(1));
@@ -69,9 +75,34 @@ describe('App', () => {
       expect.objectContaining({
         loan: expect.objectContaining({
           name: 'Préstamo mixto',
-          variableRatePlan: expect.objectContaining({ fixedPeriods: 12 }),
+          contract: expect.objectContaining({ monthlyInsurance: expect.anything() }),
+          tbpMarginRatePlan: expect.objectContaining({ kind: 'tbp_margin_v1', fixedPeriods: 12 }),
         }),
+        scenarios: [
+          expect.objectContaining({
+            configuration: expect.objectContaining({ kind: 'tbp_margin_v1' }),
+          }),
+        ],
       }),
     );
+  });
+
+  test('identifica préstamos sin contrato como heredados', async () => {
+    const legacyLoan = createLoan({
+      id: 'legacy-001',
+      name: 'Préstamo anterior',
+      startDate: '2026-01-01',
+      initialBalance: Money.from('1000.00', 'CRC'),
+      ordinaryPayment: Money.from('100.00', 'CRC'),
+      annualNominalRate: '0.12',
+      periodsPerYear: 12,
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+    });
+    render(<App repository={createRepository([legacyLoan])} />);
+
+    await screen.findByRole('heading', { name: 'Préstamo anterior' });
+    expect(screen.getByText('Préstamo heredado: falta plazo y seguro')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver préstamo' }));
+    expect(screen.getByText(/Este préstamo es heredado/)).toBeVisible();
   });
 });
