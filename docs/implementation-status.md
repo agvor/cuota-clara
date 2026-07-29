@@ -11,7 +11,7 @@
 | E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 3 |
 | E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 4 |
 | E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 1 |
-| E6 · Contrato financiero v2 | 0 | 0 | 0 | 0 | 4 |
+| E6 · Contrato financiero v2 | 1 | 0 | 0 | 0 | 4 |
 | E7 · Contrato y resultados legibles | 0 | 0 | 0 | 0 | 6 |
 
 ## Historias
@@ -47,3 +47,4 @@
 | US-026 | E7 · Contrato y resultados legibles | Calcular cuota automática y explorar componentes de proyección | Completado | US-025 |
 | US-027 | E4 · Escenarios y resultados | Proyectar aportes recurrentes y comparar dos escenarios | Completado | US-026 |
 | US-028 | E4 · Escenarios y resultados | Unificar administración y comparación visual de escenarios | Completado | US-027 |
+| US-029 | E6 · Contrato financiero v2 | Reconciliar cuota bancaria con tasa fija inicial y variable proyectada | Planeado | US-028 |

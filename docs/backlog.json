@@ -410,6 +410,20 @@
         "El detalle de amortización permite elegir hasta dos escenarios y los dibuja sobre el gráfico de saldo principal con estilos diferenciados.",
         "La misma vista muestra una tabla compacta con fecha final, plazo e interés ahorrados y total pagado para cada escenario elegido."
       ]
+    },
+    {
+      "id": "US-029",
+      "epic": "E6 · Contrato financiero v2",
+      "title": "Reconciliar cuota bancaria con tasa fija inicial y variable proyectada",
+      "story": "Como persona usuaria, quiero contrastar la cuota del simulador con la cotización de mi banco cuando una tasa fija inicial pasa a una tasa variable, para entender y reproducir la convención usada.",
+      "requirements": ["RF-003", "RF-013", "RNF-001", "RNF-002", "RNF-011"],
+      "dependsOn": ["US-028"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "Existe un caso de referencia documentado con cuota bancaria, desglose de la primera cuota, fechas, plazo, seguro, tasa fija y regla variable posterior confirmados por el banco.",
+        "La política distingue explícitamente entre recalcular la cuota en cada revisión y resolver una cuota nivelada con una trayectoria de tasas proyectada.",
+        "El motor reproduce el caso de referencia bajo la convención documentada, con prueba de regresión y sin reinterpretar contratos existentes."
+      ]
     }
   ]
 }
