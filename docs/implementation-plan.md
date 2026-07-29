@@ -4,7 +4,7 @@ Este backlog es la ruta de trabajo del MVP. Su fuente estructurada es [`backlog.
 
 ## Cómo tomar el siguiente trabajo
 
-Un agente debe tomar el primer ítem con estado `ready` cuyas dependencias estén completadas. Antes de modificar código, cambia su estado a `in_progress`, actualiza `updatedAt`, ejecuta `pnpm docs:sync` y no inicies otro ítem en paralelo. Al terminar, comprueba sus criterios de aceptación, marca `completed`, actualiza los requisitos que hayan quedado completamente entregados y ejecuta `pnpm verify`.
+Un agente debe tomar el primer ítem con estado `ready` cuyas dependencias estén completadas. Antes de modificar código, cambia su estado a `in_progress`, actualiza `updatedAt`, ejecuta `pnpm docs:sync` y no inicies otro ítem en paralelo. Al terminar, comprueba sus criterios de aceptación, marca `completed`, actualiza los requisitos que hayan quedado completamente entregados y ejecuta la verificación disponible en el entorno.
 
 Un ítem solo se marca `blocked` cuando describe la decisión o evidencia externa que falta. Nunca se marca `completed` porque "el código compila": deben cumplirse todos sus criterios, pruebas y documentación.
 
@@ -19,7 +19,7 @@ Un ítem solo se marca `blocked` cuando describe la decisión o evidencia extern
 | E5 · Respaldo y publicación       | Recuperación de datos y operación offline completa.                              | US-015 a US-016          |
 | E6 · Contrato financiero v2       | Plazo, seguro, estimación y regla variable TBP+margen migrables.                 | US-017 a US-020          |
 
-El orden no es una excusa para omitir dependencias: el campo `dependsOn` de cada historia es autoritativo. Antes de tomar `US-017`, resolver las preguntas de producto de [`domain/loan-contract-v2.md`](domain/loan-contract-v2.md); son decisiones financieras, no detalles de implementación. Las historias avanzadas —pagos recurrentes, aporte objetivo al principal, fuentes de tasa de referencia, sincronización y premium— se crearán como nuevos ítems después de validar el MVP.
+El orden no es una excusa para omitir dependencias: el campo `dependsOn` de cada historia es autoritativo. US-017 solo depende del respaldo: la terminación de la experiencia PWA offline (US-016) no bloquea una migración de dominio/persistencia. Las decisiones ya adoptadas y las pendientes están en [`domain/loan-contract-v2.md`](domain/loan-contract-v2.md). Las historias avanzadas —pagos recurrentes, aporte objetivo al principal, fuentes de tasa de referencia, sincronización y premium— se crearán como nuevos ítems después de validar el MVP.
 
 ## Definition of Ready
 
@@ -30,5 +30,5 @@ Una historia está lista si tiene requisitos relacionados, dependencias completa
 - Todas las pruebas del cambio pasan, incluyendo regresión financiera cuando aplique.
 - El requisito y los criterios de aceptación se cumplen, no solo la interfaz visible.
 - Requisitos, glosario, ADR y trazabilidad están actualizados cuando corresponde.
-- `pnpm verify` termina correctamente.
+- Las comprobaciones disponibles del repositorio terminan correctamente; si una no puede correr por el entorno, se documenta el motivo y no se oculta.
 - El cambio puede explicarse con entradas, políticas, resultados y limitaciones.

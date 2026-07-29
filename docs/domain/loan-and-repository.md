@@ -1,8 +1,10 @@
 # Préstamo y puerto de repositorio
 
-## Préstamo mínimo
+## Préstamo contractual
 
-La implementación actual de `Loan` contiene identificador, nombre, fecha inicial, saldo inicial, cuota ordinaria, tasa nominal anual, períodos por año y política de redondeo. Puede incluir una fase variable manual. Ese contrato es insuficiente para el plazo y seguro requeridos; el diseño propuesto está en [`loan-contract-v2.md`](loan-contract-v2.md) y debe reemplazarlo mediante migración explícita, no por valores inventados.
+`Loan` conserva sus campos financieros v1 para no romper proyecciones y pagos existentes. `createLoanV2` crea además un `contract` de versión `2`, con monto original, cuota mensual, seguro mensual y exactamente una de fecha final o cantidad total de cuotas. La cuota y el monto original duplicados deben coincidir con los campos v1.
+
+Un préstamo sin `contract` se identifica mediante `isLegacyLoan`. Es un registro heredado: no se le asignan plazo ni seguro por defecto y sigue pudiendo cargarse, exportarse y conservar sus pagos y escenarios. El diseño de detalle está en [`loan-contract-v2.md`](loan-contract-v2.md).
 
 Este contrato representa la configuración del préstamo; los pagos históricos y escenarios viven en el agregado asociado para que una proyección no modifique la realidad contractual.
 

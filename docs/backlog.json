@@ -233,7 +233,7 @@
       "story": "Como persona usuaria, quiero instalar CuotaClara y usar las funciones MVP sin conexión.",
       "requirements": ["RF-012", "RNF-005", "RNF-009"],
       "dependsOn": ["US-014", "US-015"],
-      "status": "in_progress",
+      "status": "planned",
       "acceptanceCriteria": [
         "La PWA es instalable y carga rutas esenciales sin red después de la primera visita.",
         "Se prueban actualización de caché y recuperación ante datos locales inválidos.",
@@ -245,13 +245,13 @@
       "epic": "E6 · Contrato financiero v2",
       "title": "Modelar plazo, seguro y migración de préstamo",
       "story": "Como persona usuaria, quiero declarar el plazo y seguro de mi préstamo para que la proyección represente el contrato sin inventar datos faltantes.",
-      "requirements": ["RF-002", "RF-013", "RNF-001", "RNF-002", "RNF-006"],
-      "dependsOn": ["US-015", "US-016"],
-      "status": "planned",
+      "requirements": ["RF-002", "RNF-001", "RNF-002", "RNF-006"],
+      "dependsOn": ["US-015"],
+      "status": "completed",
       "acceptanceCriteria": [
         "El contrato exige fecha final o total de cuotas y separa monto original, cuota mensual y seguro mensual.",
         "Los préstamos v1 no reciben plazo ni seguro inventados; una migración conserva exportación, pagos y escenarios.",
-        "La proyección informa principal, interés, seguro y total como importes separados."
+        "El modelo conserva el seguro como importe separado, listo para su desglose proyectado en US-018."
       ]
     },
     {
@@ -261,7 +261,7 @@
       "story": "Como persona usuaria, quiero ver antes de guardar la fecha final y el costo proyectados para contrastarlos con mi contrato.",
       "requirements": ["RF-004", "RF-013", "RNF-001", "RNF-011"],
       "dependsOn": ["US-017"],
-      "status": "planned",
+      "status": "ready",
       "acceptanceCriteria": [
         "La estimación muestra última cuota, número de cuotas, principal, interés, seguro y total de desembolsos.",
         "Un saldo final o pago final distinto se muestra de forma explícita.",
@@ -275,7 +275,7 @@
       "story": "Como persona usuaria, quiero simular mi fase variable con TBP+margen y supuestos de evolución para comparar alternativas reproducibles.",
       "requirements": ["RF-003", "RF-014", "RNF-002", "RNF-004", "RNF-011"],
       "dependsOn": ["US-017"],
-      "status": "planned",
+      "status": "ready",
       "acceptanceCriteria": [
         "La regla conserva TBP inicial, margen, frecuencia, evolución y variación por revisión en el escenario.",
         "Las opciones estable, alza progresiva y baja progresiva resuelven tasas deterministas sin red.",

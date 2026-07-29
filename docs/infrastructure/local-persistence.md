@@ -4,19 +4,21 @@
 
 ## Datos y transacciones
 
-La versión de esquema actual es **1** y define tres tablas:
+La versión de esquema actual es **2** y define tres tablas:
 
-| Tabla       | Clave e índices                 | Contenido                                                               |
-| ----------- | ------------------------------- | ----------------------------------------------------------------------- |
-| `loans`     | `id`                            | Configuración financiera serializada con importes decimales como texto. |
-| `payments`  | `id`, `loanId`, `[loanId+date]` | Pagos reales asociados a un préstamo.                                   |
-| `scenarios` | `id`, `loanId`                  | Capturas de configuración de escenarios.                                |
+| Tabla       | Clave e índices                 | Contenido                                                                       |
+| ----------- | ------------------------------- | ------------------------------------------------------------------------------- |
+| `loans`     | `id`                            | Configuración financiera y, opcionalmente, contrato v2 con importes como texto. |
+| `payments`  | `id`, `loanId`, `[loanId+date]` | Pagos reales asociados a un préstamo.                                           |
+| `scenarios` | `id`, `loanId`                  | Capturas de configuración de escenarios.                                        |
 
 `saveAggregate` valida y serializa todo el agregado antes de abrir una transacción. Después reemplaza los pagos y escenarios del préstamo y escribe el préstamo en una única transacción de IndexedDB. Por ello, un error de validación o de almacenamiento no deja un agregado a medio actualizar. Borrar un préstamo también elimina sus hijos dentro de una transacción.
 
 Los importes se guardan como `{ amount: string, currency: string }`; no se convierten a `number`. Al leer, el adaptador vuelve a construir `Money`, `Loan` y `PaymentRecord`, aplicando sus invariantes de dominio.
 
 ## Migraciones
+
+La versión 2 añade el campo no indexado `contract` a `loans`. No transforma las filas v1: la ausencia de ese campo identifica un préstamo heredado y evita inventar plazo o seguro. Pagos y escenarios se conservan. Hay una prueba que abre una base v1 realista con la declaración v2 y verifica los tres datos.
 
 Una modificación persistente incrementa la versión declarada por Dexie y añade una migración explícita. La migración debe ser compatible con datos reales y tener una prueba con datos de la versión previa. No se cambia el esquema existente sin una ruta de actualización ni se borra la base automáticamente.
 

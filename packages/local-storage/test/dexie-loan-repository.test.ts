@@ -3,7 +3,7 @@ import 'fake-indexeddb/auto';
 import { Dexie as DexieConstructor } from 'dexie/dist/dexie.js';
 import { describe, expect, test } from 'vitest';
 
-import { createPaymentRecord, createLoan, Money } from '@cuotaclara/domain';
+import { createLoanV2, createPaymentRecord, createLoan, Money } from '@cuotaclara/domain';
 
 import { DexieLoanRepository, LocalDataCorruptionError } from '../src/dexie-loan-repository.js';
 
@@ -140,5 +140,72 @@ describe('DexieLoanRepository', () => {
 
     await repository.close();
     database.close();
+  });
+
+  test('conserva el contrato v2 y deja los préstamos anteriores como heredados', async () => {
+    const repository = createRepository();
+    const aggregate = createAggregate();
+    const loan = createLoanV2({
+      id: aggregate.loan.id,
+      name: aggregate.loan.name,
+      startDate: aggregate.loan.startDate,
+      originalPrincipal: aggregate.loan.initialBalance,
+      monthlyInstallment: aggregate.loan.ordinaryPayment,
+      monthlyInsurance: Money.from('15.00', 'CRC'),
+      term: { totalInstallments: 180 },
+      annualNominalRate: aggregate.loan.annualNominalRate,
+      roundingPolicy,
+    });
+    await repository.saveAggregate({ ...aggregate, loan });
+
+    await expect(repository.loadAggregate(loan.id)).resolves.toMatchObject({
+      loan: { contract: { version: 2, term: { totalInstallments: 180 } } },
+    });
+    await repository.close();
+  });
+
+  test('migra una base v1 sin inventar contrato ni perder pagos o escenarios', async () => {
+    const databaseName = `cuotaclara-test-${crypto.randomUUID()}`;
+    const v1 = new DexieConstructor(databaseName);
+    v1.version(1).stores({
+      loans: 'id',
+      payments: 'id, loanId, [loanId+date]',
+      scenarios: 'id, loanId',
+    });
+    await v1.table('loans').put({
+      id: 'legacy-001',
+      name: 'Préstamo heredado',
+      startDate: '2026-01-01',
+      initialBalance: { amount: '1000', currency: 'CRC' },
+      ordinaryPayment: { amount: '100', currency: 'CRC' },
+      annualNominalRate: '0.12',
+      periodsPerYear: 12,
+      roundingPolicy,
+    });
+    await v1.table('payments').put({
+      id: 'legacy-payment-001',
+      loanId: 'legacy-001',
+      date: '2026-02-01',
+      totalAmount: { amount: '100', currency: 'CRC' },
+      source: 'manual',
+    });
+    await v1.table('scenarios').put({
+      id: 'legacy-scenario-001',
+      loanId: 'legacy-001',
+      name: 'Base',
+      configuration: { rateMode: 'fixed' },
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
+    v1.close();
+
+    const repository = new DexieLoanRepository({ databaseName });
+    await expect(repository.loadAggregate('legacy-001')).resolves.toMatchObject({
+      loan: { id: 'legacy-001' },
+      payments: [{ id: 'legacy-payment-001' }],
+      scenarios: [{ id: 'legacy-scenario-001' }],
+    });
+    const aggregate = await repository.loadAggregate('legacy-001');
+    expect(aggregate?.loan.contract).toBeUndefined();
+    await repository.close();
   });
 });

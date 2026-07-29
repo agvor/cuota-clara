@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { createLoan, createPaymentRecord, Money } from '@cuotaclara/domain';
+import { createLoan, createLoanV2, createPaymentRecord, Money } from '@cuotaclara/domain';
 
 import { createBackup, parseBackup } from '../src/index.js';
 
@@ -38,5 +38,30 @@ describe('backup', () => {
 
   test('rechaza una copia de versión o estructura desconocida', () => {
     expect(() => parseBackup('{"schemaVersion":99}')).toThrow('respaldo');
+  });
+
+  test('conserva contratos v2 y permite restaurar copias v1 heredadas', () => {
+    const loan = createLoanV2({
+      id: 'loan-v2',
+      name: 'Hipoteca v2',
+      startDate: '2026-01-01',
+      originalPrincipal: Money.from('1000.00', 'CRC'),
+      monthlyInstallment: Money.from('100.00', 'CRC'),
+      monthlyInsurance: Money.from('5.00', 'CRC'),
+      term: { totalInstallments: 12 },
+      annualNominalRate: '0.12',
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+    });
+    const v2 = createBackup([{ ...aggregate, loan }], '2026-07-29T00:00:00.000Z');
+    const restoredV2 = parseBackup(JSON.stringify(v2));
+
+    expect(v2.schemaVersion).toBe(2);
+    expect(restoredV2.aggregates[0]?.loan.contract).toMatchObject({
+      version: 2,
+      term: { totalInstallments: 12 },
+    });
+
+    const v1Text = JSON.stringify({ ...createBackup([aggregate]), schemaVersion: 1 });
+    expect(parseBackup(v1Text).aggregates[0]?.loan.contract).toBeUndefined();
   });
 });

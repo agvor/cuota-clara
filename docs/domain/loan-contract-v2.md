@@ -1,20 +1,20 @@
-# Modelo contractual de préstamo v2 (propuesto)
+# Modelo contractual de préstamo v2
 
-Este documento prepara la sustitución del modelo mínimo actual. No describe comportamiento implementado todavía ni autoriza inferir datos que la persona usuaria no haya proporcionado.
+US-017 implementa el núcleo contractual, su serialización y la migración compatible. La captura desde la interfaz y los cálculos de estimación/TBP siguen planificados en US-018 a US-020. Ninguna ruta infiere datos que la persona usuaria no haya proporcionado.
 
 ## Datos del contrato
 
 La próxima versión del préstamo deberá distinguir estos datos, todos en moneda decimal del préstamo:
 
-| Dato                                       | Regla propuesta                                                                        | Propósito                                                                            |
-| ------------------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Fecha de inicio                            | Obligatoria, ISO.                                                                      | Primer día del contrato y ancla del calendario.                                      |
-| Fecha final **o** cantidad total de cuotas | Al menos uno obligatorio; si se informan ambos deben ser coherentes con el calendario. | Define el plazo contractual.                                                         |
-| Monto original                             | Positivo.                                                                              | Principal originalmente financiado; no se confunde con saldo histórico reconciliado. |
-| Tasa nominal anual inicial                 | Decimal anual no negativo.                                                             | Tasa de la fase fija.                                                                |
-| Cuota mensual contractual                  | Positiva.                                                                              | Pago ordinario que amortiza principal e interés.                                     |
-| Seguro mensual                             | No negativo; por defecto `0`.                                                          | Cargo mensual separado, no aplicado a principal.                                     |
-| Periodicidad                               | El primer alcance será mensual (`12` pagos/año).                                       | Evita inventar un calendario para contratos no mensuales.                            |
+| Dato                                       | Regla propuesta                                  | Propósito                                                                            |
+| ------------------------------------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| Fecha de inicio                            | Obligatoria, ISO.                                | Primer día del contrato y ancla del calendario.                                      |
+| Fecha final **o** cantidad total de cuotas | Exactamente uno obligatorio.                     | Define el plazo contractual.                                                         |
+| Monto original                             | Positivo.                                        | Principal originalmente financiado; no se confunde con saldo histórico reconciliado. |
+| Tasa nominal anual inicial                 | Decimal anual no negativo.                       | Tasa de la fase fija.                                                                |
+| Cuota mensual contractual                  | Positiva.                                        | Pago ordinario que amortiza principal e interés.                                     |
+| Seguro mensual                             | No negativo; por defecto `0`.                    | Cargo mensual separado, no aplicado a principal.                                     |
+| Periodicidad                               | El primer alcance será mensual (`12` pagos/año). | Evita inventar un calendario para contratos no mensuales.                            |
 
 El seguro mensual se mostrará separado. La primera regla propuesta es que no financia principal ni devenga interés; el total de desembolsos proyectado será **principal + interés + seguro**. Comisiones u otros cargos no se introducirán hasta tener una regla contractual específica.
 
@@ -50,13 +50,12 @@ Antes de guardar o editar un préstamo, la UI deberá presentar una estimación 
 
 Si la cuota no cubre el interés y seguro aplicables, no se produce una estimación: se muestra un error contractual explícito. Cuando la fecha final o el número de cuotas limita el plazo, cualquier saldo remanente o pago final distinto debe mostrarse, nunca ajustarse silenciosamente.
 
-## Supuestos que requieren confirmación de producto
+## Decisiones vigentes y pendientes
 
-1. ¿La cuota mensual indicada excluye siempre el seguro? Esta propuesta asume que sí.
-2. ¿El seguro es constante, o puede cambiar por periodo? Esta propuesta inicial lo fija mensual.
-3. ¿La variación de TBP debe ser en puntos porcentuales por revisión (propuesta) o porcentual relativa?
-4. Ante cambio de tasa variable, ¿se conserva cuota y cambia plazo (propuesta actual) o se recalcula cuota manteniendo fecha final?
-5. ¿El margen TBP+margen se registra como tasa anual nominal, como puntos porcentuales o ambos? La propuesta lo trata como decimal anual sumable.
+1. La cuota mensual excluye el seguro; el seguro es fijo por mes y no se financia ni devenga interés.
+2. La variación de TBP propuesta es en puntos porcentuales anuales por revisión, no porcentual relativa.
+3. US-019 debe decidir y documentar si, ante cambio de tasa, conserva cuota y cambia plazo o recalcula cuota manteniendo fecha final.
+4. El margen TBP+margen se tratará como decimal anual sumable.
 
 ## Migración de datos existentes
 

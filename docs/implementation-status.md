@@ -2,7 +2,7 @@
 
 > Generado desde `docs/backlog.json` el 2026-07-29. No editar manualmente.
 
-**Siguiente ítem habilitado:** ninguno; revisar dependencias o bloqueos.
+**Siguiente ítem habilitado:** US-018 — Estimar fecha y costo inicial del préstamo
 
 | Épica | Planeado | Listo | En curso | Bloqueado | Completado |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -10,8 +10,8 @@
 | E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 3 |
 | E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 3 |
 | E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 2 |
-| E5 · Respaldo y publicación | 0 | 0 | 1 | 0 | 1 |
-| E6 · Contrato financiero v2 | 4 | 0 | 0 | 0 | 0 |
+| E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 1 |
+| E6 · Contrato financiero v2 | 1 | 2 | 0 | 0 | 1 |
 
 ## Historias
 
@@ -33,8 +33,8 @@
 | US-013 | E4 · Escenarios y resultados | Comparar escenario base y pago extraordinario | Completado | US-006, US-011 |
 | US-014 | E4 · Escenarios y resultados | Mostrar tabla y evolución de saldo | Completado | US-012, US-013 |
 | US-015 | E5 · Respaldo y publicación | Respaldar y restaurar datos locales | Completado | US-009, US-011 |
-| US-016 | E5 · Respaldo y publicación | Completar experiencia offline e instalación | En curso | US-014, US-015 |
-| US-017 | E6 · Contrato financiero v2 | Modelar plazo, seguro y migración de préstamo | Planeado | US-015, US-016 |
-| US-018 | E6 · Contrato financiero v2 | Estimar fecha y costo inicial del préstamo | Planeado | US-017 |
-| US-019 | E6 · Contrato financiero v2 | Resolver tasa variable TBP más margen | Planeado | US-017 |
+| US-016 | E5 · Respaldo y publicación | Completar experiencia offline e instalación | Planeado | US-014, US-015 |
+| US-017 | E6 · Contrato financiero v2 | Modelar plazo, seguro y migración de préstamo | Completado | US-015 |
+| US-018 | E6 · Contrato financiero v2 | Estimar fecha y costo inicial del préstamo | Listo | US-017 |
+| US-019 | E6 · Contrato financiero v2 | Resolver tasa variable TBP más margen | Listo | US-017 |
 | US-020 | E6 · Contrato financiero v2 | Configurar contrato y escenario TBP desde la PWA | Planeado | US-018, US-019 |
