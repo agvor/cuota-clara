@@ -1,0 +1,33 @@
+{
+  "caseId": "contract-total-payment-insufficient-v1",
+  "version": 1,
+  "title": "Cuota total incluida con seguro que no cubre el interés inicial",
+  "source": {
+    "type": "synthetic",
+    "isBankValidated": false,
+    "reference": "Caso de regla creado para CuotaClara a partir de los datos de producto; no representa una liquidación bancaria.",
+    "containsPersonalData": false
+  },
+  "inputs": {
+    "currency": "CRC",
+    "startDate": "2026-01-15",
+    "totalInstallments": 360,
+    "originalPrincipal": "115000000",
+    "monthlyTotalPayment": "900000",
+    "monthlyInsurance": "150000",
+    "annualNominalRate": "0.085",
+    "periodsPerYear": 12,
+    "rounding": {
+      "scale": 2,
+      "mode": "half_up",
+      "stage": "interest_each_period"
+    },
+    "basePaymentRule": "monthly_total_payment - monthly_insurance",
+    "interestRule": "opening_balance * annual_nominal_rate / 12"
+  },
+  "expected": {
+    "basePayment": "750000.00",
+    "firstInterest": "814583.33",
+    "errorIncludes": "cuota base derivada de cuota total menos seguro"
+  }
+}

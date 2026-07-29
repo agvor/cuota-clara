@@ -2,7 +2,7 @@
 
 US-017 implementa el núcleo contractual, su serialización y la migración compatible. US-018 implementa la estimación de costo y fecha; US-019 la regla TBP; y US-020 expone ambas capacidades en la PWA. Ninguna ruta infiere datos que la persona usuaria no haya proporcionado.
 
-> Estado de producto: la interpretación actual de cuota v2 será reemplazada por la cuota total acordada. El plan y las incompatibilidades de migración están en [`contract-payment-and-results-v3.md`](contract-payment-and-results-v3.md); no se implementa ni se infiere ese cambio todavía.
+> Estado de producto: v2 permanece como formato heredado de cuota base. El contrato v3 activo guarda cuota total incluida con seguro y deriva la cuota base. La migración visible sigue siendo explícita; véase [`contract-payment-and-results-v3.md`](contract-payment-and-results-v3.md).
 
 ## Datos del contrato
 

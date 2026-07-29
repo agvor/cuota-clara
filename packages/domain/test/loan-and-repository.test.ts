@@ -1,6 +1,13 @@
 import { describe, expect, test } from 'vitest';
 
-import { createLoan, createLoanV2, isLegacyLoan, LoanValidationError } from '../src/loan/loan.js';
+import {
+  createLoan,
+  createLoanV2,
+  createLoanV3,
+  isLegacyLoan,
+  LoanValidationError,
+  requiresContractMigration,
+} from '../src/loan/loan.js';
 import { Money } from '../src/money.js';
 
 const roundingPolicy = { scale: 2, mode: 'half_up' } as const;
@@ -89,5 +96,39 @@ describe('Loan', () => {
 
     expect(isLegacyLoan(legacyLoan)).toBe(true);
     expect(legacyLoan.contract).toBeUndefined();
+  });
+
+  test('deriva cuota base de una cuota total v3 incluida con seguro', () => {
+    const loan = createLoanV3({
+      id: 'loan-v3',
+      name: 'Hipoteca v3',
+      startDate: '2026-01-01',
+      originalPrincipal: Money.from('115000000', 'CRC'),
+      monthlyTotalPayment: Money.from('900000', 'CRC'),
+      monthlyInsurance: Money.from('150000', 'CRC'),
+      term: { totalInstallments: 360 },
+      annualNominalRate: '0.085',
+      roundingPolicy,
+    });
+
+    expect(loan.contract).toMatchObject({ version: 3 });
+    expect(loan.ordinaryPayment.toFixed(roundingPolicy)).toBe('750000.00');
+    expect(requiresContractMigration(loan)).toBe(false);
+  });
+
+  test('rechaza una cuota total que no deja cuota base', () => {
+    expect(() =>
+      createLoanV3({
+        id: 'loan-invalid',
+        name: 'Inválido',
+        startDate: '2026-01-01',
+        originalPrincipal: Money.from('1000', 'CRC'),
+        monthlyTotalPayment: Money.from('10', 'CRC'),
+        monthlyInsurance: Money.from('10', 'CRC'),
+        term: { totalInstallments: 12 },
+        annualNominalRate: '0.12',
+        roundingPolicy,
+      }),
+    ).toThrow(LoanValidationError);
   });
 });

@@ -183,19 +183,24 @@ export function App({ repository }: AppProps) {
                           <dd>{formatMoney(loan, loan.initialBalance)}</dd>
                         </div>
                         <div>
-                          <dt>Cuota ordinaria</dt>
-                          <dd>{formatMoney(loan, loan.ordinaryPayment)}</dd>
+                          <dt>Cuota mensual</dt>
+                          <dd>
+                            {formatMoney(
+                              loan,
+                              loan.contract?.version === 3
+                                ? loan.contract.monthlyTotalPayment
+                                : loan.ordinaryPayment,
+                            )}
+                          </dd>
                         </div>
                         <div>
                           <dt>Tasa nominal anual</dt>
                           <dd>{Number(loan.annualNominalRate) * 100}%</dd>
                         </div>
                       </dl>
-                      <p className={loan.contract ? 'contract-status' : 'inherited-notice'}>
-                        {loan.contract
-                          ? 'Contrato v2 configurado'
-                          : 'Préstamo heredado: falta plazo y seguro'}
-                      </p>
+                      {!loan.contract ? (
+                        <p className="inherited-notice">Préstamo heredado: falta plazo y seguro</p>
+                      ) : null}
                       <button type="button" onClick={() => void selectLoan(loan.id)}>
                         Ver préstamo
                       </button>

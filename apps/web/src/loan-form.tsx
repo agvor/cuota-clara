@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 
 import {
-  createLoanV2,
+  createLoanV3,
   estimateLoanContract,
   Money,
   type Loan,
@@ -26,7 +26,7 @@ type FormValues = Readonly<{
   startDate: string;
   currency: string;
   originalPrincipal: string;
-  monthlyInstallment: string;
+  monthlyTotalPayment: string;
   monthlyInsurance: string;
   termMode: TermMode;
   totalInstallments: string;
@@ -57,10 +57,12 @@ function initialValues(loan: Loan | undefined): FormValues {
     currency: loan?.initialBalance.currency ?? 'CRC',
     originalPrincipal:
       contract?.originalPrincipal.toDecimalString() ?? loan?.initialBalance.toDecimalString() ?? '',
-    monthlyInstallment:
-      contract?.monthlyInstallment.toDecimalString() ??
-      loan?.ordinaryPayment.toDecimalString() ??
-      '',
+    monthlyTotalPayment:
+      contract?.version === 3
+        ? contract.monthlyTotalPayment.toDecimalString()
+        : contract?.version === 2
+          ? contract.monthlyInstallment.add(contract.monthlyInsurance).toDecimalString()
+          : (loan?.ordinaryPayment.toDecimalString() ?? ''),
     monthlyInsurance: contract?.monthlyInsurance.toDecimalString() ?? '0',
     termMode,
     totalInstallments:
@@ -98,12 +100,12 @@ function parseVariableRates(value: string) {
 }
 
 function createConfiguredLoan(values: FormValues, id: string): Loan {
-  return createLoanV2({
+  return createLoanV3({
     id,
     name: values.name,
     startDate: values.startDate,
     originalPrincipal: Money.from(values.originalPrincipal, values.currency),
-    monthlyInstallment: Money.from(values.monthlyInstallment, values.currency),
+    monthlyTotalPayment: Money.from(values.monthlyTotalPayment, values.currency),
     monthlyInsurance: Money.from(values.monthlyInsurance, values.currency),
     term:
       values.termMode === 'installments'
@@ -228,8 +230,14 @@ export function LoanForm({ loan, onCancel, onSave }: LoanFormProps) {
       <h2 id="loan-form-title">{loan ? 'Editar préstamo' : 'Crear préstamo'}</h2>
       {loan && !loan.contract ? (
         <p className="inherited-notice" role="status">
-          Préstamo heredado: completa plazo y seguro para migrarlo a contrato v2. No se inventarán
+          Préstamo heredado: completa plazo y seguro para migrarlo a contrato v3. No se inventarán
           datos.
+        </p>
+      ) : null}
+      {loan?.contract?.version === 2 ? (
+        <p className="inherited-notice" role="status">
+          Contrato v2 heredado: al guardar se migrará a cuota total, conservando el total efectivo
+          actual (cuota base más seguro).
         </p>
       ) : null}
       <form onSubmit={(event) => void submit(event)}>
@@ -271,16 +279,16 @@ export function LoanForm({ loan, onCancel, onSave }: LoanFormProps) {
             />
           </label>
           <label>
-            Cuota mensual, sin seguro
+            Cuota mensual total, incluido seguro
             <input
               required
               inputMode="decimal"
-              value={values.monthlyInstallment}
-              onChange={(event) => update('monthlyInstallment', event.target.value)}
+              value={values.monthlyTotalPayment}
+              onChange={(event) => update('monthlyTotalPayment', event.target.value)}
             />
           </label>
           <label>
-            Seguro mensual, separado
+            Seguro mensual, incluido en la cuota total
             <input
               required
               inputMode="decimal"

@@ -2,7 +2,13 @@ import { readFile } from 'node:fs/promises';
 
 import { describe, expect, test } from 'vitest';
 
-import { ContractEstimateError, createLoanV2, estimateLoanContract, Money } from '../src/index.js';
+import {
+  ContractEstimateError,
+  createLoanV2,
+  createLoanV3,
+  estimateLoanContract,
+  Money,
+} from '../src/index.js';
 
 const roundingPolicy = { scale: 2, mode: 'half_up' } as const;
 
@@ -124,5 +130,56 @@ describe('estimateLoanContract', () => {
     });
 
     expect(() => estimateLoanContract(loan)).toThrow(ContractEstimateError);
+  });
+
+  test('rechaza el caso de referencia cuya cuota total deja una base insuficiente', async () => {
+    const file = new URL('./fixtures/contract-total-payment-insufficient-v1.json', import.meta.url);
+    const reference = JSON.parse(await readFile(file, 'utf8')) as {
+      caseId: string;
+      inputs: Record<string, string | number>;
+      expected: { basePayment: string; errorIncludes: string };
+    };
+    const loan = createLoanV3({
+      id: 'loan-total-insufficient',
+      name: 'Cuota total insuficiente',
+      startDate: String(reference.inputs.startDate),
+      originalPrincipal: Money.from(
+        String(reference.inputs.originalPrincipal),
+        String(reference.inputs.currency),
+      ),
+      monthlyTotalPayment: Money.from(
+        String(reference.inputs.monthlyTotalPayment),
+        String(reference.inputs.currency),
+      ),
+      monthlyInsurance: Money.from(
+        String(reference.inputs.monthlyInsurance),
+        String(reference.inputs.currency),
+      ),
+      term: { totalInstallments: Number(reference.inputs.totalInstallments) },
+      annualNominalRate: String(reference.inputs.annualNominalRate),
+      roundingPolicy,
+    });
+
+    expect(reference.caseId).toBe('contract-total-payment-insufficient-v1');
+    expect(loan.ordinaryPayment.toFixed(roundingPolicy)).toBe(reference.expected.basePayment);
+    expect(() => estimateLoanContract(loan)).toThrow(reference.expected.errorIncludes);
+  });
+
+  test('programa la cuota 360 exactamente 30 años después del inicio', () => {
+    const loan = createLoanV3({
+      id: 'loan-360',
+      name: 'Treinta años',
+      startDate: '2026-01-15',
+      originalPrincipal: Money.from('1000000', 'CRC'),
+      monthlyTotalPayment: Money.from('100', 'CRC'),
+      monthlyInsurance: Money.from('0', 'CRC'),
+      term: { totalInstallments: 360 },
+      annualNominalRate: '0',
+      roundingPolicy,
+    });
+
+    const estimate = estimateLoanContract(loan);
+    expect(estimate.finalInstallmentDate).toBe('2056-01-15');
+    expect(estimate.estimatedInstallments).toBe(360);
   });
 });

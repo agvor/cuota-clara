@@ -1,6 +1,6 @@
 # ADR-0006: Cuota total, calendario contractual y resultados bajo demanda
 
-- Estado: aceptado para planificar; pendiente de implementación en US-021 a US-023
+- Estado: aceptado; US-021 implementado, US-022 a US-023 pendientes
 - Fecha: 2026-07-29
 
 ## Contexto
@@ -9,7 +9,7 @@ La implementación v2 actual interpreta la cuota mensual como importe base y sum
 
 ## Decisiones
 
-1. El próximo contrato guarda `monthlyTotalPayment` y `monthlyInsurance`. La cuota base se deriva como `monthlyTotalPayment − monthlyInsurance`; debe ser positiva y es la única parte disponible para interés y principal.
+1. El contrato v3 guarda `monthlyTotalPayment` y `monthlyInsurance`. La cuota base se deriva como `monthlyTotalPayment − monthlyInsurance`; debe ser positiva y es la única parte disponible para interés y principal.
 2. El seguro se cobra dentro del total, no amortiza ni devenga interés. El estimador debe rechazar una cuota base que no cubra el interés del periodo y explicar ambos importes.
 3. Para `N` cuotas mensuales, la cuota `N` vence en `startDate + N meses`, conservando el día ancla o el último día del mes cuando no exista. Así, 360 cuotas son exactamente 30 años desde el inicio.
 4. El formato monetario será centralizado, localizado y basado en importes decimales ya redondeados, sin convertir valores financieros arbitrariamente a `number`. Debe aplicarse a resúmenes, formularios, tablas y gráficos.

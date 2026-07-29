@@ -20,11 +20,11 @@ Un pago extraordinario único se identifica, se programa en una fecha de pago y 
 
 El resumen contiene fecha de finalización, total de interés, principal y pago. La función rechaza una cuota que no reduzca principal, monedas distintas, fechas no crecientes y una lista de fechas insuficiente para cancelar el saldo.
 
-## Estimación de contrato v2
+## Estimación de contrato
 
-`estimateLoanContract` construye el calendario mensual de un contrato v2 y reutiliza la misma regla de interés. Separa seguro de principal e interés y expone tanto el total desembolsado como el saldo que queda si el plazo declarado no alcanza. Si la liquidación ocurre antes, informa la cuota final reducida; si no, nunca inventa una cuota adicional.
+`estimateLoanContract` construye el calendario mensual de un contrato v2 o v3 y reutiliza la misma regla de interés. En v3 deriva antes la cuota base (`cuota total − seguro`) y rechaza un período donde esa base no cubra interés. Separa seguro de principal e interés y expone tanto el total desembolsado como el saldo que queda si el plazo declarado no alcanza. Si la liquidación ocurre antes, informa la cuota final reducida; si no, nunca inventa una cuota adicional.
 
-Su caso de referencia sintético es [`contract-estimate-monthly-insurance-v1`](../../packages/domain/test/fixtures/contract-estimate-monthly-insurance-v1.json). El seguro es fijo, se cobra por cada cuota proyectada y no devenga interés ni amortiza principal. La estimación no prorratea interés por días ni constituye una liquidación bancaria.
+Sus casos de referencia sintéticos son [`contract-estimate-monthly-insurance-v1`](../../packages/domain/test/fixtures/contract-estimate-monthly-insurance-v1.json) y [`contract-total-payment-insufficient-v1`](../../packages/domain/test/fixtures/contract-total-payment-insufficient-v1.json). El seguro es fijo, se cobra por cada cuota proyectada y no devenga interés ni amortiza principal. La estimación no prorratea interés por días ni constituye una liquidación bancaria.
 
 ## Tasa variable TBP+margen
 
@@ -32,7 +32,7 @@ Su caso de referencia sintético es [`contract-estimate-monthly-insurance-v1`](.
 
 ## Límites conocidos
 
-- El motor genérico no incorpora seguros ni comisiones; la estimación contractual v2 aplica el seguro mensual fijo por separado.
+- El motor genérico no incorpora seguros ni comisiones; la estimación contractual aplica el seguro mensual fijo por separado.
 - No decide ni genera el calendario de pagos; esa política se incorporará de forma explícita cuando exista evidencia contractual.
 - No representa aún atrasos, pagos parciales ni cambios de cuota.
 
@@ -40,6 +40,4 @@ El caso [`fixed-rate-monthly-v1`](../../packages/domain/test/fixtures/fixed-rate
 
 `projectLoanAmortization` adapta la configuración de un `Loan` al motor y genera el calendario contractual inicial para frecuencias que dividen doce. La presentación usa ese resultado para la tabla y el gráfico, sin repetir cálculos financieros.
 
-## Cambio acordado, aún no implementado
-
-ADR-0006 reemplaza la semántica v2 de cuota base por cuota total incluida con seguro. US-021 migrará el contrato y hará que el motor derive la cuota disponible para principal e interés antes de calcular la amortización. El motor actual no debe usarse para afirmar que un total de cuota que incluye seguro es amortizable hasta que exista esa migración y sus casos de referencia.
+La vista de tabla y gráfico bajo demanda sigue pendiente en US-023; el dominio conserva el cálculo completo y determinista sin conocimiento de la interfaz.

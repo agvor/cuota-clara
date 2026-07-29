@@ -4,7 +4,9 @@ import {
   createLoan,
   createPaymentRecord,
   type Loan,
+  type LoanContract,
   type LoanContractV2,
+  type LoanContractV3,
   type LoanAggregate,
   type LoanRepository,
   Money,
@@ -33,7 +35,7 @@ type StoredLoan = Readonly<{
   tbpMarginRatePlan?: Loan['tbpMarginRatePlan'];
   periodsPerYear: number;
   roundingPolicy: RoundingPolicy;
-  contract?: StoredLoanContractV2;
+  contract?: StoredLoanContract;
 }>;
 
 type StoredLoanContractV2 = Readonly<{
@@ -43,6 +45,16 @@ type StoredLoanContractV2 = Readonly<{
   monthlyInsurance: StoredMoney;
   term: Readonly<{ endDate: string }> | Readonly<{ totalInstallments: number }>;
 }>;
+
+type StoredLoanContractV3 = Readonly<{
+  version: 3;
+  originalPrincipal: StoredMoney;
+  monthlyTotalPayment: StoredMoney;
+  monthlyInsurance: StoredMoney;
+  term: Readonly<{ endDate: string }> | Readonly<{ totalInstallments: number }>;
+}>;
+
+type StoredLoanContract = StoredLoanContractV2 | StoredLoanContractV3;
 
 type StoredPayment = Readonly<{
   id: string;
@@ -98,6 +110,13 @@ export class DexieLoanRepository implements LoanRepository {
     // v2 agrega el contrato como campo no indexado. Las filas v1 se conservan
     // intactas y se reconocen como heredadas por la ausencia de `contract`.
     this.database.version(2).stores({
+      loans: 'id',
+      payments: 'id, loanId, [loanId+date]',
+      scenarios: 'id, loanId',
+    });
+    // v3 permite persistir cuota total incluida con seguro. Las filas v2 se
+    // conservan sin reinterpretarlas para que la migración sea explícita.
+    this.database.version(3).stores({
       loans: 'id',
       payments: 'id, loanId, [loanId+date]',
       scenarios: 'id, loanId',
@@ -227,19 +246,29 @@ function deserializeLoan(value: unknown): Loan {
   }
 }
 
-function serializeContract(contract: LoanContractV2): StoredLoanContractV2 {
+function serializeContract(contract: LoanContract): StoredLoanContract {
+  if (contract.version === 2) {
+    return Object.freeze({
+      version: 2,
+      originalPrincipal: serializeMoney(contract.originalPrincipal),
+      monthlyInstallment: serializeMoney(contract.monthlyInstallment),
+      monthlyInsurance: serializeMoney(contract.monthlyInsurance),
+      term: Object.freeze({ ...contract.term }),
+    });
+  }
   return Object.freeze({
-    version: 2,
+    version: 3,
     originalPrincipal: serializeMoney(contract.originalPrincipal),
-    monthlyInstallment: serializeMoney(contract.monthlyInstallment),
+    monthlyTotalPayment: serializeMoney(contract.monthlyTotalPayment),
     monthlyInsurance: serializeMoney(contract.monthlyInsurance),
     term: Object.freeze({ ...contract.term }),
   });
 }
 
-function deserializeContract(value: unknown): LoanContractV2 {
+function deserializeContract(value: unknown): LoanContract {
   const record = readRecord(value, 'loan.contract');
-  if (readNumber(record, 'version', 'loan.contract') !== 2) {
+  const version = readNumber(record, 'version', 'loan.contract');
+  if (version !== 2 && version !== 3) {
     throw new Error('la versión del contrato no es compatible');
   }
   const term = readRecord(record.term, 'loan.contract.term');
@@ -249,19 +278,32 @@ function deserializeContract(value: unknown): LoanContractV2 {
       : Object.freeze({
           totalInstallments: readNumber(term, 'totalInstallments', 'loan.contract.term'),
         });
-  return Object.freeze({
-    version: 2,
+  const common = {
     originalPrincipal: deserializeMoney(
       record.originalPrincipal,
       'loan.contract.originalPrincipal',
     ),
-    monthlyInstallment: deserializeMoney(
-      record.monthlyInstallment,
-      'loan.contract.monthlyInstallment',
-    ),
     monthlyInsurance: deserializeMoney(record.monthlyInsurance, 'loan.contract.monthlyInsurance'),
     term: contractTerm,
-  });
+  };
+  if (version === 2) {
+    return Object.freeze({
+      version: 2,
+      ...common,
+      monthlyInstallment: deserializeMoney(
+        record.monthlyInstallment,
+        'loan.contract.monthlyInstallment',
+      ),
+    });
+  }
+  return Object.freeze({
+    version: 3,
+    ...common,
+    monthlyTotalPayment: deserializeMoney(
+      record.monthlyTotalPayment,
+      'loan.contract.monthlyTotalPayment',
+    ),
+  }) as LoanContractV3;
 }
 
 function serializePayment(payment: PaymentRecord, loanId: string, currency: string): StoredPayment {

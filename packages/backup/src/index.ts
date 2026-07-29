@@ -2,12 +2,14 @@ import {
   createLoan,
   createPaymentRecord,
   Money,
+  type LoanContract,
   type LoanContractV2,
+  type LoanContractV3,
   type LoanAggregate,
   type ProjectionScenarioSnapshot,
 } from '@cuotaclara/domain';
 
-const CURRENT_SCHEMA_VERSION = 2;
+const CURRENT_SCHEMA_VERSION = 3;
 
 type StoredMoney = Readonly<{ amount: string; currency: string }>;
 export type BackupDocument = Readonly<{
@@ -58,7 +60,11 @@ export function parseBackup(
     throw new BackupValidationError('no contiene JSON válido.');
   }
   const backup = record(value, 'raíz');
-  if (backup.schemaVersion !== 1 && backup.schemaVersion !== CURRENT_SCHEMA_VERSION)
+  if (
+    backup.schemaVersion !== 1 &&
+    backup.schemaVersion !== 2 &&
+    backup.schemaVersion !== CURRENT_SCHEMA_VERSION
+  )
     throw new BackupValidationError('la versión de esquema no es compatible.');
   if (typeof backup.createdAt !== 'string' || !Array.isArray(backup.aggregates))
     throw new BackupValidationError('faltan fecha o agregados.');
@@ -116,19 +122,29 @@ function storeMoney(money: Money): StoredMoney {
   return Object.freeze({ amount: money.toDecimalString(), currency: money.currency });
 }
 
-function storeContract(contract: LoanContractV2) {
+function storeContract(contract: LoanContract) {
+  if (contract.version === 2) {
+    return Object.freeze({
+      version: 2 as const,
+      originalPrincipal: storeMoney(contract.originalPrincipal),
+      monthlyInstallment: storeMoney(contract.monthlyInstallment),
+      monthlyInsurance: storeMoney(contract.monthlyInsurance),
+      term: Object.freeze({ ...contract.term }),
+    });
+  }
   return Object.freeze({
-    version: 2 as const,
+    version: 3 as const,
     originalPrincipal: storeMoney(contract.originalPrincipal),
-    monthlyInstallment: storeMoney(contract.monthlyInstallment),
+    monthlyTotalPayment: storeMoney(contract.monthlyTotalPayment),
     monthlyInsurance: storeMoney(contract.monthlyInsurance),
     term: Object.freeze({ ...contract.term }),
   });
 }
 
-function parseContract(value: unknown): LoanContractV2 {
+function parseContract(value: unknown): LoanContract {
   const contract = record(value, 'préstamo.contrato');
-  if (number(contract.version, 'préstamo.contrato.versión') !== 2)
+  const version = number(contract.version, 'préstamo.contrato.versión');
+  if (version !== 2 && version !== 3)
     throw new BackupValidationError('la versión del contrato no es compatible.');
   const term = record(contract.term, 'préstamo.contrato.plazo');
   const hasEndDate = typeof term.endDate === 'string';
@@ -140,13 +156,23 @@ function parseContract(value: unknown): LoanContractV2 {
     : Object.freeze({
         totalInstallments: number(term.totalInstallments, 'préstamo.contrato.totalCuotas'),
       });
-  return Object.freeze({
-    version: 2,
+  const common = {
     originalPrincipal: parseMoney(contract.originalPrincipal, 'préstamo.contrato.montoOriginal'),
-    monthlyInstallment: parseMoney(contract.monthlyInstallment, 'préstamo.contrato.cuotaMensual'),
     monthlyInsurance: parseMoney(contract.monthlyInsurance, 'préstamo.contrato.seguroMensual'),
     term: parsedTerm,
-  });
+  };
+  if (version === 2) {
+    return Object.freeze({
+      version: 2,
+      ...common,
+      monthlyInstallment: parseMoney(contract.monthlyInstallment, 'préstamo.contrato.cuotaMensual'),
+    });
+  }
+  return Object.freeze({
+    version: 3,
+    ...common,
+    monthlyTotalPayment: parseMoney(contract.monthlyTotalPayment, 'préstamo.contrato.cuotaTotal'),
+  }) as LoanContractV3;
 }
 function parseMoney(value: unknown, field: string): Money {
   const money = record(value, field);

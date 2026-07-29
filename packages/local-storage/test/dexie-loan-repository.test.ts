@@ -5,6 +5,7 @@ import { describe, expect, test } from 'vitest';
 
 import {
   createLoanV2,
+  createLoanV3,
   createPaymentRecord,
   createLoan,
   createTbpMarginScenario,
@@ -167,6 +168,11 @@ describe('DexieLoanRepository', () => {
     await expect(repository.loadAggregate(loan.id)).resolves.toMatchObject({
       loan: { contract: { version: 2, term: { totalInstallments: 180 } } },
     });
+    const loaded = await repository.loadAggregate(loan.id);
+    if (!loaded?.loan.contract || loaded.loan.contract.version !== 2) {
+      throw new Error('El contrato v2 no se recuperó como dato heredado.');
+    }
+    expect(loaded.loan.contract.monthlyInstallment.toFixed(roundingPolicy)).toBe('1000.00');
     await repository.close();
   });
 
@@ -261,6 +267,30 @@ describe('DexieLoanRepository', () => {
     await expect(repository.loadAggregate(loan.id)).resolves.toMatchObject({
       loan: { tbpMarginRatePlan: { kind: 'tbp_margin_v1', evolution: 'baja_progresiva' } },
     });
+    await repository.close();
+  });
+
+  test('persiste cuota total v3 sin reinterpretar el contrato v2 existente', async () => {
+    const repository = createRepository();
+    const aggregate = createAggregate();
+    const loan = createLoanV3({
+      id: aggregate.loan.id,
+      name: aggregate.loan.name,
+      startDate: aggregate.loan.startDate,
+      originalPrincipal: aggregate.loan.initialBalance,
+      monthlyTotalPayment: Money.from('1015', 'CRC'),
+      monthlyInsurance: Money.from('15', 'CRC'),
+      term: { totalInstallments: 180 },
+      annualNominalRate: aggregate.loan.annualNominalRate,
+      roundingPolicy,
+    });
+    await repository.saveAggregate({ ...aggregate, loan });
+
+    await expect(repository.loadAggregate(loan.id)).resolves.toMatchObject({
+      loan: { contract: { version: 3, term: { totalInstallments: 180 } } },
+    });
+    const loaded = await repository.loadAggregate(loan.id);
+    expect(loaded?.loan.ordinaryPayment.toFixed(roundingPolicy)).toBe('1000.00');
     await repository.close();
   });
 });

@@ -1,15 +1,15 @@
-# Ajuste de contrato y resultados v3 (planificado)
+# Ajuste de contrato y resultados v3
 
-Este documento traduce las observaciones de producto en trabajo comprobable. Describe el destino; el comportamiento actual sigue documentado como v2 hasta que US-021 lo migre.
+Este documento traduce las observaciones de producto en trabajo comprobable. US-021 implementa el contrato v3 en dominio, persistencia local, respaldos y formulario. La migración visible de un v2 ocurre al editarlo y guardar la conservación de su total efectivo; el formato universal y el resumen inmediato pertenecen a US-022.
 
 ## Diferencia que debe migrarse
 
-| Concepto                   | v2 actual               | v3 acordado                                                  |
+| Concepto                   | v2 heredado             | v3 implementado                                              |
 | -------------------------- | ----------------------- | ------------------------------------------------------------ |
 | Campo ingresado como cuota | Cuota base, sin seguro. | Cuota total, incluido seguro.                                |
 | Cálculo base               | No se deriva.           | `cuota total − seguro mensual`.                              |
 | Total proyectado           | Cuota base + seguro.    | Cuota total; principal, interés y seguro siguen desglosados. |
-| V2 almacenado              | Contrato activo.        | Dato heredado hasta migración explícita.                     |
+| V2 almacenado              | Dato heredado.          | Dato activo al crear o migrar explícitamente.                |
 
 No se debe interpretar automáticamente la cuota v2 como cuota total: hacerlo cambiaría el importe contractual conocido. La migración solicitará confirmación de la persona usuaria o conservará el préstamo como heredado.
 
@@ -29,7 +29,7 @@ La primera cuota se programa un mes después de la fecha de inicio. La cuota nú
 | Tasa nominal anual     | 8.5% (`0.085`) |
 | Interés del primer mes |     814,583.33 |
 
-La cuota base no cubre ese interés inicial. US-021 debe emitir un error contractual trazable; no puede presentar un plan amortizable ni absorber silenciosamente la diferencia con el seguro.
+La cuota base no cubre ese interés inicial. US-021 emite un error contractual trazable; no presenta un plan amortizable ni absorbe silenciosamente la diferencia con el seguro. El fixture ejecutable es [`contract-total-payment-insufficient-v1`](../../packages/domain/test/fixtures/contract-total-payment-insufficient-v1.json).
 
 ## Presentación acordada
 
@@ -40,6 +40,6 @@ La cuota base no cubre ese interés inicial. US-021 debe emitir un error contrac
 
 ## Secuencia de entrega
 
-- **US-021:** contrato total, migración y casos de referencia.
+- **US-021:** contrato total, migración y casos de referencia. **Completado en dominio y persistencia.**
 - **US-022:** formato monetario universal y resumen inmediato.
 - **US-023:** detalle de amortización y gráfico ajustable bajo demanda.

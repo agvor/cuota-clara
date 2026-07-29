@@ -43,14 +43,14 @@ export class ContractEstimateError extends Error {
 }
 
 /**
- * Proyecta un contrato v2 con su cuota mensual y seguro separado.
+ * Proyecta un contrato v2 o v3 con su cuota base y seguro mensual separado.
  * La estimación usa tasa nominal anual dividida entre doce y no sustituye el
  * estado histórico ni una liquidación bancaria.
  */
 export function estimateLoanContract(loan: Loan): LoanContractEstimate {
   const contract = loan.contract;
   if (!contract) {
-    throw new ContractEstimateError('La estimación requiere un contrato v2 con plazo y seguro.');
+    throw new ContractEstimateError('La estimación requiere un contrato con plazo y seguro.');
   }
   if (loan.periodsPerYear !== 12) {
     throw new ContractEstimateError(
@@ -91,7 +91,9 @@ export function estimateLoanContract(loan: Loan): LoanContractEstimate {
     const principal = installment.subtract(interest);
     if (principal.isLessThanOrEqualTo(zero)) {
       throw new ContractEstimateError(
-        `La cuota mensual no cubre el interés exigible en la cuota ${index + 1}.`,
+        contract.version === 3
+          ? `La cuota base derivada de cuota total menos seguro no cubre el interés exigible en la cuota ${index + 1}.`
+          : `La cuota mensual no cubre el interés exigible en la cuota ${index + 1}.`,
       );
     }
     const closingBalance = openingBalance.subtract(principal);

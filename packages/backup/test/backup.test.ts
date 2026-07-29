@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'vitest';
 
-import { createLoan, createLoanV2, createPaymentRecord, Money } from '@cuotaclara/domain';
+import {
+  createLoan,
+  createLoanV2,
+  createLoanV3,
+  createPaymentRecord,
+  Money,
+} from '@cuotaclara/domain';
 
 import { createBackup, parseBackup } from '../src/index.js';
 
@@ -40,8 +46,8 @@ describe('backup', () => {
     expect(() => parseBackup('{"schemaVersion":99}')).toThrow('respaldo');
   });
 
-  test('conserva contratos v2 y permite restaurar copias v1 heredadas', () => {
-    const loan = createLoanV2({
+  test('conserva contratos v3 y permite restaurar copias v1 y v2', () => {
+    const v2Loan = createLoanV2({
       id: 'loan-v2',
       name: 'Hipoteca v2',
       startDate: '2026-01-01',
@@ -52,13 +58,30 @@ describe('backup', () => {
       annualNominalRate: '0.12',
       roundingPolicy: { scale: 2, mode: 'half_up' },
     });
-    const v2 = createBackup([{ ...aggregate, loan }], '2026-07-29T00:00:00.000Z');
-    const restoredV2 = parseBackup(JSON.stringify(v2));
+    const v2Backup = createBackup([{ ...aggregate, loan: v2Loan }], '2026-07-29T00:00:00.000Z');
+    const restoredV2 = parseBackup(JSON.stringify({ ...v2Backup, schemaVersion: 2 }));
 
-    expect(v2.schemaVersion).toBe(2);
     expect(restoredV2.aggregates[0]?.loan.contract).toMatchObject({
       version: 2,
       term: { totalInstallments: 12 },
+    });
+
+    const v3Loan = createLoanV3({
+      id: 'loan-v3',
+      name: 'Hipoteca v3',
+      startDate: '2026-01-01',
+      originalPrincipal: Money.from('1000.00', 'CRC'),
+      monthlyTotalPayment: Money.from('105.00', 'CRC'),
+      monthlyInsurance: Money.from('5.00', 'CRC'),
+      term: { totalInstallments: 12 },
+      annualNominalRate: '0.12',
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+    });
+    const v3 = createBackup([{ ...aggregate, loan: v3Loan }], '2026-07-29T00:00:00.000Z');
+    expect(v3.schemaVersion).toBe(3);
+    expect(parseBackup(JSON.stringify(v3)).aggregates[0]?.loan.contract).toMatchObject({
+      version: 3,
+      monthlyTotalPayment: expect.objectContaining({ currency: 'CRC' }),
     });
 
     const v1Text = JSON.stringify({ ...createBackup([aggregate]), schemaVersion: 1 });

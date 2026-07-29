@@ -19,7 +19,7 @@ export type Loan = Readonly<{
   tbpMarginRatePlan?: TbpMarginRatePlan;
   periodsPerYear: number;
   roundingPolicy: RoundingPolicy;
-  contract?: LoanContractV2;
+  contract?: LoanContract;
 }>;
 
 export type CreateLoanInput = Loan;
@@ -34,12 +34,36 @@ export type LoanContractV2 = Readonly<{
   term: LoanTerm;
 }>;
 
+export type LoanContractV3 = Readonly<{
+  version: 3;
+  originalPrincipal: Money;
+  monthlyTotalPayment: Money;
+  monthlyInsurance: Money;
+  term: LoanTerm;
+}>;
+
+export type LoanContract = LoanContractV2 | LoanContractV3;
+
 export type CreateLoanV2Input = Readonly<{
   id: string;
   name: string;
   startDate: string;
   originalPrincipal: Money;
   monthlyInstallment: Money;
+  monthlyInsurance: Money;
+  term: LoanTerm;
+  annualNominalRate: string;
+  variableRatePlan?: ManualVariableRatePlan;
+  tbpMarginRatePlan?: TbpMarginRatePlan;
+  roundingPolicy: RoundingPolicy;
+}>;
+
+export type CreateLoanV3Input = Readonly<{
+  id: string;
+  name: string;
+  startDate: string;
+  originalPrincipal: Money;
+  monthlyTotalPayment: Money;
   monthlyInsurance: Money;
   term: LoanTerm;
   annualNominalRate: string;
@@ -88,14 +112,17 @@ export function createLoan(input: CreateLoanInput): Loan {
   }
   if (input.contract) {
     validateContract(input.contract, input.startDate, input.initialBalance.currency);
-    if (
-      !sameMoney(input.contract.originalPrincipal, input.initialBalance) ||
-      !sameMoney(input.contract.monthlyInstallment, input.ordinaryPayment)
-    ) {
+    if (!sameMoney(input.contract.originalPrincipal, input.initialBalance)) {
       throw new LoanValidationError(
-        'El contrato debe coincidir con el monto original y la cuota del préstamo.',
+        'El contrato debe coincidir con el monto original del préstamo.',
       );
     }
+    const expectedBasePayment =
+      input.contract.version === 2
+        ? input.contract.monthlyInstallment
+        : input.contract.monthlyTotalPayment.subtract(input.contract.monthlyInsurance);
+    if (!sameMoney(expectedBasePayment, input.ordinaryPayment))
+      throw new LoanValidationError('El contrato debe coincidir con la cuota base del préstamo.');
   }
   return Object.freeze({ ...input });
 }
@@ -134,29 +161,66 @@ export function createLoanV2(input: CreateLoanV2Input): Loan {
   });
 }
 
+/** Crea el contrato v3: la cuota ingresada incluye el seguro mensual. */
+export function createLoanV3(input: CreateLoanV3Input): Loan {
+  const contract: LoanContractV3 = Object.freeze({
+    version: 3,
+    originalPrincipal: input.originalPrincipal,
+    monthlyTotalPayment: input.monthlyTotalPayment,
+    monthlyInsurance: input.monthlyInsurance,
+    term: Object.freeze({ ...input.term }),
+  });
+  validateContract(contract, input.startDate, input.originalPrincipal.currency);
+  const basePayment = input.monthlyTotalPayment.subtract(input.monthlyInsurance);
+  return createLoan({
+    id: input.id,
+    name: input.name,
+    startDate: input.startDate,
+    initialBalance: input.originalPrincipal,
+    ordinaryPayment: basePayment,
+    annualNominalRate: input.annualNominalRate,
+    ...(input.variableRatePlan ? { variableRatePlan: input.variableRatePlan } : {}),
+    ...(input.tbpMarginRatePlan ? { tbpMarginRatePlan: input.tbpMarginRatePlan } : {}),
+    periodsPerYear: 12,
+    roundingPolicy: input.roundingPolicy,
+    contract,
+  });
+}
+
 export function isLegacyLoan(loan: Loan): boolean {
   return !loan.contract;
 }
 
-function validateContract(contract: LoanContractV2, startDate: string, currency: string): void {
-  if (contract.version !== 2)
+export function requiresContractMigration(loan: Loan): boolean {
+  return !loan.contract || loan.contract.version !== 3;
+}
+
+function validateContract(contract: LoanContract, startDate: string, currency: string): void {
+  if (contract.version !== 2 && contract.version !== 3)
     throw new LoanValidationError('La versión del contrato no es compatible.');
   if (!contract.originalPrincipal.isPositive()) {
     throw new LoanValidationError('El monto original debe ser positivo.');
   }
-  if (!contract.monthlyInstallment.isPositive()) {
-    throw new LoanValidationError('La cuota mensual debe ser positiva.');
-  }
   if (contract.monthlyInsurance.isNegative()) {
     throw new LoanValidationError('El seguro mensual no puede ser negativo.');
   }
-  const amounts = [
-    contract.originalPrincipal,
-    contract.monthlyInstallment,
-    contract.monthlyInsurance,
-  ];
+  const monthlyPayment =
+    contract.version === 2 ? contract.monthlyInstallment : contract.monthlyTotalPayment;
+  if (monthlyPayment.isZero() || !monthlyPayment.isPositive()) {
+    throw new LoanValidationError('La cuota mensual debe ser positiva.');
+  }
+  const amounts = [contract.originalPrincipal, monthlyPayment, contract.monthlyInsurance];
   if (amounts.some((amount) => amount.currency !== currency)) {
     throw new LoanValidationError('El contrato debe usar una única moneda.');
+  }
+  if (
+    contract.version === 3 &&
+    (contract.monthlyTotalPayment.subtract(contract.monthlyInsurance).isZero() ||
+      !contract.monthlyTotalPayment.subtract(contract.monthlyInsurance).isPositive())
+  ) {
+    throw new LoanValidationError(
+      'La cuota total menos el seguro debe dejar una cuota base positiva.',
+    );
   }
   const hasEndDate = 'endDate' in contract.term;
   const hasTotalInstallments = 'totalInstallments' in contract.term;

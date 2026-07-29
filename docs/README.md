@@ -4,26 +4,26 @@ La documentación es parte del producto y se mantiene en el mismo cambio que el 
 
 ## Fuentes de verdad
 
-| Tema                                           | Fuente                                       |
-| ---------------------------------------------- | -------------------------------------------- |
-| Alcance y comportamiento                       | `requirements.md`                            |
-| Conceptos y reglas del dominio                 | `domain/glossary.md`                         |
-| Motor de amortización inicial                  | `domain/amortization-engine.md`              |
-| Estado histórico y reconciliación              | `domain/historical-state.md`                 |
-| Transición a tasa variable manual              | `domain/manual-variable-rates.md`            |
-| Escenarios con pago extraordinario único       | `domain/one-time-extra-payment-scenarios.md` |
-| Préstamo y puerto de repositorio               | `domain/loan-and-repository.md`              |
-| Contrato v2, seguro y escenarios TBP+margen    | `domain/loan-contract-v2.md`                 |
-| Importación CSV de pagos                       | `import/payment-csv.md`                      |
-| Persistencia local, migraciones y recuperación | `infrastructure/local-persistence.md`        |
-| Respaldo y restauración                        | `backup.md`                                  |
-| PWA, navegación y estado offline actual        | `pwa.md`                                     |
-| Preparación y ejecución local                  | `run.md`                                     |
-| Límites y componentes                          | `architecture.md`                            |
-| Decisiones irreversibles                       | `adr/`                                       |
-| Estado de requisitos                           | `traceability.json` → `status.md`            |
-| Plan y estado de implementación                | `backlog.json` → `implementation-status.md`  |
-| Dependencias y criterios de selección          | `technologies.md`                            |
+| Tema                                            | Fuente                                                                     |
+| ----------------------------------------------- | -------------------------------------------------------------------------- |
+| Alcance y comportamiento                        | `requirements.md`                                                          |
+| Conceptos y reglas del dominio                  | `domain/glossary.md`                                                       |
+| Motor de amortización inicial                   | `domain/amortization-engine.md`                                            |
+| Estado histórico y reconciliación               | `domain/historical-state.md`                                               |
+| Transición a tasa variable manual               | `domain/manual-variable-rates.md`                                          |
+| Escenarios con pago extraordinario único        | `domain/one-time-extra-payment-scenarios.md`                               |
+| Préstamo y puerto de repositorio                | `domain/loan-and-repository.md`                                            |
+| Contratos v2/v3, seguro y escenarios TBP+margen | `domain/loan-contract-v2.md` y `domain/contract-payment-and-results-v3.md` |
+| Importación CSV de pagos                        | `import/payment-csv.md`                                                    |
+| Persistencia local, migraciones y recuperación  | `infrastructure/local-persistence.md`                                      |
+| Respaldo y restauración                         | `backup.md`                                                                |
+| PWA, navegación y estado offline actual         | `pwa.md`                                                                   |
+| Preparación y ejecución local                   | `run.md`                                                                   |
+| Límites y componentes                           | `architecture.md`                                                          |
+| Decisiones irreversibles                        | `adr/`                                                                     |
+| Estado de requisitos                            | `traceability.json` → `status.md`                                          |
+| Plan y estado de implementación                 | `backlog.json` → `implementation-status.md`                                |
+| Dependencias y criterios de selección           | `technologies.md`                                                          |
 
 `status.md`, `implementation-status.md` y `run.md` se generan desde sus fuentes; nunca se editan a mano. Ejecuta `pnpm docs:sync` tras cambiar el estado de una entrega, scripts o paquetes de ejecución. `pnpm docs:check` comprueba que los informes generados sigan coherentes. La automatización evita desalineación mecánica; actualizar el contenido de una decisión sigue siendo responsabilidad de quien hace el cambio.
 

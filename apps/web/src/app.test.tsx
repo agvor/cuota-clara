@@ -5,7 +5,7 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
-import { createLoan, Money, type LoanRepository } from '@cuotaclara/domain';
+import { createLoan, createLoanV2, Money, type LoanRepository } from '@cuotaclara/domain';
 
 import { App } from './app.js';
 
@@ -46,7 +46,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Resumen de Hipoteca principal' })).toBeVisible();
   });
 
-  test('guarda contrato v2, estimación y escenario TBP en un agregado nuevo', async () => {
+  test('guarda contrato v3 con cuota total, estimación y escenario TBP en un agregado nuevo', async () => {
     const repository = createRepository([]);
     render(<App repository={repository} />);
     await screen.findByRole('heading', { name: 'Aún no hay préstamos' });
@@ -54,10 +54,10 @@ describe('App', () => {
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Préstamo mixto' } });
     fireEvent.change(screen.getByLabelText('Fecha de inicio'), { target: { value: '2026-01-01' } });
     fireEvent.change(screen.getByLabelText('Monto original'), { target: { value: '100000.00' } });
-    fireEvent.change(screen.getByLabelText('Cuota mensual, sin seguro'), {
-      target: { value: '1100.00' },
+    fireEvent.change(screen.getByLabelText('Cuota mensual total, incluido seguro'), {
+      target: { value: '1115.00' },
     });
-    fireEvent.change(screen.getByLabelText('Seguro mensual, separado'), {
+    fireEvent.change(screen.getByLabelText('Seguro mensual, incluido en la cuota total'), {
       target: { value: '15.00' },
     });
     fireEvent.change(screen.getByLabelText('Número total de cuotas'), {
@@ -75,7 +75,12 @@ describe('App', () => {
       expect.objectContaining({
         loan: expect.objectContaining({
           name: 'Préstamo mixto',
-          contract: expect.objectContaining({ monthlyInsurance: expect.anything() }),
+          ordinaryPayment: expect.objectContaining({}),
+          contract: expect.objectContaining({
+            version: 3,
+            monthlyTotalPayment: expect.anything(),
+            monthlyInsurance: expect.anything(),
+          }),
           tbpMarginRatePlan: expect.objectContaining({ kind: 'tbp_margin_v1', fixedPeriods: 12 }),
         }),
         scenarios: [
@@ -104,5 +109,45 @@ describe('App', () => {
     expect(screen.getByText('Préstamo heredado: falta plazo y seguro')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Ver préstamo' }));
     expect(screen.getByText(/Este préstamo es heredado/)).toBeVisible();
+  });
+
+  test('migra un contrato v2 a cuota total v3 únicamente al guardarlo', async () => {
+    const v2Loan = createLoanV2({
+      id: 'loan-v2',
+      name: 'Préstamo anterior',
+      startDate: '2026-01-01',
+      originalPrincipal: Money.from('100000.00', 'CRC'),
+      monthlyInstallment: Money.from('1100.00', 'CRC'),
+      monthlyInsurance: Money.from('15.00', 'CRC'),
+      term: { totalInstallments: 180 },
+      annualNominalRate: '0.12',
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+    });
+    const repository = createRepository([v2Loan]);
+    vi.mocked(repository.loadAggregate).mockResolvedValue({
+      loan: v2Loan,
+      payments: [],
+      scenarios: [],
+    });
+    render(<App repository={repository} />);
+
+    await screen.findByRole('heading', { name: 'Préstamo anterior' });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver préstamo' }));
+    expect(await screen.findByRole('button', { name: 'Editar préstamo' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Editar préstamo' }));
+    expect(screen.getByText(/Contrato v2 heredado/)).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar préstamo' }));
+
+    await waitFor(() => expect(repository.saveAggregate).toHaveBeenCalledTimes(1));
+    const saved = vi.mocked(repository.saveAggregate).mock.calls[0]?.[0];
+    expect(saved?.loan.contract).toMatchObject({ version: 3 });
+    if (!saved?.loan.contract || saved.loan.contract.version !== 3) {
+      throw new Error('No se guardó el contrato v3 esperado.');
+    }
+    expect(saved.loan.contract.monthlyTotalPayment.toFixed(saved.loan.roundingPolicy)).toBe(
+      '1115.00',
+    );
+    expect(saved.loan.ordinaryPayment.toFixed(saved.loan.roundingPolicy)).toBe('1100.00');
   });
 });

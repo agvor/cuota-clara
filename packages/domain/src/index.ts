@@ -58,12 +58,17 @@ export {
 export {
   createLoan,
   createLoanV2,
+  createLoanV3,
   isLegacyLoan,
+  requiresContractMigration,
   LoanValidationError,
   type CreateLoanInput,
   type CreateLoanV2Input,
+  type CreateLoanV3Input,
   type Loan,
+  type LoanContract,
   type LoanContractV2,
+  type LoanContractV3,
   type LoanTerm,
 } from './loan/loan.js';
 export {
