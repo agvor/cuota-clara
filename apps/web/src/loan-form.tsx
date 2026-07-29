@@ -470,7 +470,7 @@ function TbpFields({
         </select>
       </label>
       <label>
-        Variación por revisión (puntos porcentuales anuales)
+        Variación por revisión anual (%)
         <input
           required
           inputMode="decimal"
