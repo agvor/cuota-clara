@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react';
 
-import type { Loan, LoanAggregate, LoanRepository, PaymentRecord } from '@cuotaclara/domain';
+import type {
+  Loan,
+  LoanAggregate,
+  LoanRepository,
+  PaymentRecord,
+  ProjectionScenarioSnapshot,
+} from '@cuotaclara/domain';
 
 import { LoanForm } from './loan-form.js';
 import { PaymentTools } from './payment-tools.js';
+import { ScenarioTools } from './scenario-tools.js';
 import './styles.css';
 
 export type AppProps = Readonly<{
@@ -111,6 +118,16 @@ export function App({ repository }: AppProps) {
     setSelectedAggregate(aggregate);
   }
 
+  async function saveScenario(scenario: ProjectionScenarioSnapshot) {
+    if (!selectedAggregate) return;
+    const aggregate = {
+      ...selectedAggregate,
+      scenarios: [...selectedAggregate.scenarios, scenario],
+    };
+    await repository.saveAggregate(aggregate);
+    setSelectedAggregate(aggregate);
+  }
+
   return (
     <div className="app-shell">
       <a className="skip-link" href="#loans">
@@ -186,6 +203,7 @@ export function App({ repository }: AppProps) {
                   aggregate={selectedAggregate}
                   onSavePayment={savePayment}
                   onImportPayments={importPayments}
+                  onSaveScenario={saveScenario}
                 />
               ) : null}
             </>
@@ -217,6 +235,7 @@ function LoanDetail({
   aggregate,
   onSavePayment,
   onImportPayments,
+  onSaveScenario,
 }: Readonly<{
   loan: Loan | undefined;
   onEdit: () => void;
@@ -225,6 +244,7 @@ function LoanDetail({
   aggregate: LoanAggregate | undefined;
   onSavePayment: (payment: PaymentRecord) => Promise<void>;
   onImportPayments: (payments: readonly PaymentRecord[]) => Promise<void>;
+  onSaveScenario: (scenario: ProjectionScenarioSnapshot) => Promise<void>;
 }>) {
   if (!loan) return null;
   return (
@@ -255,6 +275,13 @@ function LoanDetail({
       ) : (
         <p aria-live="polite">Cargando pagos…</p>
       )}
+      {aggregate?.loan.id === loan.id ? (
+        <ScenarioTools
+          loan={loan}
+          scenarios={aggregate.scenarios}
+          onSaveScenario={onSaveScenario}
+        />
+      ) : null}
     </section>
   );
 }

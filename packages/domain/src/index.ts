@@ -57,6 +57,7 @@ export type {
 export {
   compareLoanWithOneTimeExtraPayment,
   createOneTimeExtraPaymentScenario,
+  isOneTimeExtraPaymentScenario,
   ScenarioValidationError,
   type OneTimeExtraPaymentComparison,
   type OneTimeExtraPaymentScenario,

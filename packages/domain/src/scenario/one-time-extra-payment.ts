@@ -109,6 +109,22 @@ export function compareLoanWithOneTimeExtraPayment(input: {
   });
 }
 
+export function isOneTimeExtraPaymentScenario(
+  scenario: ProjectionScenarioSnapshot,
+): scenario is OneTimeExtraPaymentScenario {
+  const configuration = scenario.configuration;
+  const extraPayment = configuration.extraPayment;
+  return (
+    configuration.kind === SCENARIO_KIND &&
+    typeof extraPayment === 'object' &&
+    extraPayment !== null &&
+    typeof (extraPayment as Record<string, unknown>).id === 'string' &&
+    typeof (extraPayment as Record<string, unknown>).date === 'string' &&
+    typeof (extraPayment as Record<string, unknown>).amount === 'string' &&
+    typeof (extraPayment as Record<string, unknown>).currency === 'string'
+  );
+}
+
 function deserializeExtraPayment(scenario: OneTimeExtraPaymentScenario): OneTimeExtraPayment {
   const configuration = scenario.configuration;
   if (configuration.kind !== SCENARIO_KIND) {
