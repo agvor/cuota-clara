@@ -191,7 +191,7 @@
       "story": "Como persona usuaria, quiero comparar un escenario base contra un pago extra sin alterar mi historial real.",
       "requirements": ["RF-008", "RF-009", "RNF-004"],
       "dependsOn": ["US-006", "US-011"],
-      "status": "planned",
+      "status": "in_progress",
       "acceptanceCriteria": [
         "Se crean y guardan escenarios independientes por préstamo.",
         "La comparación muestra fecha final, plazo, total pagado, interés y ahorro.",

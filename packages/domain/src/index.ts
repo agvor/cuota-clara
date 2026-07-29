@@ -54,3 +54,10 @@ export type {
   LoanRepository,
   ProjectionScenarioSnapshot,
 } from './ports/loan-repository.js';
+export {
+  compareLoanWithOneTimeExtraPayment,
+  createOneTimeExtraPaymentScenario,
+  ScenarioValidationError,
+  type OneTimeExtraPaymentComparison,
+  type OneTimeExtraPaymentScenario,
+} from './scenario/one-time-extra-payment.js';

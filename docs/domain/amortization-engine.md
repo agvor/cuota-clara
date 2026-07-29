@@ -2,7 +2,7 @@
 
 ## Modelo implementado
 
-`generateFixedRateAmortization` genera una tabla de cuota periódica fija para una tasa nominal anual fija. Recibe las fechas de pago de forma explícita para no ocultar todavía una política de calendario —por ejemplo, qué ocurre con el día 31 o feriados— dentro del motor.
+`generateFixedRateAmortization` genera una tabla de cuota periódica fija para una tasa nominal anual fija o una serie variable manual. Recibe las fechas de pago de forma explícita para no ocultar todavía una política de calendario —por ejemplo, qué ocurre con el día 31 o feriados— dentro del motor.
 
 En cada periodo aplica este orden:
 
@@ -22,7 +22,7 @@ El resumen contiene fecha de finalización, total de interés, principal y pago.
 
 ## Límites conocidos
 
-- No incorpora pagos extraordinarios recurrentes, seguros, comisiones ni tasas variables.
+- No incorpora pagos extraordinarios recurrentes, seguros ni comisiones.
 - No decide ni genera el calendario de pagos; esa política se incorporará de forma explícita cuando exista evidencia contractual.
 - No representa aún atrasos, pagos parciales ni cambios de cuota.
 
