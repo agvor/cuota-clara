@@ -7,9 +7,10 @@ CuotaClara es un simulador de préstamos local-first. La exactitud, trazabilidad
 ## Antes de cambiar código
 
 1. Lee `docs/requirements.md`, `docs/architecture.md` y el glosario que afecte el cambio.
-2. Identifica los requisitos por su identificador (`RF-*` o `RNF-*`).
-3. Expón cualquier regla financiera ambigua como supuesto; no la inventes silenciosamente.
-4. Escribe primero una prueba que falle; implementa el cambio mínimo y refactoriza con las pruebas en verde.
+2. Lee `docs/implementation-plan.md` y toma únicamente el siguiente ítem habilitado del backlog.
+3. Identifica los requisitos por su identificador (`RF-*` o `RNF-*`).
+4. Expón cualquier regla financiera ambigua como supuesto; no la inventes silenciosamente.
+5. Escribe primero una prueba que falle; implementa el cambio mínimo y refactoriza con las pruebas en verde.
 
 ## Reglas no negociables
 
@@ -30,9 +31,11 @@ En el mismo cambio, actualiza los documentos afectados y `docs/traceability.json
 | Decisión estructural o tecnológica    | ADR en `docs/adr/`, arquitectura o tecnologías   |
 | Tipo, invariante o término financiero | `docs/domain/glossary.md`                        |
 | Entrega o avance de requisito         | `docs/traceability.json` y estado generado       |
+| Avance de una historia                | `docs/backlog.json` y estado generado            |
 
 ## Recursos para trabajo agentic
 
 - Usa [`.agents/prompts/`](.agents/prompts/README.md) para tareas repetibles.
+- Para proseguir de forma autónoma, usa [`.agents/prompts/next-work-item.md`](.agents/prompts/next-work-item.md).
 - Las habilidades específicas del proyecto viven en [`.agents/skills/`](.agents/skills/README.md). Cada una requiere un `SKILL.md` autosuficiente.
 - Mantén prompts y habilidades libres de secretos, datos reales de clientes y afirmaciones financieras sin fuente.

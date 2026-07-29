@@ -4,16 +4,17 @@ La documentación es parte del producto y se mantiene en el mismo cambio que el 
 
 ## Fuentes de verdad
 
-| Tema                                  | Fuente                            |
-| ------------------------------------- | --------------------------------- |
-| Alcance y comportamiento              | `requirements.md`                 |
-| Conceptos y reglas del dominio        | `domain/glossary.md`              |
-| Límites y componentes                 | `architecture.md`                 |
-| Decisiones irreversibles              | `adr/`                            |
-| Estado de requisitos                  | `traceability.json` → `status.md` |
-| Dependencias y criterios de selección | `technologies.md`                 |
+| Tema                                  | Fuente                                      |
+| ------------------------------------- | ------------------------------------------- |
+| Alcance y comportamiento              | `requirements.md`                           |
+| Conceptos y reglas del dominio        | `domain/glossary.md`                        |
+| Límites y componentes                 | `architecture.md`                           |
+| Decisiones irreversibles              | `adr/`                                      |
+| Estado de requisitos                  | `traceability.json` → `status.md`           |
+| Plan y estado de implementación       | `backlog.json` → `implementation-status.md` |
+| Dependencias y criterios de selección | `technologies.md`                           |
 
-`status.md` se genera desde `traceability.json`; nunca se edita a mano. Ejecuta `npm run docs:sync` tras cambiar el estado de una entrega. `npm run docs:check` comprueba que el estado generado y los documentos obligatorios sigan coherentes. La automatización evita desalineación mecánica; actualizar el contenido de una decisión sigue siendo responsabilidad de quien hace el cambio.
+`status.md` e `implementation-status.md` se generan desde sus fuentes JSON; nunca se editan a mano. Ejecuta `pnpm docs:sync` tras cambiar el estado de una entrega. `pnpm docs:check` comprueba que los informes generados sigan coherentes. La automatización evita desalineación mecánica; actualizar el contenido de una decisión sigue siendo responsabilidad de quien hace el cambio.
 
 ## Ciclo de documentación
 

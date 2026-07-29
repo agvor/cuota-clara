@@ -26,6 +26,8 @@ pnpm verify
 - [Glosario e invariantes](docs/domain/glossary.md)
 - [Estructura del repositorio](docs/project-structure.md)
 - [Estándares de cambio, TDD y validación](docs/development.md)
+- [Plan de implementación](docs/implementation-plan.md)
+- [Estado de implementación](docs/implementation-status.md)
 - [Proceso de documentación viva](docs/README.md)
 - [Estado generado](docs/status.md)
 

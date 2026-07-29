@@ -1,0 +1,230 @@
+{
+  "updatedAt": "2026-07-28",
+  "items": [
+    {
+      "id": "US-001",
+      "epic": "E1 · Motor financiero verificable",
+      "title": "Establecer casos de referencia financieros",
+      "story": "Como responsable del producto, quiero casos de referencia documentados para verificar el motor contra reglas y resultados conocidos.",
+      "requirements": ["RNF-001", "RNF-002", "RNF-011"],
+      "dependsOn": [],
+      "status": "ready",
+      "acceptanceCriteria": [
+        "Existe una plantilla de caso con entradas, supuestos, fuente, periodos y resultados esperados.",
+        "Se registra al menos un caso fijo sintético y se declara que no reemplaza una validación bancaria real.",
+        "Los valores no contienen datos personales ni contratos sin autorización."
+      ]
+    },
+    {
+      "id": "US-002",
+      "epic": "E1 · Motor financiero verificable",
+      "title": "Representar dinero y redondeo de forma decimal",
+      "story": "Como persona usuaria, quiero que los importes y redondeos se calculen de forma consistente para confiar en la proyección.",
+      "requirements": ["RNF-001", "RNF-002"],
+      "dependsOn": ["US-001"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "El dominio expone tipos de dinero y política de redondeo sin usar number para cálculo financiero.",
+        "Se prueban al menos redondeo a dos decimales, empate y acumulación de operaciones.",
+        "Los errores de moneda o escala incompatible son explícitos."
+      ]
+    },
+    {
+      "id": "US-003",
+      "epic": "E1 · Motor financiero verificable",
+      "title": "Resolver una tasa fija por periodo",
+      "story": "Como persona con préstamo de tasa fija, quiero obtener la tasa y el interés aplicables en cada periodo.",
+      "requirements": ["RF-003", "RF-004", "RNF-002"],
+      "dependsOn": ["US-002"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "La regla recibe saldo, fechas, tasa anual, frecuencia y convención declarada.",
+        "La salida contiene tasa e interés trazables para cada periodo.",
+        "Los casos de referencia fijo pasan con valores exactos."
+      ]
+    },
+    {
+      "id": "US-004",
+      "epic": "E1 · Motor financiero verificable",
+      "title": "Generar amortización de cuota periódica fija",
+      "story": "Como persona usuaria, quiero una tabla de amortización para conocer interés, principal y saldo por periodo.",
+      "requirements": ["RF-004", "RNF-002", "RNF-003", "RNF-007"],
+      "dependsOn": ["US-003"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "La tabla incluye saldo inicial/final, cuota, interés, principal, cargos y fecha.",
+        "El último pago no deja saldo negativo ni excede lo adeudado.",
+        "El resultado es determinista y coincide con los casos de referencia."
+      ]
+    },
+    {
+      "id": "US-005",
+      "epic": "E1 · Motor financiero verificable",
+      "title": "Reconstruir estado desde pagos históricos",
+      "story": "Como persona usuaria, quiero registrar pagos reales y obtener un saldo de corte explicable.",
+      "requirements": ["RF-005", "RF-007", "RNF-004"],
+      "dependsOn": ["US-004"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "Los pagos históricos tienen fecha, importes conocidos, origen y notas.",
+        "La reconstrucción separa periodos históricos de proyecciones futuras.",
+        "Un ajuste de reconciliación es explícito, fechado y no muta los pagos originales."
+      ]
+    },
+    {
+      "id": "US-006",
+      "epic": "E1 · Motor financiero verificable",
+      "title": "Aplicar pagos extraordinarios únicos",
+      "story": "Como persona usuaria, quiero simular un pago adicional único y medir su efecto sobre el plazo e interés.",
+      "requirements": ["RF-008", "RF-009", "RNF-004"],
+      "dependsOn": ["US-004"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "El pago extra se aplica al principal en una fecha/periodo válido.",
+        "El escenario conserva inalterados préstamo e historial.",
+        "La comparación muestra cambio de plazo e interés frente a la base."
+      ]
+    },
+    {
+      "id": "US-007",
+      "epic": "E1 · Motor financiero verificable",
+      "title": "Resolver tasa fija seguida de serie variable manual",
+      "story": "Como persona con tasa promocional inicial, quiero proyectar una fase fija y luego una tasa variable reproducible.",
+      "requirements": ["RF-003", "RF-004", "RNF-002"],
+      "dependsOn": ["US-004"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "La fase fija termina en un periodo inequívoco.",
+        "La fase variable usa una serie manual fechada y frecuencia de revisión explícita.",
+        "El comportamiento inicial conserva la cuota y recalcula plazo; la política queda trazada.",
+        "Los cambios de tasa se cubren con pruebas de frontera."
+      ]
+    },
+    {
+      "id": "US-008",
+      "epic": "E2 · Importación y datos locales",
+      "title": "Validar y previsualizar un CSV de pagos",
+      "story": "Como persona usuaria, quiero importar mi registro de pagos sin corromper el préstamo por filas erróneas.",
+      "requirements": ["RF-006", "RNF-006"],
+      "dependsOn": ["US-005"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "Existe plantilla CSV y normalización explícita de fecha, decimal y separador regional.",
+        "La previsualización reporta filas válidas, errores, duplicados y periodos faltantes.",
+        "Ningún dato se persiste hasta confirmación explícita."
+      ]
+    },
+    {
+      "id": "US-009",
+      "epic": "E2 · Importación y datos locales",
+      "title": "Persistir préstamos mediante un puerto local",
+      "story": "Como persona usuaria, quiero conservar mis préstamos en el dispositivo y recuperar mis datos al reiniciar.",
+      "requirements": ["RF-001", "RF-011", "RNF-005", "RNF-010"],
+      "dependsOn": ["US-005"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "La aplicación depende de interfaces de repositorio y no de Dexie directamente.",
+        "El adaptador IndexedDB persiste préstamo, pagos y escenarios de forma transaccional.",
+        "Las migraciones y datos inválidos tienen una ruta de recuperación documentada."
+      ]
+    },
+    {
+      "id": "US-010",
+      "epic": "E3 · PWA y gestión de préstamos",
+      "title": "Crear la PWA y navegar préstamos",
+      "story": "Como persona usuaria, quiero abrir una aplicación web responsive y ver mis préstamos independientes.",
+      "requirements": ["RF-001", "RF-012", "RNF-008", "RNF-009"],
+      "dependsOn": ["US-009"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "La aplicación React se construye como PWA y usa el paquete de dominio sin duplicar cálculos.",
+        "La lista muestra resumen de cada préstamo y estados vacíos accesibles.",
+        "La navegación básica funciona en móvil y escritorio."
+      ]
+    },
+    {
+      "id": "US-011",
+      "epic": "E3 · PWA y gestión de préstamos",
+      "title": "Crear y editar un préstamo",
+      "story": "Como persona usuaria, quiero configurar un préstamo y sus tasas para obtener una proyección válida.",
+      "requirements": ["RF-001", "RF-002", "RF-003"],
+      "dependsOn": ["US-007", "US-010"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "El formulario valida campos obligatorios, moneda, fechas, cuota y configuración fija-variable.",
+        "Crear, editar, duplicar y eliminar requieren las confirmaciones apropiadas.",
+        "Cada préstamo conserva datos completamente aislados."
+      ]
+    },
+    {
+      "id": "US-012",
+      "epic": "E3 · PWA y gestión de préstamos",
+      "title": "Registrar e importar pagos desde la interfaz",
+      "story": "Como persona usuaria, quiero registrar pagos manuales o importar un CSV desde el préstamo seleccionado.",
+      "requirements": ["RF-005", "RF-006", "RF-007"],
+      "dependsOn": ["US-008", "US-010"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "Se puede registrar, corregir y revisar un pago histórico manual.",
+        "El asistente CSV muestra previsualización antes de confirmar.",
+        "La interfaz explica diferencias de reconciliación y el corte proyectado."
+      ]
+    },
+    {
+      "id": "US-013",
+      "epic": "E4 · Escenarios y resultados",
+      "title": "Comparar escenario base y pago extraordinario",
+      "story": "Como persona usuaria, quiero comparar un escenario base contra un pago extra sin alterar mi historial real.",
+      "requirements": ["RF-008", "RF-009", "RNF-004"],
+      "dependsOn": ["US-006", "US-011"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "Se crean y guardan escenarios independientes por préstamo.",
+        "La comparación muestra fecha final, plazo, total pagado, interés y ahorro.",
+        "Un escenario nunca cambia el historial ni la configuración contractual."
+      ]
+    },
+    {
+      "id": "US-014",
+      "epic": "E4 · Escenarios y resultados",
+      "title": "Mostrar tabla y evolución de saldo",
+      "story": "Como persona usuaria, quiero visualizar la evolución de mi deuda y distinguir historia de proyección.",
+      "requirements": ["RF-004", "RF-010", "RNF-008"],
+      "dependsOn": ["US-012", "US-013"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "La tabla permite consultar amortizaciones extensas sin degradación perceptible.",
+        "El gráfico de saldo diferencia pagos históricos y proyecciones.",
+        "Los valores de visualización coinciden con el resumen del motor."
+      ]
+    },
+    {
+      "id": "US-015",
+      "epic": "E5 · Respaldo y publicación",
+      "title": "Respaldar y restaurar datos locales",
+      "story": "Como persona usuaria, quiero exportar e importar una copia validada de mis datos para no perderlos.",
+      "requirements": ["RF-011", "RNF-006"],
+      "dependsOn": ["US-009", "US-011"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "La copia contiene préstamo, pagos, escenarios y versión de esquema.",
+        "La restauración valida antes de cambiar datos y ofrece resumen del impacto.",
+        "Los datos corruptos no se incorporan silenciosamente."
+      ]
+    },
+    {
+      "id": "US-016",
+      "epic": "E5 · Respaldo y publicación",
+      "title": "Completar experiencia offline e instalación",
+      "story": "Como persona usuaria, quiero instalar CuotaClara y usar las funciones MVP sin conexión.",
+      "requirements": ["RF-012", "RNF-005", "RNF-009"],
+      "dependsOn": ["US-014", "US-015"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "La PWA es instalable y carga rutas esenciales sin red después de la primera visita.",
+        "Se prueban actualización de caché y recuperación ante datos locales inválidos.",
+        "No se realiza ninguna transmisión de datos financieros en el MVP."
+      ]
+    }
+  ]
+}

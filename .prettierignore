@@ -4,3 +4,4 @@ coverage/
 .vite/
 pnpm-lock.yaml
 docs/status.md
+docs/implementation-status.md
