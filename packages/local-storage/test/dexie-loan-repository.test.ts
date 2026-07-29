@@ -3,7 +3,13 @@ import 'fake-indexeddb/auto';
 import { Dexie as DexieConstructor } from 'dexie/dist/dexie.js';
 import { describe, expect, test } from 'vitest';
 
-import { createLoanV2, createPaymentRecord, createLoan, Money } from '@cuotaclara/domain';
+import {
+  createLoanV2,
+  createPaymentRecord,
+  createLoan,
+  createTbpMarginScenario,
+  Money,
+} from '@cuotaclara/domain';
 
 import { DexieLoanRepository, LocalDataCorruptionError } from '../src/dexie-loan-repository.js';
 
@@ -206,6 +212,55 @@ describe('DexieLoanRepository', () => {
     });
     const aggregate = await repository.loadAggregate('legacy-001');
     expect(aggregate?.loan.contract).toBeUndefined();
+    await repository.close();
+  });
+
+  test('persiste un escenario TBP+margen completo sin consultar red', async () => {
+    const repository = createRepository();
+    const aggregate = createAggregate();
+    const scenario = createTbpMarginScenario({
+      id: 'tbp-001',
+      loanId: aggregate.loan.id,
+      name: 'TBP estable',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      plan: {
+        kind: 'tbp_margin_v1',
+        fixedPeriods: 12,
+        marginAnnualRate: '0.02',
+        tbpInitialAnnualRate: '0.05',
+        reviewFrequency: 'quarterly',
+        evolution: 'estable',
+        variationPerReview: '0',
+      },
+    });
+    await repository.saveAggregate({ ...aggregate, scenarios: [scenario] });
+
+    await expect(repository.loadAggregate(aggregate.loan.id)).resolves.toMatchObject({
+      scenarios: [{ configuration: { kind: 'tbp_margin_v1', marginAnnualRate: '0.02' } }],
+    });
+    await repository.close();
+  });
+
+  test('conserva la configuración TBP del préstamo al recargarlo', async () => {
+    const repository = createRepository();
+    const aggregate = createAggregate();
+    const loan = createLoan({
+      ...aggregate.loan,
+      tbpMarginRatePlan: {
+        kind: 'tbp_margin_v1',
+        fixedPeriods: 12,
+        marginAnnualRate: '0.02',
+        tbpInitialAnnualRate: '0.05',
+        reviewFrequency: 'annual',
+        evolution: 'baja_progresiva',
+        variationPerReview: '0.001',
+      },
+    });
+    await repository.saveAggregate({ ...aggregate, loan });
+
+    await expect(repository.loadAggregate(loan.id)).resolves.toMatchObject({
+      loan: { tbpMarginRatePlan: { kind: 'tbp_margin_v1', evolution: 'baja_progresiva' } },
+    });
     await repository.close();
   });
 });

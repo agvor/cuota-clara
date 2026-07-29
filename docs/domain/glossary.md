@@ -15,7 +15,7 @@
 | Plan de tasas (`InterestPlan`)   | Secuencia de reglas que resuelve la tasa aplicable a cada periodo.                                 |
 | Fase fija                        | Intervalo explícito en el que la tasa anual se conoce y no cambia.                                 |
 | Fase variable                    | Intervalo posterior cuya tasa se determina por una regla versionada y una frecuencia de revisión.  |
-| Serie manual de tasas            | Lista de tasas efectivas desde fechas concretas, introducida por la persona usuaria.               |
+| Serie manual de tasas            | Regla `manual_series_v1`: lista de tasas efectivas desde fechas concretas.                         |
 | TBP (tasa básica pasiva)         | Tasa de referencia anual usada como supuesto local configurable; no se consulta desde red en MVP.  |
 | Margen                           | Tasa anual contractual que se suma a la TBP para resolver la tasa variable.                        |
 | Evolución de TBP                 | Hipótesis estable, alza progresiva o baja progresiva aplicada por revisión a la TBP del escenario. |
@@ -45,4 +45,5 @@
 - Un contrato v2 declara plazo por fecha final o número total de cuotas y separa monto original de saldo reconciliado.
 - El seguro mensual no reduce principal ni genera interés mientras no exista una regla contractual que disponga lo contrario.
 - Una estimación que alcanza el plazo con saldo pendiente lo muestra; no inventa cuotas posteriores.
-- Una regla TBP+margen conserva TBP inicial, margen, frecuencia, evolución y versión; no consulta ni infiere una tasa externa.
+- Una regla `tbp_margin_v1` conserva TBP inicial, margen, frecuencia, evolución, variación y versión; no consulta ni infiere una tasa externa.
+- La TBP no baja de cero; la cuota se conserva en el cambio de tasa y el saldo pendiente se expone al final del plazo declarado.

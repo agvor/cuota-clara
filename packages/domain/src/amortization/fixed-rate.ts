@@ -3,6 +3,7 @@ import {
   resolveAnnualRateForPeriod,
   type ManualVariableRatePlan,
 } from '../interest/manual-variable-rate.js';
+import { type TbpMarginRatePlan } from '../interest/tbp-margin-rate.js';
 import { Money, type RoundingPolicy } from '../money.js';
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -23,6 +24,7 @@ export type FixedRateAmortizationInput = Readonly<{
   roundingPolicy: RoundingPolicy;
   extraPayments?: readonly OneTimeExtraPayment[];
   variableRatePlan?: ManualVariableRatePlan;
+  tbpMarginRatePlan?: TbpMarginRatePlan;
 }>;
 
 export type FixedRateAmortizationPeriod = Readonly<{
@@ -146,18 +148,13 @@ export function generateFixedRateAmortization(
       );
     }
 
-    const rate = input.variableRatePlan
-      ? resolveAnnualRateForPeriod({
-          fixedAnnualNominalRate: input.annualNominalRate,
-          variableRatePlan: input.variableRatePlan,
-          periodNumber: index + 1,
-          periodEndDate,
-        })
-      : resolveAnnualRateForPeriod({
-          fixedAnnualNominalRate: input.annualNominalRate,
-          periodNumber: index + 1,
-          periodEndDate,
-        });
+    const rate = resolveAnnualRateForPeriod({
+      fixedAnnualNominalRate: input.annualNominalRate,
+      ...(input.variableRatePlan ? { variableRatePlan: input.variableRatePlan } : {}),
+      ...(input.tbpMarginRatePlan ? { tbpMarginRatePlan: input.tbpMarginRatePlan } : {}),
+      periodNumber: index + 1,
+      periodEndDate,
+    });
     const interestResult = calculateFixedNominalInterest({
       openingBalance,
       annualNominalRate: rate.annualNominalRate,

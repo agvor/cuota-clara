@@ -28,6 +28,13 @@ export {
   type VariableRateReviewFrequency,
 } from './interest/manual-variable-rate.js';
 export {
+  resolveTbpMarginRateForPeriod,
+  TbpMarginRatePlanError,
+  type TbpEvolution,
+  type TbpMarginRatePlan,
+  type TbpMarginResolvedRate,
+} from './interest/tbp-margin-rate.js';
+export {
   AmortizationValidationError,
   compareFixedRateAmortizations,
   generateFixedRateAmortization,
@@ -79,3 +86,9 @@ export {
   type OneTimeExtraPaymentComparison,
   type OneTimeExtraPaymentScenario,
 } from './scenario/one-time-extra-payment.js';
+export {
+  createTbpMarginScenario,
+  isTbpMarginScenario,
+  projectLoanWithTbpMarginScenario,
+  type TbpMarginScenario,
+} from './scenario/tbp-margin.js';

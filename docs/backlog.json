@@ -275,7 +275,7 @@
       "story": "Como persona usuaria, quiero simular mi fase variable con TBP+margen y supuestos de evolución para comparar alternativas reproducibles.",
       "requirements": ["RF-003", "RF-014", "RNF-002", "RNF-004", "RNF-011"],
       "dependsOn": ["US-017"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "La regla conserva TBP inicial, margen, frecuencia, evolución y variación por revisión en el escenario.",
         "Las opciones estable, alza progresiva y baja progresiva resuelven tasas deterministas sin red.",
@@ -289,7 +289,7 @@
       "story": "Como persona usuaria, quiero configurar fácilmente las fases fija y variable de mi préstamo y revisar su estimación inicial.",
       "requirements": ["RF-002", "RF-003", "RF-013", "RF-014", "RNF-008"],
       "dependsOn": ["US-018", "US-019"],
-      "status": "planned",
+      "status": "ready",
       "acceptanceCriteria": [
         "El formulario guía plazo, cuota, seguro, fase fija, TBP+margen y evolución sin ocultar unidades o supuestos.",
         "La estimación se actualiza antes de confirmar y distingue principal, interés, seguro y total.",

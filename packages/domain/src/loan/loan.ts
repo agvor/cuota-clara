@@ -3,6 +3,7 @@ import {
   resolveAnnualRateForPeriod,
   type ManualVariableRatePlan,
 } from '../interest/manual-variable-rate.js';
+import { type TbpMarginRatePlan } from '../interest/tbp-margin-rate.js';
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const NON_NEGATIVE_DECIMAL = /^(?:0|[1-9]\d*)(?:\.\d+)?$/;
@@ -15,6 +16,7 @@ export type Loan = Readonly<{
   ordinaryPayment: Money;
   annualNominalRate: string;
   variableRatePlan?: ManualVariableRatePlan;
+  tbpMarginRatePlan?: TbpMarginRatePlan;
   periodsPerYear: number;
   roundingPolicy: RoundingPolicy;
   contract?: LoanContractV2;
@@ -42,6 +44,7 @@ export type CreateLoanV2Input = Readonly<{
   term: LoanTerm;
   annualNominalRate: string;
   variableRatePlan?: ManualVariableRatePlan;
+  tbpMarginRatePlan?: TbpMarginRatePlan;
   roundingPolicy: RoundingPolicy;
 }>;
 
@@ -73,12 +76,14 @@ export function createLoan(input: CreateLoanInput): Loan {
   if (!Number.isInteger(input.periodsPerYear) || input.periodsPerYear <= 0) {
     throw new LoanValidationError('Los periodos por año deben ser un entero positivo.');
   }
-  if (input.variableRatePlan) {
+  if (input.variableRatePlan || input.tbpMarginRatePlan) {
     resolveAnnualRateForPeriod({
       fixedAnnualNominalRate: input.annualNominalRate,
-      variableRatePlan: input.variableRatePlan,
-      periodNumber: input.variableRatePlan.fixedPeriods + 1,
-      periodEndDate: input.variableRatePlan.variableRates[0]?.effectiveDate ?? input.startDate,
+      ...(input.variableRatePlan ? { variableRatePlan: input.variableRatePlan } : {}),
+      ...(input.tbpMarginRatePlan ? { tbpMarginRatePlan: input.tbpMarginRatePlan } : {}),
+      periodNumber:
+        (input.variableRatePlan?.fixedPeriods ?? input.tbpMarginRatePlan?.fixedPeriods ?? 0) + 1,
+      periodEndDate: input.variableRatePlan?.variableRates[0]?.effectiveDate ?? input.startDate,
     });
   }
   if (input.contract) {
@@ -116,6 +121,7 @@ export function createLoanV2(input: CreateLoanV2Input): Loan {
     ordinaryPayment: input.monthlyInstallment,
     annualNominalRate: input.annualNominalRate,
     ...(input.variableRatePlan ? { variableRatePlan: input.variableRatePlan } : {}),
+    ...(input.tbpMarginRatePlan ? { tbpMarginRatePlan: input.tbpMarginRatePlan } : {}),
     periodsPerYear: 12,
     roundingPolicy: input.roundingPolicy,
     contract: Object.freeze({

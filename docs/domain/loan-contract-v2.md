@@ -20,12 +20,12 @@ El seguro mensual se mostrará separado. La primera regla propuesta es que no fi
 
 ## Plan de interés fijo→variable
 
-El contrato tendrá una fase fija definida por número de cuotas y una fase variable para el resto del plazo. La fase variable elegirá una regla versionada:
+El contrato puede tener una fase fija definida por número de cuotas y una fase variable para el resto del plazo. Las reglas son versionadas y distintas:
 
-1. **TBP + margen (predeterminada):** tasa nominal anual = tasa básica pasiva configurada en el escenario + margen anual del contrato.
-2. **Serie manual fechada:** conserva compatibilidad con la capacidad actual de introducir tasas explícitas.
+1. **TBP + margen (`tbp_margin_v1`):** tasa nominal anual = tasa básica pasiva configurada en el escenario + margen anual.
+2. **Serie manual (`manual_series_v1`):** conserva compatibilidad con la capacidad actual de introducir tasas explícitas. Los registros anteriores sin `kind` se reconocen como serie manual heredada; no se reinterpretan como TBP.
 
-La tasa básica pasiva no se consultará desde red en el MVP. Cada escenario conserva su supuesto inicial y evolución, por lo que el cálculo es reproducible:
+US-019 implementa `tbp_margin_v1`. La tasa básica pasiva no se consulta desde red: cada escenario conserva el supuesto completo, por lo que el cálculo es reproducible:
 
 | Parámetro de escenario TBP | Regla propuesta                                                              |
 | -------------------------- | ---------------------------------------------------------------------------- |
@@ -36,6 +36,8 @@ La tasa básica pasiva no se consultará desde red en el MVP. Cada escenario con
 | Margen                     | Decimal anual fijo del contrato, sumado a TBP.                               |
 
 Ejemplo: TBP inicial `0.05`, margen `0.02`, alza progresiva de `0.001` trimestral ⇒ primera tasa variable `0.07`, luego `0.071`, `0.072`, etc. La variación se expresa en puntos porcentuales, no como multiplicación relativa de la TBP. Si el producto necesita la otra interpretación, se añadirá como una regla distinta y versionada.
+
+La primera cuota variable usa la TBP inicial. La evolución se aplica después de cada frecuencia de revisión (1, 3, 6 o 12 cuotas); una baja se limita a TBP `0`, por lo que la tasa no pasa a ser negativa. La cuota mensual se conserva al cambiar la tasa. Si el plazo declarado termina con saldo, la estimación lo muestra: no extiende ni acorta silenciosamente el contrato.
 
 ## Estimación inicial obligatoria
 
@@ -56,7 +58,7 @@ El calendario mensual conserva el día de inicio cuando existe en el mes; por ej
 
 1. La cuota mensual excluye el seguro; el seguro es fijo por mes y no se financia ni devenga interés.
 2. La variación de TBP propuesta es en puntos porcentuales anuales por revisión, no porcentual relativa.
-3. US-019 debe decidir y documentar si, ante cambio de tasa, conserva cuota y cambia plazo o recalcula cuota manteniendo fecha final.
+3. Ante cambio de tasa se conserva cuota. El plazo declarado sigue siendo un límite explícito: la estimación revela saldo pendiente o cuota final reducida.
 4. El margen TBP+margen se tratará como decimal anual sumable.
 
 ## Migración de datos existentes
@@ -68,4 +70,4 @@ Los préstamos ya guardados no contienen plazo contractual ni seguro. Una migrac
 3. guardar la procedencia/migración y no alterar pagos históricos ni escenarios existentes;
 4. versionar respaldo y esquema de IndexedDB antes de escribir el contrato v2.
 
-La compatibilidad de una serie manual existente se mantiene como regla variable `manual_series_v1`; TBP+margen será una regla nueva y no una reinterpretación automática de datos previos.
+La compatibilidad de una serie manual existente se mantiene como regla variable heredada o `manual_series_v1`; TBP+margen es una regla nueva y no una reinterpretación automática de datos previos.

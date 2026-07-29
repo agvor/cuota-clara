@@ -92,6 +92,7 @@ export function compareLoanWithOneTimeExtraPayment(input: {
     roundingPolicy: input.loan.roundingPolicy,
     extraPayments: [extraPayment],
     ...(input.loan.variableRatePlan ? { variableRatePlan: input.loan.variableRatePlan } : {}),
+    ...(input.loan.tbpMarginRatePlan ? { tbpMarginRatePlan: input.loan.tbpMarginRatePlan } : {}),
   });
   return Object.freeze({
     base,
@@ -110,6 +111,7 @@ export function projectLoanAmortization(loan: Loan): FixedRateAmortizationResult
     periodEndDates: generatePeriodEndDates(loan.startDate, loan.periodsPerYear),
     roundingPolicy: loan.roundingPolicy,
     ...(loan.variableRatePlan ? { variableRatePlan: loan.variableRatePlan } : {}),
+    ...(loan.tbpMarginRatePlan ? { tbpMarginRatePlan: loan.tbpMarginRatePlan } : {}),
   });
 }
 

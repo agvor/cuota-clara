@@ -30,6 +30,7 @@ type StoredLoan = Readonly<{
   ordinaryPayment: StoredMoney;
   annualNominalRate: string;
   variableRatePlan?: Loan['variableRatePlan'];
+  tbpMarginRatePlan?: Loan['tbpMarginRatePlan'];
   periodsPerYear: number;
   roundingPolicy: RoundingPolicy;
   contract?: StoredLoanContractV2;
@@ -206,6 +207,7 @@ function deserializeLoan(value: unknown): Loan {
   try {
     const record = readRecord(value, 'loan');
     const variableRatePlan = record.variableRatePlan as Loan['variableRatePlan'];
+    const tbpMarginRatePlan = record.tbpMarginRatePlan as Loan['tbpMarginRatePlan'];
     const contract = record.contract ? deserializeContract(record.contract) : undefined;
     return createLoan({
       id: readString(record, 'id', 'loan'),
@@ -215,6 +217,7 @@ function deserializeLoan(value: unknown): Loan {
       ordinaryPayment: deserializeMoney(record.ordinaryPayment, 'loan.ordinaryPayment'),
       annualNominalRate: readString(record, 'annualNominalRate', 'loan'),
       ...(variableRatePlan ? { variableRatePlan } : {}),
+      ...(tbpMarginRatePlan ? { tbpMarginRatePlan } : {}),
       periodsPerYear: readNumber(record, 'periodsPerYear', 'loan'),
       roundingPolicy: deserializeRoundingPolicy(record.roundingPolicy),
       ...(contract ? { contract } : {}),

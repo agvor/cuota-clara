@@ -72,6 +72,7 @@ export function estimateLoanContract(loan: Loan): LoanContractEstimate {
     const rate = resolveAnnualRateForPeriod({
       fixedAnnualNominalRate: loan.annualNominalRate,
       ...(loan.variableRatePlan ? { variableRatePlan: loan.variableRatePlan } : {}),
+      ...(loan.tbpMarginRatePlan ? { tbpMarginRatePlan: loan.tbpMarginRatePlan } : {}),
       periodNumber: index + 1,
       periodEndDate: date,
     });

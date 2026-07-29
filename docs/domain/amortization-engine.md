@@ -26,6 +26,10 @@ El resumen contiene fecha de finalización, total de interés, principal y pago.
 
 Su caso de referencia sintético es [`contract-estimate-monthly-insurance-v1`](../../packages/domain/test/fixtures/contract-estimate-monthly-insurance-v1.json). El seguro es fijo, se cobra por cada cuota proyectada y no devenga interés ni amortiza principal. La estimación no prorratea interés por días ni constituye una liquidación bancaria.
 
+## Tasa variable TBP+margen
+
+`tbp_margin_v1` resuelve la fase variable sin red. El escenario persiste TBP inicial, margen anual, frecuencia de revisión, evolución y variación por revisión; la tasa de cada cuota es `TBP + margen`. La TBP permanece estable o aumenta/disminuye por puntos porcentuales después de cada revisión; en una baja se limita a cero. La serie manual existente se resuelve por otra regla y nunca se transforma automáticamente en TBP.
+
 ## Límites conocidos
 
 - El motor genérico no incorpora seguros ni comisiones; la estimación contractual v2 aplica el seguro mensual fijo por separado.

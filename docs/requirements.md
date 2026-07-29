@@ -27,7 +27,7 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 | RF-011 | Persistir y respaldar datos locales.    | Los datos sobreviven reinicios, se pueden exportar a una copia de respaldo e importar tras validación.                                                                      | En curso |
 | RF-012 | Operar sin conexión.                    | Las funciones MVP funcionan después de instalar/cargar la PWA, sin cuenta ni red.                                                                                           | En curso |
 | RF-013 | Estimar costo y fecha contractual.      | Antes de confirmar el préstamo se estiman fecha final, cuotas, principal, interés, seguro y total desembolsado; supuestos y límites se muestran explícitamente.             | En curso |
-| RF-014 | Configurar escenario de TBP+margen.     | La fase variable permite TBP promedio configurable, margen, frecuencia y evolución estable/alza/baja reproducible por escenario, sin consultar red.                         | Planeado |
+| RF-014 | Configurar escenario de TBP+margen.     | La fase variable permite TBP promedio configurable, margen, frecuencia y evolución estable/alza/baja reproducible por escenario, sin consultar red.                         | En curso |
 
 ### Precisiones del modelo de tasa
 

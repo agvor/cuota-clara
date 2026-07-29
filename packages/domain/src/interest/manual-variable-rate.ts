@@ -1,3 +1,5 @@
+import { resolveTbpMarginRateForPeriod, type TbpMarginRatePlan } from './tbp-margin-rate.js';
+
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const NON_NEGATIVE_DECIMAL = /^(?:0|[1-9]\d*)(?:\.\d+)?$/;
 
@@ -9,6 +11,8 @@ export type ManualVariableRate = Readonly<{
 }>;
 
 export type ManualVariableRatePlan = Readonly<{
+  /** Los registros anteriores sin `kind` se conservan como serie manual heredada. */
+  kind?: 'manual_series_v1';
   fixedPeriods: number;
   reviewFrequency: VariableRateReviewFrequency;
   variableRates: readonly ManualVariableRate[];
@@ -27,6 +31,9 @@ export class VariableRatePlanError extends Error {
 }
 
 function validatePlan(plan: ManualVariableRatePlan): void {
+  if (plan.kind !== undefined && plan.kind !== 'manual_series_v1') {
+    throw new VariableRatePlanError('La serie manual no tiene una versión compatible.');
+  }
   if (!Number.isInteger(plan.fixedPeriods) || plan.fixedPeriods < 0) {
     throw new VariableRatePlanError('La duración fija debe expresarse como un entero no negativo.');
   }
@@ -53,6 +60,7 @@ function validatePlan(plan: ManualVariableRatePlan): void {
 export function resolveAnnualRateForPeriod(input: {
   fixedAnnualNominalRate: string;
   variableRatePlan?: ManualVariableRatePlan;
+  tbpMarginRatePlan?: TbpMarginRatePlan;
   periodNumber: number;
   periodEndDate: string;
 }): ResolvedAnnualRate {
@@ -65,6 +73,17 @@ export function resolveAnnualRateForPeriod(input: {
     !ISO_DATE.test(input.periodEndDate)
   ) {
     throw new VariableRatePlanError('El periodo y su fecha de cierre deben ser válidos.');
+  }
+  if (input.variableRatePlan && input.tbpMarginRatePlan) {
+    throw new VariableRatePlanError('Un préstamo no puede combinar serie manual y TBP+margen.');
+  }
+  if (input.tbpMarginRatePlan) {
+    const resolved = resolveTbpMarginRateForPeriod({
+      fixedAnnualNominalRate: input.fixedAnnualNominalRate,
+      plan: input.tbpMarginRatePlan,
+      periodNumber: input.periodNumber,
+    });
+    return { phase: resolved.phase, annualNominalRate: resolved.annualNominalRate };
   }
   if (!input.variableRatePlan) {
     return { phase: 'fixed', annualNominalRate: input.fixedAnnualNominalRate };
