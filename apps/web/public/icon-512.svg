@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="CuotaClara">
+  <rect width="512" height="512" rx="96" fill="#1d4ed8" />
+  <path d="M115 317h282M115 251h282M115 185h154" stroke="#fff" stroke-linecap="round" stroke-width="38" />
+  <circle cx="363" cy="185" r="38" fill="#86efac" />
+</svg>

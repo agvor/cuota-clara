@@ -233,7 +233,7 @@
       "story": "Como persona usuaria, quiero instalar CuotaClara y usar las funciones MVP sin conexión.",
       "requirements": ["RF-012", "RNF-005", "RNF-009"],
       "dependsOn": ["US-014", "US-015"],
-      "status": "planned",
+      "status": "in_progress",
       "acceptanceCriteria": [
         "La PWA es instalable y carga rutas esenciales sin red después de la primera visita.",
         "Se prueban actualización de caché y recuperación ante datos locales inválidos.",
