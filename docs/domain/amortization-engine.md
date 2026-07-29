@@ -22,7 +22,7 @@ El resumen contiene fecha de finalización, total de interés, principal y pago.
 
 ## Estimación de contrato
 
-`estimateLoanContract` construye el calendario mensual de un contrato v2 o v3 y reutiliza la misma regla de interés. En v3 deriva antes la cuota base (`cuota total − seguro`) y rechaza un período donde esa base no cubra interés. Separa seguro de principal e interés y expone tanto el total desembolsado como el saldo que queda si el plazo declarado no alcanza. Si la liquidación ocurre antes, informa la cuota final reducida; si no, nunca inventa una cuota adicional.
+`estimateLoanContract` construye el calendario mensual de un contrato v2 o v3 y reutiliza la misma regla de interés. En v3 el plazo es autoritativo: calcula la cuota base necesaria en las cuotas restantes, suma el seguro y compara esa cuota total proyectada con la configurada. Separa seguro de principal e interés y expone tanto el total desembolsado como el saldo que queda si el plazo declarado no alcanza. No acorta silenciosamente un contrato v3 cuando la cuota declarada liquidaría antes el principal.
 
 Sus casos de referencia sintéticos son [`contract-estimate-monthly-insurance-v1`](../../packages/domain/test/fixtures/contract-estimate-monthly-insurance-v1.json) y [`contract-total-payment-insufficient-v1`](../../packages/domain/test/fixtures/contract-total-payment-insufficient-v1.json). El seguro es fijo, se cobra por cada cuota proyectada y no devenga interés ni amortiza principal. La estimación no prorratea interés por días ni constituye una liquidación bancaria.
 

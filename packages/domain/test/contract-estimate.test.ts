@@ -132,12 +132,17 @@ describe('estimateLoanContract', () => {
     expect(() => estimateLoanContract(loan)).toThrow(ContractEstimateError);
   });
 
-  test('rechaza el caso de referencia cuya cuota total deja una base insuficiente', async () => {
+  test('conserva el plazo del caso de referencia y expone la cuota requerida', async () => {
     const file = new URL('./fixtures/contract-total-payment-insufficient-v1.json', import.meta.url);
     const reference = JSON.parse(await readFile(file, 'utf8')) as {
       caseId: string;
       inputs: Record<string, string | number>;
-      expected: { basePayment: string; errorIncludes: string };
+      expected: {
+        basePayment: string;
+        completionDate: string;
+        installments: number;
+        projectedInitialTotalPayment: string;
+      };
     };
     const loan = createLoanV3({
       id: 'loan-total-insufficient',
@@ -162,7 +167,15 @@ describe('estimateLoanContract', () => {
 
     expect(reference.caseId).toBe('contract-total-payment-insufficient-v1');
     expect(loan.ordinaryPayment.toFixed(roundingPolicy)).toBe(reference.expected.basePayment);
-    expect(() => estimateLoanContract(loan)).toThrow(reference.expected.errorIncludes);
+    const estimate = estimateLoanContract(loan);
+    expect(estimate.status).toBe('settled_on_term');
+    expect(estimate.finalInstallmentDate).toBe(reference.expected.completionDate);
+    expect(estimate.estimatedInstallments).toBe(reference.expected.installments);
+    expect(estimate.projectedInitialTotalPayment?.toFixed(roundingPolicy)).toBe(
+      reference.expected.projectedInitialTotalPayment,
+    );
+    expect(estimate.initialPaymentDifference?.toFixed(roundingPolicy)).toBe('134250.51');
+    expect(estimate.hasConfiguredPaymentDifference).toBe(true);
   });
 
   test('programa la cuota 360 exactamente 30 años después del inicio', () => {

@@ -1,6 +1,7 @@
 import { calculateFixedNominalInterest } from '../interest/fixed-rate.js';
 import { resolveAnnualRateForPeriod } from '../interest/manual-variable-rate.js';
 import { Money } from '../money.js';
+import { Decimal } from 'decimal.js';
 
 import { type Loan } from './loan.js';
 
@@ -32,6 +33,10 @@ export type LoanContractEstimate = Readonly<{
   finalTotalDue: Money;
   hasAdjustedFinalInstallment: boolean;
   remainingPrincipal: Money;
+  configuredTotalPayment?: Money;
+  projectedInitialTotalPayment?: Money;
+  initialPaymentDifference?: Money;
+  hasConfiguredPaymentDifference: boolean;
   periods: readonly ContractEstimatePeriod[];
 }>;
 
@@ -67,6 +72,7 @@ export function estimateLoanContract(loan: Loan): LoanContractEstimate {
   let estimatedInsurance = zero;
   let estimatedTotal = zero;
   const periods: ContractEstimatePeriod[] = [];
+  let projectedInitialTotalPayment: Money | undefined;
 
   for (const [index, date] of dates.entries()) {
     const rate = resolveAnnualRateForPeriod({
@@ -85,9 +91,23 @@ export function estimateLoanContract(loan: Loan): LoanContractEstimate {
       roundingPolicy: loan.roundingPolicy,
     }).interest;
     const amountDueBeforeInsurance = openingBalance.add(interest);
-    const installment = amountDueBeforeInsurance.isLessThan(loan.ordinaryPayment)
-      ? amountDueBeforeInsurance
-      : loan.ordinaryPayment;
+    const isTermPreservingContract = contract.version === 3;
+    const installment = isTermPreservingContract
+      ? index + 1 === dates.length
+        ? amountDueBeforeInsurance
+        : calculateTermPreservingInstallment({
+            openingBalance,
+            annualNominalRate: rate.annualNominalRate,
+            remainingInstallments: dates.length - index,
+            periodsPerYear: loan.periodsPerYear,
+            roundingPolicy: loan.roundingPolicy,
+          })
+      : amountDueBeforeInsurance.isLessThan(loan.ordinaryPayment)
+        ? amountDueBeforeInsurance
+        : loan.ordinaryPayment;
+    if (!projectedInitialTotalPayment) {
+      projectedInitialTotalPayment = installment.add(contract.monthlyInsurance);
+    }
     const principal = installment.subtract(interest);
     if (principal.isLessThanOrEqualTo(zero)) {
       throw new ContractEstimateError(
@@ -115,7 +135,7 @@ export function estimateLoanContract(loan: Loan): LoanContractEstimate {
     estimatedInsurance = estimatedInsurance.add(contract.monthlyInsurance);
     estimatedTotal = estimatedTotal.add(totalDue);
 
-    if (closingBalance.isZero()) break;
+    if (closingBalance.isZero() && !isTermPreservingContract) break;
     openingBalance = closingBalance;
     periodStartDate = date;
   }
@@ -127,6 +147,11 @@ export function estimateLoanContract(loan: Loan): LoanContractEstimate {
       ? 'settled_early'
       : 'settled_on_term'
     : 'remaining_balance';
+  const configuredTotalPayment = contract.version === 3 ? contract.monthlyTotalPayment : undefined;
+  const initialPaymentDifference =
+    configuredTotalPayment && projectedInitialTotalPayment
+      ? projectedInitialTotalPayment.subtract(configuredTotalPayment)
+      : undefined;
 
   return Object.freeze({
     status,
@@ -141,10 +166,35 @@ export function estimateLoanContract(loan: Loan): LoanContractEstimate {
     finalInsurance: finalPeriod.insurance,
     finalTotalDue: finalPeriod.totalDue,
     hasAdjustedFinalInstallment:
-      finalPeriod.installment.toDecimalString() !== loan.ordinaryPayment.toDecimalString(),
+      finalPeriod.installment.toDecimalString() !==
+      (contract.version === 3
+        ? periods.at(-2)?.installment.toDecimalString()
+        : loan.ordinaryPayment.toDecimalString()),
     remainingPrincipal: finalPeriod.closingBalance,
+    ...(configuredTotalPayment ? { configuredTotalPayment } : {}),
+    ...(projectedInitialTotalPayment ? { projectedInitialTotalPayment } : {}),
+    ...(initialPaymentDifference ? { initialPaymentDifference } : {}),
+    hasConfiguredPaymentDifference:
+      Boolean(initialPaymentDifference) && !initialPaymentDifference?.isZero(),
     periods: Object.freeze(periods),
   });
+}
+
+function calculateTermPreservingInstallment(input: {
+  openingBalance: Money;
+  annualNominalRate: string;
+  remainingInstallments: number;
+  periodsPerYear: number;
+  roundingPolicy: Loan['roundingPolicy'];
+}): Money {
+  const rate = new Decimal(input.annualNominalRate).div(input.periodsPerYear);
+  const balance = new Decimal(input.openingBalance.toDecimalString());
+  const amount = rate.isZero()
+    ? balance.div(input.remainingInstallments)
+    : balance
+        .mul(rate)
+        .div(new Decimal(1).minus(new Decimal(1).plus(rate).pow(-input.remainingInstallments)));
+  return Money.from(amount.toFixed(40), input.openingBalance.currency).round(input.roundingPolicy);
 }
 
 function generateMonthlyDates(

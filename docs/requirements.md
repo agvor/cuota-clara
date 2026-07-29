@@ -36,7 +36,7 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 - La fase fija tiene un número de cuotas inequívoco. La fase variable declara una regla versionada: serie manual fechada o **TBP+margen** con TBP promedio configurable por escenario y sin consulta de red.
 - La frecuencia de revisión es distinta de la periodicidad de pago y debe estar representada explícitamente.
 - Un cambio de tasa conserva cuota. El plazo declarado no se altera: la estimación muestra el saldo pendiente o la cuota final reducida.
-- La cuota mensual ingresada es el total exigible e incluye seguro. La cuota base que amortiza principal e interés es `cuota total − seguro`; el seguro no se financia ni se aplica a principal.
+- La cuota mensual ingresada es el total exigible e incluye seguro. La cuota base que amortiza principal e interés es `cuota total − seguro`; el seguro no se financia ni se aplica a principal. Para v3, el plazo declarado es autoritativo: la proyección compara la cuota configurada con la cuota necesaria bajo sus supuestos, en lugar de acortar el contrato.
 - Con `N` cuotas mensuales, la última fecha programada es la fecha de inicio desplazada exactamente `N` meses, conservando el día ancla cuando exista. Por ejemplo, 360 cuotas equivalen a 30 años.
 - Los importes de lectura se presentan en `es-CR` con símbolo de moneda, separadores de miles y escala contractual. Los campos editables conservan el literal decimal canónico para no alterar la entrada ni la precisión.
 - No se asume que una proyección coincida con un banco sin validar su convención de días, fechas, redondeo, seguros y aplicación de pagos.

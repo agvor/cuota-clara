@@ -273,6 +273,14 @@ h1 {
   border-bottom: 0;
 }
 
+.payment-difference {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem;
+  border-left: 4px solid #0f766e;
+  background: #ecfeff;
+  color: #164e63;
+}
+
 .inherited-notice {
   padding: 0.75rem;
   border-left: 4px solid #d97706;

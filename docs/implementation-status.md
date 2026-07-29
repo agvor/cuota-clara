@@ -12,7 +12,7 @@
 | E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 2 |
 | E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 1 |
 | E6 · Contrato financiero v2 | 0 | 0 | 0 | 0 | 4 |
-| E7 · Contrato y resultados legibles | 0 | 0 | 0 | 0 | 3 |
+| E7 · Contrato y resultados legibles | 0 | 0 | 0 | 0 | 4 |
 
 ## Historias
 
@@ -42,3 +42,4 @@
 | US-021 | E7 · Contrato y resultados legibles | Migrar a cuota total incluida con seguro | Completado | US-020 |
 | US-022 | E7 · Contrato y resultados legibles | Mostrar resumen y dinero con formato universal | Completado | US-021 |
 | US-023 | E7 · Contrato y resultados legibles | Consultar amortización y gráfico bajo demanda | Completado | US-022 |
+| US-024 | E7 · Contrato y resultados legibles | Preservar el plazo contractual al estimar cuotas | Completado | US-023 |

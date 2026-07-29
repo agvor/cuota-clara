@@ -140,7 +140,7 @@ describe('App', () => {
     );
   });
 
-  test('muestra el error de cuota base insuficiente antes de guardar', async () => {
+  test('muestra la discrepancia de cuota sin alterar el plazo contractual', async () => {
     render(<App repository={createRepository([])} />);
     await screen.findByRole('heading', { name: 'Aún no hay préstamos' });
     fireEvent.click(screen.getByRole('button', { name: 'Crear préstamo' }));
@@ -160,10 +160,15 @@ describe('App', () => {
       target: { value: '0.085' },
     });
 
+    expect(await screen.findByText('2056-01-15')).toBeVisible();
+    expect(screen.getByText('360')).toBeVisible();
+    expect(screen.getByRole('rowheader', { name: 'Cuota total configurada' })).toBeVisible();
+    expect(screen.getByRole('rowheader', { name: 'Cuota total proyectada inicial' })).toBeVisible();
+    expect(screen.getByRole('rowheader', { name: 'Diferencia inicial de cuota' })).toBeVisible();
     expect(
-      await screen.findByText(/cuota base derivada de cuota total menos seguro/i),
+      screen.getByText(/la cuota proyectada se recalcula para conservar el plazo/i),
     ).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Guardar préstamo' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Guardar préstamo' })).toBeEnabled();
   });
 
   test('identifica préstamos sin contrato como heredados', async () => {

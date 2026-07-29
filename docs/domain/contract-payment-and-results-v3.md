@@ -29,7 +29,11 @@ La primera cuota se programa un mes después de la fecha de inicio. La cuota nú
 | Tasa nominal anual     | 8.5% (`0.085`) |
 | Interés del primer mes |     814,583.33 |
 
-La cuota base no cubre ese interés inicial. US-021 emite un error contractual trazable; no presenta un plan amortizable ni absorbe silenciosamente la diferencia con el seguro. El fixture ejecutable es [`contract-total-payment-insufficient-v1`](../../packages/domain/test/fixtures/contract-total-payment-insufficient-v1.json).
+La cuota base configurada no cubre ese interés inicial. El plazo sigue siendo contractual: la proyección contiene 360 cuotas, termina el `2056-01-15` y muestra una cuota total inicial proyectada de `1,034,250.51` bajo la convención nominal mensual actual. La diferencia con 900,000 queda visible; no se atribuye silenciosamente al seguro ni se usa para acortar el plazo. El fixture ejecutable es [`contract-total-payment-insufficient-v1`](../../packages/domain/test/fixtures/contract-total-payment-insufficient-v1.json).
+
+## Plazo contractual y cuota proyectada
+
+Para v3, la fecha final o cantidad total de cuotas es autoritativa. En cada período, la PWA calcula la cuota base que liquida el saldo en las cuotas restantes usando la tasa prevista; el seguro se agrega después. La cuota total configurada permanece como dato contractual declarado y se compara con la cuota total proyectada inicial. Esto no intenta reproducir automáticamente un estado de cuenta bancario: cargos, convenciones de días y reglas de recálculo pueden diferir. La decisión completa está en [ADR-0007](../adr/0007-contract-term-is-authoritative.md).
 
 ## Presentación acordada
 
@@ -43,3 +47,4 @@ La cuota base no cubre ese interés inicial. US-021 emite un error contractual t
 - **US-021:** contrato total, migración y casos de referencia. **Completado en dominio y persistencia.**
 - **US-022:** formato monetario universal y resumen inmediato. **Completado.**
 - **US-023:** detalle de amortización y gráfico ajustable bajo demanda. **Completado.**
+- **US-024:** preservar plazo contractual y exponer discrepancia de cuota. **Completado.**

@@ -1,7 +1,7 @@
 {
   "caseId": "contract-total-payment-insufficient-v1",
   "version": 1,
-  "title": "Cuota total incluida con seguro que no cubre el interés inicial",
+  "title": "Cuota total incluida con seguro que no preserva el plazo declarado",
   "source": {
     "type": "synthetic",
     "isBankValidated": false,
@@ -28,6 +28,8 @@
   "expected": {
     "basePayment": "750000.00",
     "firstInterest": "814583.33",
-    "errorIncludes": "cuota base derivada de cuota total menos seguro"
+    "completionDate": "2056-01-15",
+    "installments": 360,
+    "projectedInitialTotalPayment": "1034250.51"
   }
 }

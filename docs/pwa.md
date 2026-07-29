@@ -8,6 +8,8 @@ El formulario crea contratos v3 mensuales: muestra monto original, cuota total i
 
 Toda salida monetaria de la PWA usa un único formateador de `es-CR`: conserva el decimal redondeado contractual y añade símbolo de moneda, miles y decimales sin convertir el importe a `number`. Los campos editables siguen mostrando el literal decimal canónico para no modificar la entrada. El detalle del préstamo presenta de inmediato una tabla compacta con fecha final estimada, cuotas, principal, interés, seguro, total y saldo pendiente cuando aplique.
 
+Para un contrato v3, la cantidad de cuotas o fecha final declarada es autoritativa. Si la cuota total configurada no coincide con la cuota que requiere el modelo para cumplir ese plazo, el resumen conserva ambas cifras y explica la discrepancia; no adelanta la fecha final. La tabla de amortización usa el mismo calendario cuando se abre el detalle.
+
 La tabla de amortización y el gráfico se montan solo al seleccionar **Ver detalle de amortización**. El gráfico ofrece rangos de 12, 60, 120 períodos o todo el plazo, con ejes temporal y monetario, nombre y descripción accesibles. Véase [`domain/contract-payment-and-results-v3.md`](domain/contract-payment-and-results-v3.md).
 
 La PWA precachea la página, manifiesto, iconos y recursos de construcción. Después de la primera visita, la página raíz puede servirse mediante el service worker sin red. La verificación de actualización de caché y de recuperación ante datos locales inválidos requiere una prueba de navegador con Chromium y sigue pendiente dentro de `US-016`.

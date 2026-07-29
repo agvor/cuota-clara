@@ -1,11 +1,26 @@
 import { useMemo, useState } from 'react';
 
-import { projectLoanAmortization, type Loan, type PaymentRecord } from '@cuotaclara/domain';
+import {
+  estimateLoanContract,
+  projectLoanAmortization,
+  type Loan,
+  type PaymentRecord,
+} from '@cuotaclara/domain';
 
 import { formatMoney } from './money-format.js';
 
 const PAGE_SIZE = 24;
 const CHART_RANGES = [12, 60, 120] as const;
+
+type DisplayProjectionPeriod = Readonly<{
+  period: number;
+  date: string;
+  openingBalance: Loan['initialBalance'];
+  interest: Loan['initialBalance'];
+  principal: Loan['initialBalance'];
+  payment: Loan['initialBalance'];
+  closingBalance: Loan['initialBalance'];
+}>;
 
 export function ProjectionView({
   loan,
@@ -14,7 +29,18 @@ export function ProjectionView({
   const [page, setPage] = useState(0);
   const result = useMemo(() => {
     try {
-      return { value: projectLoanAmortization(loan) };
+      const periods: readonly DisplayProjectionPeriod[] = loan.contract
+        ? estimateLoanContract(loan).periods.map((period) => ({
+            period: period.period,
+            date: period.date,
+            openingBalance: period.openingBalance,
+            interest: period.interest,
+            principal: period.principal,
+            payment: period.totalDue,
+            closingBalance: period.closingBalance,
+          }))
+        : projectLoanAmortization(loan).periods;
+      return { periods };
     } catch (cause) {
       return {
         error: cause instanceof Error ? cause.message : 'No se pudo generar la proyección.',
@@ -28,7 +54,7 @@ export function ProjectionView({
         <p role="alert">{result.error}</p>
       </section>
     );
-  const periods = result.value.periods;
+  const periods = result.periods;
   const start = page * PAGE_SIZE;
   const visiblePeriods = periods.slice(start, start + PAGE_SIZE);
   const pages = Math.ceil(periods.length / PAGE_SIZE);
@@ -117,7 +143,7 @@ function BalanceChart({
 }: Readonly<{
   loan: Loan;
   payments: readonly PaymentRecord[];
-  periods: ReturnType<typeof projectLoanAmortization>['periods'];
+  periods: readonly DisplayProjectionPeriod[];
 }>) {
   const [range, setRange] = useState<number | 'all'>(60);
   const visiblePeriods = range === 'all' ? periods : periods.slice(-range);

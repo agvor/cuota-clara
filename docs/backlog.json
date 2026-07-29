@@ -305,9 +305,9 @@
       "dependsOn": ["US-020"],
       "status": "completed",
       "acceptanceCriteria": [
-        "El contrato guarda cuota total y seguro, deriva cuota base como total menos seguro y rechaza una cuota base no positiva o que no cubra interés.",
+        "El contrato guarda cuota total y seguro, deriva cuota base como total menos seguro y rechaza una cuota base no positiva.",
         "Con N cuotas mensuales, la última fecha es inicio + N meses; 360 cuotas verifican exactamente 30 años y el ancla de día tiene casos de referencia.",
-        "La migración y el respaldo no reinterpretan contratos v2, pagos ni escenarios; el caso 115,000,000/360/900,000/150,000/8.5% falla de forma trazable por cuota base insuficiente."
+        "La migración y el respaldo no reinterpretan contratos v2, pagos ni escenarios; el caso 115,000,000/360/900,000/150,000/8.5% conserva sus datos y permite comparar la cuota configurada."
       ]
     },
     {
@@ -321,7 +321,7 @@
       "acceptanceCriteria": [
         "Un formateador monetario común presenta separadores de miles y decimales en resúmenes, formularios, tablas y gráficos sin perder precisión decimal.",
         "El detalle inmediato del préstamo muestra fecha final, cuotas, principal, interés, seguro, total y saldo pendiente mediante una tabla compacta.",
-        "Las pruebas de interfaz cubren importes grandes, moneda y el mensaje de cuota insuficiente."
+        "Las pruebas de interfaz cubren importes grandes, moneda y la discrepancia entre cuota configurada y proyectada."
       ]
     },
     {
@@ -336,6 +336,20 @@
         "El resumen no calcula ni renderiza tabla/gráfico hasta que la persona solicita el detalle.",
         "La tabla alinea importes, conserva cabeceras accesibles y pagina resultados extensos.",
         "El gráfico tiene ejes temporal y monetario, etiquetas accesibles y control de rango sin ocultar datos."
+      ]
+    },
+    {
+      "id": "US-024",
+      "epic": "E7 · Contrato y resultados legibles",
+      "title": "Preservar el plazo contractual al estimar cuotas",
+      "story": "Como persona usuaria, quiero que la cantidad de cuotas acordada se cumpla en la proyección, para comparar mi cuota declarada con la cuota que exigen los supuestos del simulador.",
+      "requirements": ["RF-002", "RF-013", "RNF-001", "RNF-002", "RNF-011"],
+      "dependsOn": ["US-023"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "Un contrato v3 con N cuotas proyecta exactamente N períodos y termina en la fecha contractual, sin liquidarse temprano por una cuota declarada distinta.",
+        "El resumen conserva la cuota total configurada y muestra la cuota total inicial proyectada, con una discrepancia visible cuando corresponda.",
+        "El detalle de amortización usa el mismo calendario que el resumen y el caso 115,000,000/360/900,000/150,000/8.5% verifica 360 cuotas y fecha final contractual."
       ]
     }
   ]

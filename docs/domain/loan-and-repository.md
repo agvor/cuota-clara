@@ -6,7 +6,7 @@
 
 Un préstamo sin `contract` se identifica mediante `isLegacyLoan`. `requiresContractMigration` identifica tanto esos préstamos como los contratos v2, que no se reinterpretan automáticamente. Un registro heredado sigue pudiendo cargarse, exportarse y conservar sus pagos y escenarios. El diseño de detalle está en [`loan-contract-v2.md`](loan-contract-v2.md) y su evolución en [`contract-payment-and-results-v3.md`](contract-payment-and-results-v3.md).
 
-`estimateLoanContract` recibe un `Loan` con contrato v2 o v3 y genera una proyección trazable: cuotas, principal, interés, seguro, total, fecha de última cuota, pago final y saldo pendiente. Para v3 rechaza una cuota base que no cubra el interés del período. No modifica el agregado ni los pagos históricos.
+`estimateLoanContract` recibe un `Loan` con contrato v2 o v3 y genera una proyección trazable: cuotas, principal, interés, seguro, total, fecha de última cuota, pago final y saldo pendiente. Para v3 conserva el plazo declarado y compara la cuota total configurada con la cuota inicial proyectada necesaria bajo sus supuestos. No modifica el agregado ni los pagos históricos.
 
 Este contrato representa la configuración del préstamo; los pagos históricos y escenarios viven en el agregado asociado para que una proyección no modifique la realidad contractual.
 

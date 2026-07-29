@@ -26,6 +26,24 @@ export function EstimateSummary({
             <th scope="row">Cuotas estimadas</th>
             <td>{estimate.estimatedInstallments}</td>
           </tr>
+          {estimate.configuredTotalPayment ? (
+            <tr>
+              <th scope="row">Cuota total configurada</th>
+              <td>{formatMoney(estimate.configuredTotalPayment, loan.roundingPolicy)}</td>
+            </tr>
+          ) : null}
+          {estimate.projectedInitialTotalPayment ? (
+            <tr>
+              <th scope="row">Cuota total proyectada inicial</th>
+              <td>{formatMoney(estimate.projectedInitialTotalPayment, loan.roundingPolicy)}</td>
+            </tr>
+          ) : null}
+          {estimate.hasConfiguredPaymentDifference && estimate.initialPaymentDifference ? (
+            <tr>
+              <th scope="row">Diferencia inicial de cuota</th>
+              <td>{formatMoney(estimate.initialPaymentDifference, loan.roundingPolicy)}</td>
+            </tr>
+          ) : null}
           <tr>
             <th scope="row">Principal estimado</th>
             <td>{formatMoney(estimate.estimatedPrincipal, loan.roundingPolicy)}</td>
@@ -54,6 +72,13 @@ export function EstimateSummary({
         <p>
           La cuota final proyectada es {formatMoney(estimate.finalInstallment, loan.roundingPolicy)}
           , incluido seguro de {formatMoney(estimate.finalInsurance, loan.roundingPolicy)}.
+        </p>
+      ) : null}
+      {estimate.hasConfiguredPaymentDifference ? (
+        <p className="payment-difference" role="status">
+          Con los supuestos actuales, la cuota proyectada se recalcula para conservar el plazo
+          contractual. Compárala con la cuota configurada; el banco puede usar convenciones, cargos
+          o revisiones de tasa distintas.
         </p>
       ) : null}
     </section>
