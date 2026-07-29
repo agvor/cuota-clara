@@ -2,10 +2,10 @@
 
 import '@testing-library/jest-dom/vitest';
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
-import { createLoan, Money } from '@cuotaclara/domain';
+import { createLoan, createRecurringExtraPaymentScenario, Money } from '@cuotaclara/domain';
 
 import { ScenarioTools } from './scenario-tools.js';
 
@@ -37,5 +37,59 @@ describe('ScenarioTools', () => {
     await waitFor(() => expect(onSaveScenario).toHaveBeenCalledTimes(1));
     expect(screen.getByRole('heading', { name: 'Comparación con escenario base' })).toBeVisible();
     expect(screen.getByText('Interés ahorrado')).toBeVisible();
+  });
+
+  test('configura un extraordinario mensual constante', async () => {
+    const onSaveScenario = vi.fn().mockResolvedValue(undefined);
+    render(<ScenarioTools loan={loan} scenarios={[]} onSaveScenario={onSaveScenario} />);
+    fireEvent.change(screen.getByLabelText('Tipo de escenario'), {
+      target: { value: 'constant_extra' },
+    });
+    expect(screen.queryByLabelText('Fecha del pago extraordinario')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Extraordinario mensual'), {
+      target: { value: '50.00' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Comparar y guardar escenario' }));
+
+    await waitFor(() => expect(onSaveScenario).toHaveBeenCalledTimes(1));
+    expect(onSaveScenario).toHaveBeenCalledWith(
+      expect.objectContaining({
+        configuration: expect.objectContaining({
+          kind: 'recurring_extra_payment_v1',
+          mode: 'constant_extra',
+        }),
+      }),
+    );
+  });
+
+  test('permite seleccionar dos escenarios en el gráfico comparativo', () => {
+    const scenarios = [
+      createRecurringExtraPaymentScenario({
+        id: 'scenario-a',
+        loanId: loan.id,
+        name: 'Extra A',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        recurringExtraPayment: { kind: 'constant_extra', amount: Money.from('25', 'CRC') },
+      }),
+      createRecurringExtraPaymentScenario({
+        id: 'scenario-b',
+        loanId: loan.id,
+        name: 'Principal B',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        recurringExtraPayment: { kind: 'constant_principal', amount: Money.from('125', 'CRC') },
+      }),
+    ];
+    render(<ScenarioTools loan={loan} scenarios={scenarios} onSaveScenario={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText('Escenario A'), { target: { value: 'scenario-a' } });
+    fireEvent.change(screen.getByLabelText('Escenario B'), { target: { value: 'scenario-b' } });
+
+    expect(screen.getByRole('img', { name: 'Comparar saldos de escenarios' })).toBeVisible();
+    const chart = screen.getByRole('heading', {
+      name: 'Comparar saldos de escenarios',
+    }).parentElement;
+    if (!chart) throw new Error('No se encontró el gráfico de escenarios.');
+    expect(within(chart).getByText('Extra A', { selector: 'span' })).toBeVisible();
+    expect(within(chart).getByText('Principal B', { selector: 'span' })).toBeVisible();
   });
 });

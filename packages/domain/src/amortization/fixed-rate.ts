@@ -14,6 +14,12 @@ export type OneTimeExtraPayment = Readonly<{
   amount: Money;
 }>;
 
+/** Regla reproducible de aportes extraordinarios aplicada después de la cuota ordinaria. */
+export type RecurringExtraPayment = Readonly<{
+  kind: 'constant_extra' | 'constant_principal';
+  amount: Money;
+}>;
+
 export type FixedRateAmortizationInput = Readonly<{
   openingBalance: Money;
   annualNominalRate: string;
@@ -23,6 +29,7 @@ export type FixedRateAmortizationInput = Readonly<{
   periodEndDates: readonly string[];
   roundingPolicy: RoundingPolicy;
   extraPayments?: readonly OneTimeExtraPayment[];
+  recurringExtraPayment?: RecurringExtraPayment;
   variableRatePlan?: ManualVariableRatePlan;
   tbpMarginRatePlan?: TbpMarginRatePlan;
 }>;
@@ -86,6 +93,16 @@ function validateInput(input: FixedRateAmortizationInput): void {
     throw new AmortizationValidationError(
       'El saldo y la cuota ordinaria deben usar la misma moneda.',
     );
+  }
+  if (input.recurringExtraPayment) {
+    if (
+      input.recurringExtraPayment.amount.currency !== input.openingBalance.currency ||
+      !input.recurringExtraPayment.amount.isPositive()
+    ) {
+      throw new AmortizationValidationError(
+        'El aporte recurrente debe ser positivo y usar la moneda del préstamo.',
+      );
+    }
   }
 }
 
@@ -174,7 +191,9 @@ export function generateFixedRateAmortization(
     }
 
     const balanceAfterOrdinaryPayment = openingBalance.subtract(ordinaryPrincipal);
-    const requestedExtraPayment = extrasByDate.get(periodEndDate) ?? noExtraPayment;
+    const requestedExtraPayment = (extrasByDate.get(periodEndDate) ?? noExtraPayment).add(
+      resolveRecurringExtraPayment(input.recurringExtraPayment, ordinaryPrincipal, noExtraPayment),
+    );
     const extraPayment = balanceAfterOrdinaryPayment.isLessThan(requestedExtraPayment)
       ? balanceAfterOrdinaryPayment
       : requestedExtraPayment;
@@ -216,6 +235,18 @@ export function generateFixedRateAmortization(
   }
 
   throw new AmortizationValidationError('Las fechas de pago no alcanzan para cancelar el saldo.');
+}
+
+function resolveRecurringExtraPayment(
+  recurringExtraPayment: RecurringExtraPayment | undefined,
+  ordinaryPrincipal: Money,
+  zero: Money,
+): Money {
+  if (!recurringExtraPayment) return zero;
+  if (recurringExtraPayment.kind === 'constant_extra') return recurringExtraPayment.amount;
+  return ordinaryPrincipal.isLessThan(recurringExtraPayment.amount)
+    ? recurringExtraPayment.amount.subtract(ordinaryPrincipal)
+    : zero;
 }
 
 export function compareFixedRateAmortizations(

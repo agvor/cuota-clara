@@ -11,6 +11,7 @@ La documentación es parte del producto y se mantiene en el mismo cambio que el 
 | Motor de amortización inicial                   | `domain/amortization-engine.md`                                            |
 | Estado histórico y reconciliación               | `domain/historical-state.md`                                               |
 | Transición a tasa variable manual               | `domain/manual-variable-rates.md`                                          |
+| Escenarios de aporte recurrente                 | `domain/recurring-extra-payment-scenarios.md`                              |
 | Escenarios con pago extraordinario único        | `domain/one-time-extra-payment-scenarios.md`                               |
 | Préstamo y puerto de repositorio                | `domain/loan-and-repository.md`                                            |
 | Contratos v2/v3, seguro y escenarios TBP+margen | `domain/loan-contract-v2.md` y `domain/contract-payment-and-results-v3.md` |

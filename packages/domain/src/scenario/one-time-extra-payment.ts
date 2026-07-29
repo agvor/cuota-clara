@@ -145,7 +145,10 @@ function deserializeExtraPayment(scenario: OneTimeExtraPaymentScenario): OneTime
   });
 }
 
-function generatePeriodEndDates(startDate: string, periodsPerYear: number): readonly string[] {
+export function generatePeriodEndDates(
+  startDate: string,
+  periodsPerYear: number,
+): readonly string[] {
   if (!isIsoDate(startDate) || !Number.isInteger(periodsPerYear) || periodsPerYear <= 0) {
     throw new ScenarioValidationError('El préstamo requiere fecha inicial y frecuencia válidas.');
   }

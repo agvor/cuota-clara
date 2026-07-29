@@ -381,6 +381,21 @@
         "Una cuota automática muestra su importe calculado sin las filas Cuota total proyectada inicial ni Diferencia inicial de cuota.",
         "El gráfico permite activar saldo, cuota total, interés, principal y cuota extraordinaria registrada; las series adicionales de proyección son más claras y discontinuas."
       ]
+    },
+    {
+      "id": "US-027",
+      "epic": "E4 · Escenarios y resultados",
+      "title": "Proyectar aportes recurrentes y comparar dos escenarios",
+      "story": "Como persona usuaria, quiero simular aportes extraordinarios mensuales o un objetivo mensual de principal y comparar dos alternativas para decidir cómo acelerar mi préstamo.",
+      "requirements": ["RF-008", "RF-009", "RF-010", "RNF-001", "RNF-002", "RNF-008"],
+      "dependsOn": ["US-026"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "Un escenario de extraordinario constante aporta el mismo importe adicional después de cada cuota ordinaria hasta cancelar el saldo.",
+        "Un escenario de aporte constante al principal calcula el extraordinario de cada periodo como el faltante entre el objetivo y el principal de la cuota ordinaria, sin aportar de más cuando este ya alcanza el objetivo.",
+        "Los escenarios se persisten sin mutar el préstamo ni los pagos reales y sus resultados comparan fecha final, plazo, interés y total pagado contra la base.",
+        "Un gráfico de escenarios conserva la base y permite seleccionar hasta dos alternativas de saldo simultáneamente."
+      ]
     }
   ]
 }

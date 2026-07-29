@@ -43,6 +43,7 @@ export {
   type FixedRateAmortizationPeriod,
   type FixedRateAmortizationResult,
   type OneTimeExtraPayment,
+  type RecurringExtraPayment,
 } from './amortization/fixed-rate.js';
 export {
   createPaymentRecord,
@@ -92,6 +93,13 @@ export {
   type OneTimeExtraPaymentComparison,
   type OneTimeExtraPaymentScenario,
 } from './scenario/one-time-extra-payment.js';
+export {
+  compareLoanWithRecurringExtraPayment,
+  createRecurringExtraPaymentScenario,
+  isRecurringExtraPaymentScenario,
+  type RecurringExtraPaymentComparison,
+  type RecurringExtraPaymentScenario,
+} from './scenario/recurring-extra-payment.js';
 export {
   createTbpMarginScenario,
   isTbpMarginScenario,
