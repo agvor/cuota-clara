@@ -149,7 +149,7 @@
       "story": "Como persona usuaria, quiero abrir una aplicación web responsive y ver mis préstamos independientes.",
       "requirements": ["RF-001", "RF-012", "RNF-008", "RNF-009"],
       "dependsOn": ["US-009"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "La aplicación React se construye como PWA y usa el paquete de dominio sin duplicar cálculos.",
         "La lista muestra resumen de cada préstamo y estados vacíos accesibles.",
@@ -163,7 +163,7 @@
       "story": "Como persona usuaria, quiero configurar un préstamo y sus tasas para obtener una proyección válida.",
       "requirements": ["RF-001", "RF-002", "RF-003"],
       "dependsOn": ["US-007", "US-010"],
-      "status": "planned",
+      "status": "ready",
       "acceptanceCriteria": [
         "El formulario valida campos obligatorios, moneda, fechas, cuota y configuración fija-variable.",
         "Crear, editar, duplicar y eliminar requieren las confirmaciones apropiadas.",

@@ -1,0 +1,154 @@
+:root {
+  color: #172033;
+  background: #f8fafc;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+a {
+  color: #1d4ed8;
+}
+
+.app-shell {
+  width: min(100% - 2rem, 72rem);
+  margin: 0 auto;
+}
+
+.skip-link {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+}
+
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  z-index: 1;
+  padding: 0.5rem 0.75rem;
+  background: #fff;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.brand {
+  color: #172033;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+nav {
+  display: flex;
+  gap: 1rem;
+}
+
+main {
+  padding: 3rem 0;
+}
+
+.eyebrow {
+  margin: 0;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+h1 {
+  margin-bottom: 0.25rem;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 1.1;
+}
+
+.section-introduction {
+  max-width: 42rem;
+  color: #475569;
+}
+
+.loan-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.loan-card,
+.empty-state,
+.about {
+  padding: 1.25rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.loan-card h2,
+.empty-state h2,
+.about h2 {
+  margin-top: 0;
+}
+
+.loan-card dl {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.loan-card dt {
+  color: #475569;
+  font-size: 0.875rem;
+}
+
+.loan-card dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.loan-card button {
+  padding: 0;
+  border: 0;
+  color: #1d4ed8;
+  background: transparent;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.loan-detail {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  border-left: 4px solid #1d4ed8;
+  background: #dbeafe;
+}
+
+.about {
+  margin-top: 3rem;
+}
+
+@media (max-width: 32rem) {
+  .app-shell {
+    width: min(100% - 1.25rem, 72rem);
+  }
+
+  .site-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  main {
+    padding: 2rem 0;
+  }
+}

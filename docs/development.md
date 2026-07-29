@@ -59,6 +59,8 @@ El comando ejecuta, en este orden:
 
 Para desarrollar, usar `pnpm test:watch`. Las pruebas de navegador y de accesibilidad se añadirán cuando exista la PWA; entonces también serán obligatorias para los cambios de interfaz.
 
+La PWA se comprueba en producción con `pnpm build:web`; `pnpm verify` también la compila para evitar que un cambio de interfaz llegue a CI sin construir.
+
 ## Análisis estático
 
 El análisis no sustituye las pruebas. ESLint cubre errores y convenciones de JavaScript/TypeScript; TypeScript estricto detecta incompatibilidades de tipos; Prettier elimina discusiones de formato. Las reglas específicas del dominio financiero permanecen como invariantes, pruebas y revisión humana, porque un analizador estático no puede demostrar la corrección contractual de una amortización.

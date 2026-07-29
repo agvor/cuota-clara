@@ -25,7 +25,7 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 | RF-009 | Comparar escenarios.                    | Se comparan al menos escenario base y un escenario alternativo por fecha final, plazo restante, pago total, interés y ahorro.                                               | En curso |
 | RF-010 | Visualizar resultados.                  | Se muestra tabla paginada o virtualizada y gráfico de evolución de saldo; pagos históricos y proyecciones se distinguen.                                                    | Planeado |
 | RF-011 | Persistir y respaldar datos locales.    | Los datos sobreviven reinicios, se pueden exportar a una copia de respaldo e importar tras validación.                                                                      | En curso |
-| RF-012 | Operar sin conexión.                    | Las funciones MVP funcionan después de instalar/cargar la PWA, sin cuenta ni red.                                                                                           | Planeado |
+| RF-012 | Operar sin conexión.                    | Las funciones MVP funcionan después de instalar/cargar la PWA, sin cuenta ni red.                                                                                           | En curso |
 
 ### Precisiones del modelo de tasa
 
@@ -46,8 +46,8 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 | RNF-005 | Privacidad local-first.           | El MVP no transmite datos financieros a un servidor.                                                                     | En curso |
 | RNF-006 | Importación segura y recuperable. | La importación valida antes de confirmar y los respaldos se validan antes de restaurar.                                  | En curso |
 | RNF-007 | Rendimiento.                      | Una proyección de hasta 600 periodos se calcula interactivamente en equipo convencional; se medirá antes de optimizar.   | Planeado |
-| RNF-008 | Accesibilidad y adaptación.       | Flujos principales utilizables con teclado y pantallas pequeñas; objetivo WCAG 2.1 AA.                                   | Planeado |
-| RNF-009 | Portabilidad.                     | Funciona en navegadores modernos de escritorio y móviles; la PWA es instalable.                                          | Planeado |
+| RNF-008 | Accesibilidad y adaptación.       | Flujos principales utilizables con teclado y pantallas pequeñas; objetivo WCAG 2.1 AA.                                   | En curso |
+| RNF-009 | Portabilidad.                     | Funciona en navegadores modernos de escritorio y móviles; la PWA es instalable.                                          | En curso |
 | RNF-010 | Evolución freemium.               | Persistencia, identidad y sincronización se consumen mediante puertos; el dominio no conoce planes de pago.              | En curso |
 | RNF-011 | Calidad del cálculo.              | Cada regla financiera tiene pruebas unitarias y casos de referencia comparados con fuente contractual u hoja de cálculo. | Planeado |
 | RNF-012 | Seguridad de fórmulas.            | No hay ejecución de código arbitrario. Si se agregan fórmulas, usarán un lenguaje limitado validado.                     | Planeado |
