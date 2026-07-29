@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@cuotaclara/domain": "workspace:*",
+    "@cuotaclara/import-csv": "workspace:*",
     "@cuotaclara/local-storage": "workspace:*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"

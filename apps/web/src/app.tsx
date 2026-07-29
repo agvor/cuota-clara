@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 
-import type { Loan, LoanAggregate, LoanRepository } from '@cuotaclara/domain';
+import type { Loan, LoanAggregate, LoanRepository, PaymentRecord } from '@cuotaclara/domain';
 
 import { LoanForm } from './loan-form.js';
+import { PaymentTools } from './payment-tools.js';
 import './styles.css';
 
 export type AppProps = Readonly<{
@@ -27,6 +28,7 @@ export function App({ repository }: AppProps) {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [selectedLoanId, setSelectedLoanId] = useState<string>();
   const [formLoan, setFormLoan] = useState<Loan | null | undefined>(undefined);
+  const [selectedAggregate, setSelectedAggregate] = useState<LoanAggregate>();
 
   async function reloadLoans() {
     const loans = await repository.listLoans();
@@ -80,6 +82,33 @@ export function App({ repository }: AppProps) {
     await repository.deleteLoan(loan.id);
     await reloadLoans();
     setSelectedLoanId(undefined);
+    setSelectedAggregate(undefined);
+  }
+
+  async function selectLoan(loanId: string) {
+    setSelectedLoanId(loanId);
+    setSelectedAggregate(await repository.loadAggregate(loanId));
+  }
+
+  async function savePayment(payment: PaymentRecord) {
+    if (!selectedAggregate) return;
+    const existing = selectedAggregate.payments.find((record) => record.id === payment.id);
+    const payments = existing
+      ? selectedAggregate.payments.map((record) => (record.id === payment.id ? payment : record))
+      : [...selectedAggregate.payments, payment];
+    const aggregate = { ...selectedAggregate, payments };
+    await repository.saveAggregate(aggregate);
+    setSelectedAggregate(aggregate);
+  }
+
+  async function importPayments(payments: readonly PaymentRecord[]) {
+    if (!selectedAggregate) return;
+    const aggregate = {
+      ...selectedAggregate,
+      payments: [...selectedAggregate.payments, ...payments],
+    };
+    await repository.saveAggregate(aggregate);
+    setSelectedAggregate(aggregate);
   }
 
   return (
@@ -141,7 +170,7 @@ export function App({ repository }: AppProps) {
                           <dd>{Number(loan.annualNominalRate) * 100}%</dd>
                         </div>
                       </dl>
-                      <button type="button" onClick={() => setSelectedLoanId(loan.id)}>
+                      <button type="button" onClick={() => void selectLoan(loan.id)}>
                         Ver préstamo
                       </button>
                     </article>
@@ -154,6 +183,9 @@ export function App({ repository }: AppProps) {
                   onEdit={() => setFormLoan(state.loans.find((loan) => loan.id === selectedLoanId))}
                   onDuplicate={duplicateLoan}
                   onDelete={deleteLoan}
+                  aggregate={selectedAggregate}
+                  onSavePayment={savePayment}
+                  onImportPayments={importPayments}
                 />
               ) : null}
             </>
@@ -182,11 +214,17 @@ function LoanDetail({
   onEdit,
   onDuplicate,
   onDelete,
+  aggregate,
+  onSavePayment,
+  onImportPayments,
 }: Readonly<{
   loan: Loan | undefined;
   onEdit: () => void;
   onDuplicate: (loan: Loan) => Promise<void>;
   onDelete: (loan: Loan) => Promise<void>;
+  aggregate: LoanAggregate | undefined;
+  onSavePayment: (payment: PaymentRecord) => Promise<void>;
+  onImportPayments: (payments: readonly PaymentRecord[]) => Promise<void>;
 }>) {
   if (!loan) return null;
   return (
@@ -207,6 +245,16 @@ function LoanDetail({
           Eliminar préstamo
         </button>
       </div>
+      {aggregate?.loan.id === loan.id ? (
+        <PaymentTools
+          loan={loan}
+          payments={aggregate.payments}
+          onSavePayment={onSavePayment}
+          onImportPayments={onImportPayments}
+        />
+      ) : (
+        <p aria-live="polite">Cargando pagos…</p>
+      )}
     </section>
   );
 }

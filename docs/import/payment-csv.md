@@ -31,4 +31,4 @@ La moneda se toma de la configuración del préstamo, no de cada fila. Los impor
 - Identificadores duplicados dentro del archivo o contra una lista existente.
 - Meses faltantes entre pagos válidos, como señal diagnóstica; no implica por sí mismo que el banco haya omitido un cobro.
 
-La confirmación, persistencia transaccional y resolución interactiva de errores se implementarán en los casos de uso de la aplicación. Una fila sin principal puede previsualizarse, pero no permitirá reconstruir saldo hasta completar ese dato o reconciliar explícitamente.
+La interfaz confirma únicamente una previsualización sin errores y persiste todas sus filas en una única operación del préstamo seleccionado. Una fila sin principal puede previsualizarse, pero no permitirá reconstruir saldo hasta completar ese dato o reconciliar explícitamente. La interfaz también explica que el corte proyectado empieza tras el último pago histórico y señala meses faltantes; un saldo bancario distinto requiere un ajuste de reconciliación explícito.

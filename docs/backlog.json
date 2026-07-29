@@ -177,7 +177,7 @@
       "story": "Como persona usuaria, quiero registrar pagos manuales o importar un CSV desde el préstamo seleccionado.",
       "requirements": ["RF-005", "RF-006", "RF-007"],
       "dependsOn": ["US-008", "US-010"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "Se puede registrar, corregir y revisar un pago histórico manual.",
         "El asistente CSV muestra previsualización antes de confirmar.",
