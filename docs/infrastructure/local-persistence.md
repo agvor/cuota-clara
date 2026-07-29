@@ -27,6 +27,6 @@ Una modificación persistente incrementa la versión declarada por Dexie y añad
 
 ## Datos inválidos y recuperación
 
-Si una fila no cumple el contrato al guardarse o recuperarse, el adaptador emite `LocalDataCorruptionError`. La interfaz deberá mostrar un mensaje recuperable y no sustituir ni borrar datos silenciosamente. La ruta de recuperación prevista es conservar la base, exportar los registros que aún sean legibles y restaurar una copia validada; la experiencia de respaldo/restauración se implementará en `US-015`.
+Si una fila no cumple el contrato al guardarse o recuperarse, el adaptador emite `LocalDataCorruptionError`. La interfaz muestra un mensaje recuperable y no sustituye ni borra datos silenciosamente. La ruta de recuperación es conservar la base, exportar los registros que aún sean legibles y restaurar una copia validada.
 
-Mientras esa interfaz no exista, el equipo de soporte debe pedir una copia de respaldo previa o conservar una exportación de los registros legibles antes de usar las herramientas del navegador para borrar la base. Borrar IndexedDB es una última opción y nunca una acción automática de la aplicación.
+La copia usa un esquema versionado, serializa importes decimales como texto y valida todos los agregados antes de solicitar confirmación de restauración. Borrar IndexedDB es una última opción y nunca una acción automática de la aplicación.

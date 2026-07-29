@@ -13,13 +13,13 @@
     "format": "prettier --check .",
     "format:write": "prettier --write .",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit --project packages/domain/tsconfig.json && tsc --noEmit --project packages/import-csv/tsconfig.json && tsc --noEmit --project packages/local-storage/tsconfig.json",
+    "typecheck": "tsc --noEmit --project packages/domain/tsconfig.json && tsc --noEmit --project packages/import-csv/tsconfig.json && tsc --noEmit --project packages/local-storage/tsconfig.json && tsc --noEmit --project packages/backup/tsconfig.json",
     "build:web": "pnpm --filter @cuotaclara/web build",
     "dev:web": "cd apps/web && ../../node_modules/.bin/vite",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "commit:check": "commitlint --edit",
-    "verify": "node tooling/docs-status.mjs --check && node tooling/backlog-status.mjs --check && node tooling/run-instructions.mjs --check && prettier --check . && eslint . && tsc --noEmit --project packages/domain/tsconfig.json && tsc --noEmit --project packages/import-csv/tsconfig.json && tsc --noEmit --project packages/local-storage/tsconfig.json && tsc --noEmit --project apps/web/tsconfig.json && vitest run --passWithNoTests && pnpm --filter @cuotaclara/web build"
+    "verify": "node tooling/docs-status.mjs --check && node tooling/backlog-status.mjs --check && node tooling/run-instructions.mjs --check && prettier --check . && eslint . && tsc --noEmit --project packages/domain/tsconfig.json && tsc --noEmit --project packages/import-csv/tsconfig.json && tsc --noEmit --project packages/local-storage/tsconfig.json && tsc --noEmit --project packages/backup/tsconfig.json && tsc --noEmit --project apps/web/tsconfig.json && vitest run --passWithNoTests && pnpm --filter @cuotaclara/web build"
   },
   "packageManager": "pnpm@11.17.0+sha512.cca3cea332ad254bb84145f966d19f4879615210346fc92c79a047f23a0d7b3cca3c3792f0076ba1f1831d277efbcf0a9119b31a9a60eca7fb3d6231f331ef72",
   "devDependencies": {

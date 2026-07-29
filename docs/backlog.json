@@ -219,7 +219,7 @@
       "story": "Como persona usuaria, quiero exportar e importar una copia validada de mis datos para no perderlos.",
       "requirements": ["RF-011", "RNF-006"],
       "dependsOn": ["US-009", "US-011"],
-      "status": "planned",
+      "status": "completed",
       "acceptanceCriteria": [
         "La copia contiene préstamo, pagos, escenarios y versión de esquema.",
         "La restauración valida antes de cambiar datos y ofrece resumen del impacto.",

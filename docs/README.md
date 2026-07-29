@@ -15,6 +15,7 @@ La documentación es parte del producto y se mantiene en el mismo cambio que el 
 | Préstamo y puerto de repositorio               | `domain/loan-and-repository.md`              |
 | Importación CSV de pagos                       | `import/payment-csv.md`                      |
 | Persistencia local, migraciones y recuperación | `infrastructure/local-persistence.md`        |
+| Respaldo y restauración                        | `backup.md`                                  |
 | PWA, navegación y estado offline actual        | `pwa.md`                                     |
 | Preparación y ejecución local                  | `run.md`                                     |
 | Límites y componentes                          | `architecture.md`                            |

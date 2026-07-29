@@ -9,6 +9,7 @@ import type {
 } from '@cuotaclara/domain';
 
 import { LoanForm } from './loan-form.js';
+import { BackupTools } from './backup-tools.js';
 import { PaymentTools } from './payment-tools.js';
 import { ProjectionView } from './projection-view.js';
 import { ScenarioTools } from './scenario-tools.js';
@@ -214,6 +215,7 @@ export function App({ repository }: AppProps) {
           <h2 id="about-title">Datos bajo tu control</h2>
           <p>CuotaClara guarda los préstamos localmente y no requiere una cuenta para el MVP.</p>
         </section>
+        <BackupTools repository={repository} onRestored={reloadLoans} />
       </main>
     </div>
   );
