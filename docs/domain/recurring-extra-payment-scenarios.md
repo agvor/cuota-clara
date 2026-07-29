@@ -16,4 +16,4 @@ Así, el principal total aplicado intenta ser el objetivo declarado. Si la cuota
 
 ## Comparación visual
 
-La PWA conserva la línea base y permite elegir hasta dos escenarios guardados. El gráfico muestra su evolución de saldo; el resumen de una alternativa reporta fecha final, períodos ahorrados, interés ahorrado y total pagado. Una comparación no es un estado de cuenta bancario.
+La configuración de escenarios no duplica resultados visuales. Al abrir el detalle de amortización, la PWA conserva la línea base y permite elegir hasta dos escenarios guardados sobre ese mismo gráfico. La tabla de la misma vista reporta fecha final, períodos ahorrados, interés ahorrado y total pagado. Una comparación no es un estado de cuenta bancario.

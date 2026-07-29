@@ -2,7 +2,7 @@
 
 import '@testing-library/jest-dom/vitest';
 
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { createLoan, createRecurringExtraPaymentScenario, Money } from '@cuotaclara/domain';
@@ -23,7 +23,7 @@ const loan = createLoan({
 });
 
 describe('ScenarioTools', () => {
-  test('guarda un escenario alternativo y muestra su comparación', async () => {
+  test('guarda un escenario alternativo para compararlo desde la amortización', async () => {
     const onSaveScenario = vi.fn().mockResolvedValue(undefined);
     render(<ScenarioTools loan={loan} scenarios={[]} onSaveScenario={onSaveScenario} />);
     fireEvent.change(screen.getByLabelText('Fecha del pago extraordinario'), {
@@ -32,11 +32,9 @@ describe('ScenarioTools', () => {
     fireEvent.change(screen.getByLabelText('Importe adicional al principal'), {
       target: { value: '100.00' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Comparar y guardar escenario' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Crear escenario' }));
 
     await waitFor(() => expect(onSaveScenario).toHaveBeenCalledTimes(1));
-    expect(screen.getByRole('heading', { name: 'Comparación con escenario base' })).toBeVisible();
-    expect(screen.getByText('Interés ahorrado')).toBeVisible();
   });
 
   test('configura un extraordinario mensual constante', async () => {
@@ -49,7 +47,7 @@ describe('ScenarioTools', () => {
     fireEvent.change(screen.getByLabelText('Extraordinario mensual'), {
       target: { value: '50.00' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Comparar y guardar escenario' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Crear escenario' }));
 
     await waitFor(() => expect(onSaveScenario).toHaveBeenCalledTimes(1));
     expect(onSaveScenario).toHaveBeenCalledWith(
@@ -62,7 +60,7 @@ describe('ScenarioTools', () => {
     );
   });
 
-  test('permite seleccionar dos escenarios en el gráfico comparativo', () => {
+  test('permite editar y eliminar escenarios sin mostrar un gráfico duplicado', async () => {
     const scenarios = [
       createRecurringExtraPaymentScenario({
         id: 'scenario-a',
@@ -79,17 +77,25 @@ describe('ScenarioTools', () => {
         recurringExtraPayment: { kind: 'constant_principal', amount: Money.from('125', 'CRC') },
       }),
     ];
-    render(<ScenarioTools loan={loan} scenarios={scenarios} onSaveScenario={vi.fn()} />);
+    const onSaveScenario = vi.fn().mockResolvedValue(undefined);
+    const onDeleteScenario = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(
+      <ScenarioTools
+        loan={loan}
+        scenarios={scenarios}
+        onSaveScenario={onSaveScenario}
+        onDeleteScenario={onDeleteScenario}
+      />,
+    );
 
-    fireEvent.change(screen.getByLabelText('Escenario A'), { target: { value: 'scenario-a' } });
-    fireEvent.change(screen.getByLabelText('Escenario B'), { target: { value: 'scenario-b' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Editar escenario' })[0]!);
+    expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeVisible();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Eliminar escenario' })[1]!);
 
-    expect(screen.getByRole('img', { name: 'Comparar saldos de escenarios' })).toBeVisible();
-    const chart = screen.getByRole('heading', {
-      name: 'Comparar saldos de escenarios',
-    }).parentElement;
-    if (!chart) throw new Error('No se encontró el gráfico de escenarios.');
-    expect(within(chart).getByText('Extra A', { selector: 'span' })).toBeVisible();
-    expect(within(chart).getByText('Principal B', { selector: 'span' })).toBeVisible();
+    await waitFor(() => expect(onDeleteScenario).toHaveBeenCalledWith('scenario-b'));
+    expect(
+      screen.queryByRole('img', { name: 'Comparar saldos de escenarios' }),
+    ).not.toBeInTheDocument();
   });
 });

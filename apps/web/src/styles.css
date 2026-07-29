@@ -589,6 +589,72 @@ h1 {
   background: #15803d;
 }
 
+.legend.scenario-first::before {
+  background: #7c3aed;
+}
+
+.legend.scenario-second::before {
+  background: #db2777;
+}
+
+.scenario-comparison-selector {
+  align-items: end;
+  padding-top: 0.6rem;
+  border-top: 1px solid #dbeafe;
+}
+
+.scenario-comparison-selector label {
+  display: grid;
+  gap: 0.25rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+.chart-scenario-line {
+  fill: none;
+  stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-scenario-line.scenario-first {
+  stroke: #7c3aed;
+  stroke-dasharray: 8 4;
+}
+
+.chart-scenario-line.scenario-second {
+  stroke: #db2777;
+  stroke-dasharray: 3 4;
+}
+
+.scenario-comparison-summary {
+  margin-top: 1rem;
+}
+
+.scenario-comparison-summary h4 {
+  margin-bottom: 0.5rem;
+}
+
+.scenario-comparison-summary table {
+  width: 100%;
+  min-width: 44rem;
+  border-collapse: collapse;
+}
+
+.scenario-comparison-summary th,
+.scenario-comparison-summary td {
+  padding: 0.55rem 0.75rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.scenario-comparison-summary thead {
+  background: #f5f3ff;
+}
+
+.scenario-comparison-summary td:nth-child(n + 2) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 button {
   padding: 0.5rem 0.75rem;
   border: 1px solid #1d4ed8;
@@ -611,92 +677,6 @@ button[disabled] {
 
 .tbp-scenarios h3 {
   margin-bottom: 0.25rem;
-}
-
-.scenario-chart {
-  margin-top: 1rem;
-  padding: 0.85rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
-  background: #fff;
-}
-
-.scenario-chart h3 {
-  margin-top: 0;
-}
-
-.scenario-selectors {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.scenario-selectors label {
-  display: grid;
-  gap: 0.25rem;
-  color: #334155;
-  font-weight: 600;
-}
-
-.scenario-chart svg {
-  display: block;
-  width: 100%;
-  min-height: 14rem;
-  margin-top: 0.75rem;
-}
-
-.scenario-axis {
-  stroke: #475569;
-  stroke-width: 1.25;
-  vector-effect: non-scaling-stroke;
-}
-
-.scenario-label {
-  fill: #334155;
-  font-size: 12px;
-}
-
-.scenario-line {
-  fill: none;
-  stroke-width: 2.5;
-  vector-effect: non-scaling-stroke;
-}
-
-.scenario-line.base {
-  stroke: #334155;
-}
-
-.scenario-line.first {
-  stroke: #2563eb;
-}
-
-.scenario-line.second {
-  stroke: #9333ea;
-  stroke-dasharray: 7 5;
-}
-
-.scenario-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.scenario-legend span::before {
-  display: inline-block;
-  width: 0.8rem;
-  height: 0.2rem;
-  margin-right: 0.35rem;
-  background: #334155;
-  content: '';
-  vertical-align: middle;
-}
-
-.scenario-legend .first::before {
-  background: #2563eb;
-}
-
-.scenario-legend .second::before {
-  background: #9333ea;
 }
 
 .about {

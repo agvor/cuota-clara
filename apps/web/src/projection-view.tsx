@@ -1,13 +1,18 @@
 import { useMemo, useState } from 'react';
 
 import {
+  compareLoanWithOneTimeExtraPayment,
+  compareLoanWithRecurringExtraPayment,
   estimateLoanContract,
+  isOneTimeExtraPaymentScenario,
+  isRecurringExtraPaymentScenario,
   projectLoanAmortization,
   type Loan,
   type PaymentRecord,
+  type ProjectionScenarioSnapshot,
 } from '@cuotaclara/domain';
 
-import { formatCompactMoney, formatMoney } from './money-format.js';
+import { formatCompactMoney, formatDecimalMoney, formatMoney } from './money-format.js';
 
 const PAGE_SIZE = 24;
 const CHART_RANGES = [12, 60, 120] as const;
@@ -24,6 +29,7 @@ const SERIES = [
 type SortDirection = 'ascending' | 'descending';
 type SeriesId = (typeof SERIES)[number]['id'];
 type SelectedSeries = Readonly<Record<SeriesId, boolean>>;
+type ComparableScenario = ProjectionScenarioSnapshot;
 type DisplayProjectionPeriod = Readonly<{
   period: number;
   date: string;
@@ -43,7 +49,12 @@ type ChartPoint = Readonly<{
 export function ProjectionView({
   loan,
   payments,
-}: Readonly<{ loan: Loan; payments: readonly PaymentRecord[] }>) {
+  scenarios = [],
+}: Readonly<{
+  loan: Loan;
+  payments: readonly PaymentRecord[];
+  scenarios?: readonly ProjectionScenarioSnapshot[];
+}>) {
   const [page, setPage] = useState(0);
   const [sortDirection, setSortDirection] = useState<SortDirection>('ascending');
   const result = useMemo(() => {
@@ -96,7 +107,12 @@ export function ProjectionView({
         Los pagos históricos aparecen como registros reales; la proyección contractual se muestra
         por separado.
       </p>
-      <BalanceChart loan={loan} payments={payments} periods={result.periods} />
+      <BalanceChart
+        loan={loan}
+        payments={payments}
+        periods={result.periods}
+        scenarios={scenarios}
+      />
       <div className="table-scroll">
         <table>
           <caption>Historial y proyección de amortización</caption>
@@ -183,10 +199,12 @@ function BalanceChart({
   loan,
   payments,
   periods,
+  scenarios,
 }: Readonly<{
   loan: Loan;
   payments: readonly PaymentRecord[];
   periods: readonly DisplayProjectionPeriod[];
+  scenarios: readonly ProjectionScenarioSnapshot[];
 }>) {
   const [range, setRange] = useState<number | 'all'>(60);
   const [hoveredPeriod, setHoveredPeriod] = useState<DisplayProjectionPeriod>();
@@ -197,12 +215,30 @@ function BalanceChart({
     principal: false,
     extra: false,
   });
+  const [firstScenarioId, setFirstScenarioId] = useState('');
+  const [secondScenarioId, setSecondScenarioId] = useState('');
   const visiblePeriods = range === 'all' ? periods : periods.slice(-range);
   const startPeriod = visiblePeriods[0];
   const endPeriod = visiblePeriods.at(-1);
   if (!startPeriod || !endPeriod) return null;
 
   const extraPrincipalByPeriod = mapExtraPrincipalByPeriod(payments, periods, loan);
+  const comparableScenarios = scenarios.filter(isComparableScenario);
+  const scenarioLines = [firstScenarioId, secondScenarioId]
+    .map((id) => comparableScenarios.find((scenario) => scenario.id === id))
+    .filter((scenario): scenario is ComparableScenario => Boolean(scenario))
+    .map((scenario, index) => {
+      const comparison = compareScenario(loan, scenario);
+      return {
+        scenario,
+        comparison,
+        className: index === 0 ? 'scenario-first' : 'scenario-second',
+        values: visiblePeriods.map(
+          (_, periodIndex) =>
+            comparison.alternative.periods[periodIndex]?.closingBalance ?? zeroMoney(loan),
+        ),
+      };
+    });
   const valuesBySeries: Readonly<Record<SeriesId, readonly Loan['initialBalance'][]>> = {
     balance: visiblePeriods.map((period) => period.closingBalance),
     payment: visiblePeriods.map((period) => period.payment),
@@ -214,7 +250,10 @@ function BalanceChart({
   };
   const activeSeries = SERIES.filter((series) => selectedSeries[series.id]);
   const maximumValue = findMaximumValue(
-    activeSeries.flatMap((series) => valuesBySeries[series.id]),
+    [
+      ...activeSeries.flatMap((series) => valuesBySeries[series.id]),
+      ...scenarioLines.flatMap((scenario) => scenario.values),
+    ],
     loan,
   );
   const maximumValueAsNumber = Math.max(Number(maximumValue.toDecimalString()), 1);
@@ -287,6 +326,50 @@ function BalanceChart({
           </label>
         ))}
       </fieldset>
+      {comparableScenarios.length ? (
+        <fieldset
+          className="chart-series scenario-comparison-selector"
+          aria-label="Escenarios comparados"
+        >
+          <legend>Comparar escenarios de saldo</legend>
+          <label>
+            Escenario A
+            <select
+              value={firstScenarioId}
+              onChange={(event) => setFirstScenarioId(event.target.value)}
+            >
+              <option value="">No mostrar</option>
+              {comparableScenarios.map((scenario) => (
+                <option
+                  key={scenario.id}
+                  value={scenario.id}
+                  disabled={scenario.id === secondScenarioId}
+                >
+                  {scenario.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Escenario B
+            <select
+              value={secondScenarioId}
+              onChange={(event) => setSecondScenarioId(event.target.value)}
+            >
+              <option value="">No mostrar</option>
+              {comparableScenarios.map((scenario) => (
+                <option
+                  key={scenario.id}
+                  value={scenario.id}
+                  disabled={scenario.id === firstScenarioId}
+                >
+                  {scenario.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </fieldset>
+      ) : null}
       <svg
         viewBox="0 0 800 330"
         role="img"
@@ -359,6 +442,15 @@ function BalanceChart({
             />
           );
         })}
+        {scenarioLines.map((scenario) => (
+          <polyline
+            className={`chart-scenario-line ${scenario.className}`}
+            key={scenario.scenario.id}
+            points={toChartPoints(visiblePeriods, scenario.values, maximumValueAsNumber)
+              .map((point) => `${point.x},${point.y}`)
+              .join(' ')}
+          />
+        ))}
         {interactionPoints.map((point) => (
           <circle
             aria-label={`Cuota ${point.period.period}, ${point.period.date}`}
@@ -388,6 +480,11 @@ function BalanceChart({
             {series.label}
           </span>
         ))}
+        {scenarioLines.map((scenario) => (
+          <span className={`legend ${scenario.className}`} key={scenario.scenario.id}>
+            {scenario.scenario.name}
+          </span>
+        ))}
         <span>Las series proyectadas adicionales usan un trazo discontinuo.</span>
       </figcaption>
       <ChartPointDetails
@@ -397,7 +494,61 @@ function BalanceChart({
           hoveredPeriod ? extraPrincipalByPeriod.get(hoveredPeriod.period) : undefined
         }
       />
+      <ScenarioComparisonSummary loan={loan} scenarios={scenarioLines} />
     </figure>
+  );
+}
+
+function ScenarioComparisonSummary({
+  loan,
+  scenarios,
+}: Readonly<{
+  loan: Loan;
+  scenarios: readonly {
+    scenario: ComparableScenario;
+    comparison: ReturnType<typeof compareScenario>;
+    className: string;
+    values: readonly Loan['initialBalance'][];
+  }[];
+}>) {
+  if (!scenarios.length) return null;
+  return (
+    <section
+      className="scenario-comparison-summary"
+      aria-labelledby="scenario-comparison-summary-title"
+    >
+      <h4 id="scenario-comparison-summary-title">Resumen de escenarios comparados</h4>
+      <div className="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Escenario</th>
+              <th scope="col">Fecha final</th>
+              <th scope="col">Plazo ahorrado</th>
+              <th scope="col">Interés ahorrado</th>
+              <th scope="col">Total pagado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {scenarios.map(({ scenario, comparison }) => (
+              <tr key={scenario.id}>
+                <th scope="row">{scenario.name}</th>
+                <td>{comparison.alternative.summary.completionDate}</td>
+                <td>{comparison.comparison.periodsSaved} períodos</td>
+                <td>{formatMoney(comparison.comparison.interestSaved, loan.roundingPolicy)}</td>
+                <td>
+                  {formatDecimalMoney(
+                    comparison.alternative.summary.totalPaid,
+                    loan.initialBalance.currency,
+                    loan.roundingPolicy,
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -500,6 +651,22 @@ function mapExtraPrincipalByPeriod(
     );
   }
   return values;
+}
+
+function isComparableScenario(
+  scenario: ProjectionScenarioSnapshot,
+): scenario is ComparableScenario {
+  return isOneTimeExtraPaymentScenario(scenario) || isRecurringExtraPaymentScenario(scenario);
+}
+
+function compareScenario(loan: Loan, scenario: ComparableScenario) {
+  if (isOneTimeExtraPaymentScenario(scenario)) {
+    return compareLoanWithOneTimeExtraPayment({ loan, scenario });
+  }
+  if (isRecurringExtraPaymentScenario(scenario)) {
+    return compareLoanWithRecurringExtraPayment({ loan, scenario });
+  }
+  throw new Error('El escenario no se puede comparar.');
 }
 
 function formatChartDate(date: string): string {

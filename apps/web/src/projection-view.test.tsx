@@ -5,7 +5,7 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
 
-import { createLoan, Money } from '@cuotaclara/domain';
+import { createLoan, createRecurringExtraPaymentScenario, Money } from '@cuotaclara/domain';
 
 import { ProjectionView } from './projection-view.js';
 
@@ -73,5 +73,36 @@ describe('ProjectionView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
     expect(screen.getByText(/Página 2 de \d+/)).toBeVisible();
     expect(screen.getByRole('columnheader', { name: 'Saldo final' })).toBeVisible();
+  });
+
+  test('superpone y resume hasta dos escenarios en el gráfico principal', () => {
+    const scenarios = [
+      createRecurringExtraPaymentScenario({
+        id: 'scenario-a',
+        loanId: loan.id,
+        name: 'Extra mensual',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        recurringExtraPayment: { kind: 'constant_extra', amount: Money.from('20', 'CRC') },
+      }),
+      createRecurringExtraPaymentScenario({
+        id: 'scenario-b',
+        loanId: loan.id,
+        name: 'Principal objetivo',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        recurringExtraPayment: { kind: 'constant_principal', amount: Money.from('125', 'CRC') },
+      }),
+    ];
+    const { container } = render(
+      <ProjectionView loan={loan} payments={[]} scenarios={scenarios} />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Escenario A'), { target: { value: 'scenario-a' } });
+    fireEvent.change(screen.getByLabelText('Escenario B'), { target: { value: 'scenario-b' } });
+
+    expect(container.querySelector('.chart-scenario-line.scenario-first')).toBeVisible();
+    expect(container.querySelector('.chart-scenario-line.scenario-second')).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Resumen de escenarios comparados' })).toBeVisible();
+    expect(screen.getByRole('rowheader', { name: 'Extra mensual' })).toBeVisible();
+    expect(screen.getByRole('rowheader', { name: 'Principal objetivo' })).toBeVisible();
   });
 });

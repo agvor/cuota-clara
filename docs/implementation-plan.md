@@ -10,15 +10,15 @@ Un ítem solo se marca `blocked` cuando describe la decisión o evidencia extern
 
 ## Épicas y orden
 
-| Épica                               | Resultado                                                                        | Historias                |
-| ----------------------------------- | -------------------------------------------------------------------------------- | ------------------------ |
-| E1 · Motor financiero verificable   | Cálculo fijo, estado histórico, pagos extra y transición a tasa variable manual. | US-001 a US-007          |
-| E2 · Importación y datos locales    | CSV previsualizado, validado y almacenamiento local abstraído.                   | US-008, US-008a y US-009 |
-| E3 · PWA y gestión de préstamos     | Aplicación instalable, CRUD y captura/importación de pagos.                      | US-010 a US-012          |
-| E4 · Escenarios y resultados        | Comparación, tabla de amortización y gráfico de saldo.                           | US-013, US-014, US-027   |
-| E5 · Respaldo y publicación         | Recuperación de datos y operación offline completa.                              | US-015 a US-016          |
-| E6 · Contrato financiero v2         | Plazo, seguro, estimación y regla variable TBP+margen migrables.                 | US-017 a US-020          |
-| E7 · Contrato y resultados legibles | Cuota total con seguro, resumen financiero, plazo contractual y detalle visual.  | US-021 a US-026          |
+| Épica                               | Resultado                                                                        | Historias                       |
+| ----------------------------------- | -------------------------------------------------------------------------------- | ------------------------------- |
+| E1 · Motor financiero verificable   | Cálculo fijo, estado histórico, pagos extra y transición a tasa variable manual. | US-001 a US-007                 |
+| E2 · Importación y datos locales    | CSV previsualizado, validado y almacenamiento local abstraído.                   | US-008, US-008a y US-009        |
+| E3 · PWA y gestión de préstamos     | Aplicación instalable, CRUD y captura/importación de pagos.                      | US-010 a US-012                 |
+| E4 · Escenarios y resultados        | Comparación, tabla de amortización y gráfico de saldo.                           | US-013, US-014, US-027 a US-028 |
+| E5 · Respaldo y publicación         | Recuperación de datos y operación offline completa.                              | US-015 a US-016                 |
+| E6 · Contrato financiero v2         | Plazo, seguro, estimación y regla variable TBP+margen migrables.                 | US-017 a US-020                 |
+| E7 · Contrato y resultados legibles | Cuota total con seguro, resumen financiero, plazo contractual y detalle visual.  | US-021 a US-026                 |
 
 El orden no es una excusa para omitir dependencias: el campo `dependsOn` de cada historia es autoritativo. US-017 solo depende del respaldo: la terminación de la experiencia PWA offline (US-016) no bloquea una migración de dominio/persistencia. Las decisiones ya adoptadas y las pendientes están en [`domain/loan-contract-v2.md`](domain/loan-contract-v2.md). Las historias avanzadas —fuentes de tasa de referencia, sincronización y premium— se crearán como nuevos ítems después de validar el MVP.
 

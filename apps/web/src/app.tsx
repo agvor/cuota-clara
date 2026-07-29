@@ -122,9 +122,22 @@ export function App({ repository }: AppProps) {
 
   async function saveScenario(scenario: ProjectionScenarioSnapshot) {
     if (!selectedAggregate) return;
+    const existing = selectedAggregate.scenarios.some((item) => item.id === scenario.id);
     const aggregate = {
       ...selectedAggregate,
-      scenarios: [...selectedAggregate.scenarios, scenario],
+      scenarios: existing
+        ? selectedAggregate.scenarios.map((item) => (item.id === scenario.id ? scenario : item))
+        : [...selectedAggregate.scenarios, scenario],
+    };
+    await repository.saveAggregate(aggregate);
+    setSelectedAggregate(aggregate);
+  }
+
+  async function deleteScenario(scenarioId: string) {
+    if (!selectedAggregate) return;
+    const aggregate = {
+      ...selectedAggregate,
+      scenarios: selectedAggregate.scenarios.filter((scenario) => scenario.id !== scenarioId),
     };
     await repository.saveAggregate(aggregate);
     setSelectedAggregate(aggregate);
@@ -216,6 +229,7 @@ export function App({ repository }: AppProps) {
                   onSavePayment={savePayment}
                   onImportPayments={importPayments}
                   onSaveScenario={saveScenario}
+                  onDeleteScenario={deleteScenario}
                 />
               ) : null}
             </>
@@ -249,6 +263,7 @@ function LoanDetail({
   onSavePayment,
   onImportPayments,
   onSaveScenario,
+  onDeleteScenario,
 }: Readonly<{
   loan: Loan | undefined;
   onEdit: () => void;
@@ -258,6 +273,7 @@ function LoanDetail({
   onSavePayment: (payment: PaymentRecord) => Promise<void>;
   onImportPayments: (payments: readonly PaymentRecord[]) => Promise<void>;
   onSaveScenario: (scenario: ProjectionScenarioSnapshot) => Promise<void>;
+  onDeleteScenario: (scenarioId: string) => Promise<void>;
 }>) {
   if (!loan) return null;
   return (
@@ -327,11 +343,16 @@ function LoanDetail({
           loan={loan}
           scenarios={aggregate.scenarios}
           onSaveScenario={onSaveScenario}
+          onDeleteScenario={onDeleteScenario}
         />
       ) : null}
       {aggregate?.loan.id === loan.id ? <TbpScenarios scenarios={aggregate.scenarios} /> : null}
       {aggregate?.loan.id === loan.id ? (
-        <AmortizationDetail loan={loan} payments={aggregate.payments} />
+        <AmortizationDetail
+          loan={loan}
+          payments={aggregate.payments}
+          scenarios={aggregate.scenarios}
+        />
       ) : null}
     </section>
   );
@@ -340,7 +361,12 @@ function LoanDetail({
 function AmortizationDetail({
   loan,
   payments,
-}: Readonly<{ loan: Loan; payments: readonly PaymentRecord[] }>) {
+  scenarios,
+}: Readonly<{
+  loan: Loan;
+  payments: readonly PaymentRecord[];
+  scenarios: readonly ProjectionScenarioSnapshot[];
+}>) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <section className="amortization-detail" aria-labelledby="amortization-detail-title">
@@ -355,7 +381,7 @@ function AmortizationDetail({
         {isOpen ? 'Ocultar detalle de amortización' : 'Ver detalle de amortización'}
       </button>
       <div id="amortization-projection" hidden={!isOpen}>
-        {isOpen ? <ProjectionView loan={loan} payments={payments} /> : null}
+        {isOpen ? <ProjectionView loan={loan} payments={payments} scenarios={scenarios} /> : null}
       </div>
     </section>
   );
