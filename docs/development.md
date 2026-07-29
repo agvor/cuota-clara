@@ -1,5 +1,7 @@
 # Estándares de cambio y validación
 
+Las instrucciones reproducibles para preparar y ejecutar la PWA están en [`run.md`](run.md). Ese archivo se genera desde los manifiestos de paquetes y se valida en CI; no se edita manualmente.
+
 ## Commits
 
 Se usa [Conventional Commits](https://www.conventionalcommits.org/). El formato es:
