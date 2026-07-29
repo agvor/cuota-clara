@@ -98,6 +98,18 @@ export class Money {
     return new Money(this.value.plus(other.value), this.currency);
   }
 
+  multiplyBy(factor: string): Money {
+    return new Money(this.value.times(parseAmount(factor)), this.currency);
+  }
+
+  divideBy(divisor: string): Money {
+    const decimalDivisor = parseAmount(divisor);
+    if (decimalDivisor.isZero()) {
+      throw new MoneyValidationError('No se puede dividir un importe entre cero.');
+    }
+    return new Money(this.value.dividedBy(decimalDivisor), this.currency);
+  }
+
   round(policy: RoundingPolicy): Money {
     validateScale(policy.scale);
     return new Money(

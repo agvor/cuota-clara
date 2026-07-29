@@ -13,3 +13,9 @@ export {
   type RoundingMode,
   type RoundingPolicy,
 } from './money.js';
+export {
+  calculateFixedNominalInterest,
+  InterestValidationError,
+  type FixedNominalInterestContext,
+  type InterestCalculationResult,
+} from './interest/fixed-rate.js';

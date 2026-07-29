@@ -16,6 +16,7 @@
 | Pago extraordinario              | Importe adicional aplicado al principal bajo una regla contractual declarada.                      |
 | Dinero (`Money`)                 | Importe inmutable en una moneda, representado con aritmética decimal y no con `number`.            |
 | Política de redondeo             | Escala y modo declarados que determinan cuándo y cómo se redondea un importe.                      |
+| Interés nominal por periodo      | Interés calculado como saldo inicial × tasa nominal anual ÷ períodos por año.                      |
 
 ## Invariantes iniciales
 

@@ -36,7 +36,7 @@
       "story": "Como persona con préstamo de tasa fija, quiero obtener la tasa y el interés aplicables en cada periodo.",
       "requirements": ["RF-003", "RF-004", "RNF-002"],
       "dependsOn": ["US-002"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "La regla recibe saldo, fechas, tasa anual, frecuencia y convención declarada.",
         "La salida contiene tasa e interés trazables para cada periodo.",
@@ -50,7 +50,7 @@
       "story": "Como persona usuaria, quiero una tabla de amortización para conocer interés, principal y saldo por periodo.",
       "requirements": ["RF-004", "RNF-002", "RNF-003", "RNF-007"],
       "dependsOn": ["US-003"],
-      "status": "planned",
+      "status": "ready",
       "acceptanceCriteria": [
         "La tabla incluye saldo inicial/final, cuota, interés, principal, cargos y fecha.",
         "El último pago no deja saldo negativo ni excede lo adeudado.",
