@@ -19,3 +19,10 @@ export {
   type FixedNominalInterestContext,
   type InterestCalculationResult,
 } from './interest/fixed-rate.js';
+export {
+  AmortizationValidationError,
+  generateFixedRateAmortization,
+  type FixedRateAmortizationInput,
+  type FixedRateAmortizationPeriod,
+  type FixedRateAmortizationResult,
+} from './amortization/fixed-rate.js';

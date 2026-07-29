@@ -8,6 +8,7 @@ La documentación es parte del producto y se mantiene en el mismo cambio que el 
 | ------------------------------------- | ------------------------------------------- |
 | Alcance y comportamiento              | `requirements.md`                           |
 | Conceptos y reglas del dominio        | `domain/glossary.md`                        |
+| Motor de amortización inicial         | `domain/amortization-engine.md`             |
 | Límites y componentes                 | `architecture.md`                           |
 | Decisiones irreversibles              | `adr/`                                      |
 | Estado de requisitos                  | `traceability.json` → `status.md`           |

@@ -17,6 +17,7 @@
 | Dinero (`Money`)                 | Importe inmutable en una moneda, representado con aritmética decimal y no con `number`.            |
 | Política de redondeo             | Escala y modo declarados que determinan cuándo y cómo se redondea un importe.                      |
 | Interés nominal por periodo      | Interés calculado como saldo inicial × tasa nominal anual ÷ períodos por año.                      |
+| Amortización de tasa fija        | Secuencia de periodos con fechas explícitas, interés, principal, pago y saldo resultante.          |
 
 ## Invariantes iniciales
 
@@ -25,6 +26,7 @@
 - Una fecha de pago no puede ser anterior al inicio del préstamo.
 - Ningún saldo, pago o cargo puede ser negativo, salvo un tipo de ajuste definido explícitamente.
 - El saldo final de cada periodo no puede ser menor que cero; el último pago se limita al importe necesario.
+- El motor inicial rechaza una cuota que no reduzca principal; no modela amortización negativa todavía.
 - Un periodo histórico se identifica como tal y no se recalcula silenciosamente a partir de una proyección.
 - Toda tasa usada contiene su fuente o supuesto, fecha de vigencia y versión de la regla.
 - Un pago importado conserva archivo/origen, fila de procedencia y resultado de validación para trazabilidad.

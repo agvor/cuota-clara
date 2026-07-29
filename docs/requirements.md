@@ -41,7 +41,7 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 | ------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------- |
 | RNF-001 | Precisión decimal.                | El dominio no usa punto flotante binario para valores financieros; las políticas de redondeo se prueban.                 | En curso |
 | RNF-002 | Determinismo y trazabilidad.      | Igual entrada y versión del motor producen igual salida; una proyección conserva versión y supuestos.                    | En curso |
-| RNF-003 | Separación arquitectónica.        | El motor de dominio no depende de React, IndexedDB, red ni gráficos.                                                     | Planeado |
+| RNF-003 | Separación arquitectónica.        | El motor de dominio no depende de React, IndexedDB, red ni gráficos.                                                     | En curso |
 | RNF-004 | Integridad histórica.             | Una simulación no puede mutar pagos históricos ni el préstamo real.                                                      | Planeado |
 | RNF-005 | Privacidad local-first.           | El MVP no transmite datos financieros a un servidor.                                                                     | Planeado |
 | RNF-006 | Importación segura y recuperable. | La importación valida antes de confirmar y los respaldos se validan antes de restaurar.                                  | Planeado |

@@ -50,7 +50,7 @@
       "story": "Como persona usuaria, quiero una tabla de amortización para conocer interés, principal y saldo por periodo.",
       "requirements": ["RF-004", "RNF-002", "RNF-003", "RNF-007"],
       "dependsOn": ["US-003"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "La tabla incluye saldo inicial/final, cuota, interés, principal, cargos y fecha.",
         "El último pago no deja saldo negativo ni excede lo adeudado.",
@@ -64,7 +64,7 @@
       "story": "Como persona usuaria, quiero registrar pagos reales y obtener un saldo de corte explicable.",
       "requirements": ["RF-005", "RF-007", "RNF-004"],
       "dependsOn": ["US-004"],
-      "status": "planned",
+      "status": "ready",
       "acceptanceCriteria": [
         "Los pagos históricos tienen fecha, importes conocidos, origen y notas.",
         "La reconstrucción separa periodos históricos de proyecciones futuras.",

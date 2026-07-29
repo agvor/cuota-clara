@@ -98,6 +98,11 @@ export class Money {
     return new Money(this.value.plus(other.value), this.currency);
   }
 
+  subtract(other: Money): Money {
+    this.assertSameCurrency(other);
+    return new Money(this.value.minus(other.value), this.currency);
+  }
+
   multiplyBy(factor: string): Money {
     return new Money(this.value.times(parseAmount(factor)), this.currency);
   }
@@ -121,6 +126,28 @@ export class Money {
   toFixed(policy: RoundingPolicy): string {
     validateScale(policy.scale);
     return this.round(policy).value.toFixed(policy.scale);
+  }
+
+  isZero(): boolean {
+    return this.value.isZero();
+  }
+
+  isPositive(): boolean {
+    return this.value.isPositive();
+  }
+
+  isNegative(): boolean {
+    return this.value.isNegative();
+  }
+
+  isLessThan(other: Money): boolean {
+    this.assertSameCurrency(other);
+    return this.value.lessThan(other.value);
+  }
+
+  isLessThanOrEqualTo(other: Money): boolean {
+    this.assertSameCurrency(other);
+    return this.value.lessThanOrEqualTo(other.value);
   }
 
   private assertSameCurrency(other: Money): void {
