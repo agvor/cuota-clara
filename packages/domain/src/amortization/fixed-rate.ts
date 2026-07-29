@@ -1,4 +1,8 @@
 import { calculateFixedNominalInterest } from '../interest/fixed-rate.js';
+import {
+  resolveAnnualRateForPeriod,
+  type ManualVariableRatePlan,
+} from '../interest/manual-variable-rate.js';
 import { Money, type RoundingPolicy } from '../money.js';
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -18,6 +22,7 @@ export type FixedRateAmortizationInput = Readonly<{
   periodEndDates: readonly string[];
   roundingPolicy: RoundingPolicy;
   extraPayments?: readonly OneTimeExtraPayment[];
+  variableRatePlan?: ManualVariableRatePlan;
 }>;
 
 export type FixedRateAmortizationPeriod = Readonly<{
@@ -25,6 +30,7 @@ export type FixedRateAmortizationPeriod = Readonly<{
   date: string;
   openingBalance: Money;
   annualNominalRate: string;
+  ratePhase: 'fixed' | 'variable';
   periodicRate: string;
   interest: Money;
   principal: Money;
@@ -140,9 +146,21 @@ export function generateFixedRateAmortization(
       );
     }
 
+    const rate = input.variableRatePlan
+      ? resolveAnnualRateForPeriod({
+          fixedAnnualNominalRate: input.annualNominalRate,
+          variableRatePlan: input.variableRatePlan,
+          periodNumber: index + 1,
+          periodEndDate,
+        })
+      : resolveAnnualRateForPeriod({
+          fixedAnnualNominalRate: input.annualNominalRate,
+          periodNumber: index + 1,
+          periodEndDate,
+        });
     const interestResult = calculateFixedNominalInterest({
       openingBalance,
-      annualNominalRate: input.annualNominalRate,
+      annualNominalRate: rate.annualNominalRate,
       periodsPerYear: input.periodsPerYear,
       periodStartDate,
       periodEndDate,
@@ -170,7 +188,8 @@ export function generateFixedRateAmortization(
       period: index + 1,
       date: periodEndDate,
       openingBalance,
-      annualNominalRate: input.annualNominalRate,
+      annualNominalRate: rate.annualNominalRate,
+      ratePhase: rate.phase,
       periodicRate: interestResult.trace.periodicRate,
       interest: interestResult.interest,
       principal,

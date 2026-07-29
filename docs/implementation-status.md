@@ -2,12 +2,12 @@
 
 > Generado desde `docs/backlog.json` el 2026-07-28. No editar manualmente.
 
-**Siguiente ítem habilitado:** US-007 — Resolver tasa fija seguida de serie variable manual
+**Siguiente ítem habilitado:** US-008 — Validar y previsualizar un CSV de pagos
 
 | Épica | Planeado | Listo | En curso | Bloqueado | Completado |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| E1 · Motor financiero verificable | 0 | 1 | 0 | 0 | 6 |
-| E2 · Importación y datos locales | 2 | 0 | 0 | 0 | 0 |
+| E1 · Motor financiero verificable | 0 | 0 | 0 | 0 | 7 |
+| E2 · Importación y datos locales | 1 | 1 | 0 | 0 | 0 |
 | E3 · PWA y gestión de préstamos | 3 | 0 | 0 | 0 | 0 |
 | E4 · Escenarios y resultados | 2 | 0 | 0 | 0 | 0 |
 | E5 · Respaldo y publicación | 2 | 0 | 0 | 0 | 0 |
@@ -22,8 +22,8 @@
 | US-004 | E1 · Motor financiero verificable | Generar amortización de cuota periódica fija | Completado | US-003 |
 | US-005 | E1 · Motor financiero verificable | Reconstruir estado desde pagos históricos | Completado | US-004 |
 | US-006 | E1 · Motor financiero verificable | Aplicar pagos extraordinarios únicos | Completado | US-004 |
-| US-007 | E1 · Motor financiero verificable | Resolver tasa fija seguida de serie variable manual | Listo | US-004 |
-| US-008 | E2 · Importación y datos locales | Validar y previsualizar un CSV de pagos | Planeado | US-005 |
+| US-007 | E1 · Motor financiero verificable | Resolver tasa fija seguida de serie variable manual | Completado | US-004 |
+| US-008 | E2 · Importación y datos locales | Validar y previsualizar un CSV de pagos | Listo | US-005 |
 | US-009 | E2 · Importación y datos locales | Persistir préstamos mediante un puerto local | Planeado | US-005 |
 | US-010 | E3 · PWA y gestión de préstamos | Crear la PWA y navegar préstamos | Planeado | US-009 |
 | US-011 | E3 · PWA y gestión de préstamos | Crear y editar un préstamo | Planeado | US-007, US-010 |

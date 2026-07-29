@@ -12,6 +12,7 @@
 | Fase fija                        | Intervalo explícito en el que la tasa anual se conoce y no cambia.                                 |
 | Fase variable                    | Intervalo posterior cuya tasa se determina por una regla versionada y una frecuencia de revisión.  |
 | Serie manual de tasas            | Lista de tasas efectivas desde fechas concretas, introducida por la persona usuaria.               |
+| Frecuencia de revisión           | Cadencia declarada en que una regla variable puede actualizar su tasa.                             |
 | Reconciliación                   | Ajuste explícito que explica la diferencia entre saldo calculado y saldo informado por la entidad. |
 | Pago extraordinario              | Importe adicional aplicado al principal bajo una regla contractual declarada.                      |
 | Dinero (`Money`)                 | Importe inmutable en una moneda, representado con aritmética decimal y no con `number`.            |
@@ -31,4 +32,5 @@
 - Un periodo histórico se identifica como tal y no se recalcula silenciosamente a partir de una proyección.
 - Una reconciliación conserva tanto el saldo calculado como el saldo reportado; no reescribe pagos históricos.
 - Toda tasa usada contiene su fuente o supuesto, fecha de vigencia y versión de la regla.
+- Un periodo variable sin tasa manual vigente es inválido; el motor no infiere ni reutiliza tasas silenciosamente.
 - Un pago importado conserva archivo/origen, fila de procedencia y resultado de validación para trazabilidad.

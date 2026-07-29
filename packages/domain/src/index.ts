@@ -20,6 +20,14 @@ export {
   type InterestCalculationResult,
 } from './interest/fixed-rate.js';
 export {
+  resolveAnnualRateForPeriod,
+  VariableRatePlanError,
+  type ManualVariableRate,
+  type ManualVariableRatePlan,
+  type ResolvedAnnualRate,
+  type VariableRateReviewFrequency,
+} from './interest/manual-variable-rate.js';
+export {
   AmortizationValidationError,
   compareFixedRateAmortizations,
   generateFixedRateAmortization,

@@ -10,6 +10,7 @@ La documentación es parte del producto y se mantiene en el mismo cambio que el 
 | Conceptos y reglas del dominio        | `domain/glossary.md`                        |
 | Motor de amortización inicial         | `domain/amortization-engine.md`             |
 | Estado histórico y reconciliación     | `domain/historical-state.md`                |
+| Transición a tasa variable manual     | `domain/manual-variable-rates.md`           |
 | Límites y componentes                 | `architecture.md`                           |
 | Decisiones irreversibles              | `adr/`                                      |
 | Estado de requisitos                  | `traceability.json` → `status.md`           |
