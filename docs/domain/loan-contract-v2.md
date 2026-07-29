@@ -1,6 +1,6 @@
 # Modelo contractual de préstamo v2
 
-US-017 implementa el núcleo contractual, su serialización y la migración compatible. La captura desde la interfaz y los cálculos de estimación/TBP siguen planificados en US-018 a US-020. Ninguna ruta infiere datos que la persona usuaria no haya proporcionado.
+US-017 implementa el núcleo contractual, su serialización y la migración compatible. US-018 implementa la estimación de costo y fecha en el dominio. La captura desde la interfaz y la regla TBP siguen planificadas en US-019 y US-020. Ninguna ruta infiere datos que la persona usuaria no haya proporcionado.
 
 ## Datos del contrato
 
@@ -39,7 +39,7 @@ Ejemplo: TBP inicial `0.05`, margen `0.02`, alza progresiva de `0.001` trimestra
 
 ## Estimación inicial obligatoria
 
-Antes de guardar o editar un préstamo, la UI deberá presentar una estimación etiquetada como proyección, no como promesa bancaria:
+`estimateLoanContract` produce la estimación etiquetada como proyección, no como promesa bancaria. US-020 la mostrará antes de guardar o editar un préstamo:
 
 - fecha de última cuota estimada;
 - cantidad total de cuotas estimada;
@@ -48,7 +48,9 @@ Antes de guardar o editar un préstamo, la UI deberá presentar una estimación 
 - seguro total proyectado;
 - total de desembolsos, igual a la suma de los tres importes anteriores.
 
-Si la cuota no cubre el interés y seguro aplicables, no se produce una estimación: se muestra un error contractual explícito. Cuando la fecha final o el número de cuotas limita el plazo, cualquier saldo remanente o pago final distinto debe mostrarse, nunca ajustarse silenciosamente.
+Si la cuota mensual (que excluye el seguro) no cubre el interés aplicable, no se produce una estimación y se muestra un error contractual explícito. Cuando la fecha final o el número de cuotas limita el plazo, el resultado expone el saldo remanente o el pago final distinto; nunca los ajusta silenciosamente.
+
+El calendario mensual conserva el día de inicio cuando existe en el mes; por ejemplo, un inicio el día 31 usa el último día de febrero y vuelve al 31 en marzo. Una fecha final declarada es la última cuota, aunque produzca un periodo más corto. El cálculo sigue el modelo nominal anual ÷ 12 y no prorratea por días: ese supuesto se expone para no simular precisión bancaria inexistente.
 
 ## Decisiones vigentes y pendientes
 

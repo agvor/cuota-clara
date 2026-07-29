@@ -6,6 +6,8 @@
 
 Un préstamo sin `contract` se identifica mediante `isLegacyLoan`. Es un registro heredado: no se le asignan plazo ni seguro por defecto y sigue pudiendo cargarse, exportarse y conservar sus pagos y escenarios. El diseño de detalle está en [`loan-contract-v2.md`](loan-contract-v2.md).
 
+`estimateLoanContract` recibe únicamente un `Loan` con contrato v2 y genera una proyección trazable: cuotas, principal, interés, seguro, total, fecha de última cuota, pago final y saldo pendiente. No modifica el agregado ni los pagos históricos; la interfaz usará el resultado en US-020.
+
 Este contrato representa la configuración del préstamo; los pagos históricos y escenarios viven en el agregado asociado para que una proyección no modifique la realidad contractual.
 
 ## Agregado y persistencia

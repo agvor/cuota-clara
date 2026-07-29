@@ -261,7 +261,7 @@
       "story": "Como persona usuaria, quiero ver antes de guardar la fecha final y el costo proyectados para contrastarlos con mi contrato.",
       "requirements": ["RF-004", "RF-013", "RNF-001", "RNF-011"],
       "dependsOn": ["US-017"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "La estimación muestra última cuota, número de cuotas, principal, interés, seguro y total de desembolsos.",
         "Un saldo final o pago final distinto se muestra de forma explícita.",

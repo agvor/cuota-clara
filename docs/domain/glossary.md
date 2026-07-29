@@ -7,6 +7,7 @@
 | Préstamo (`Loan`)                | Contrato y estado real que contiene configuración y pagos históricos.                              |
 | Plazo contractual                | Fecha final o cantidad total de cuotas que limita la proyección; no se infiere silenciosamente.    |
 | Seguro mensual                   | Cargo periódico separado de cuota, principal e interés.                                            |
+| Estimación contractual           | Proyección no bancaria de cuotas, costo y saldo según contrato v2 y supuestos declarados.          |
 | Agregado de préstamo             | Préstamo con sus pagos históricos y snapshots de escenarios, unidad de persistencia.               |
 | Pago histórico (`PaymentRecord`) | Hecho real registrado manualmente o importado; nunca es resultado de una simulación.               |
 | Escenario (`ProjectionScenario`) | Hipótesis futura asociada a un préstamo. No modifica el préstamo ni su historial.                  |
@@ -43,4 +44,5 @@
 - Un pago importado conserva archivo/origen, fila de procedencia y resultado de validación para trazabilidad.
 - Un contrato v2 declara plazo por fecha final o número total de cuotas y separa monto original de saldo reconciliado.
 - El seguro mensual no reduce principal ni genera interés mientras no exista una regla contractual que disponga lo contrario.
+- Una estimación que alcanza el plazo con saldo pendiente lo muestra; no inventa cuotas posteriores.
 - Una regla TBP+margen conserva TBP inicial, margen, frecuencia, evolución y versión; no consulta ni infiere una tasa externa.

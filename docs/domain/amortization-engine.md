@@ -20,9 +20,15 @@ Un pago extraordinario único se identifica, se programa en una fecha de pago y 
 
 El resumen contiene fecha de finalización, total de interés, principal y pago. La función rechaza una cuota que no reduzca principal, monedas distintas, fechas no crecientes y una lista de fechas insuficiente para cancelar el saldo.
 
+## Estimación de contrato v2
+
+`estimateLoanContract` construye el calendario mensual de un contrato v2 y reutiliza la misma regla de interés. Separa seguro de principal e interés y expone tanto el total desembolsado como el saldo que queda si el plazo declarado no alcanza. Si la liquidación ocurre antes, informa la cuota final reducida; si no, nunca inventa una cuota adicional.
+
+Su caso de referencia sintético es [`contract-estimate-monthly-insurance-v1`](../../packages/domain/test/fixtures/contract-estimate-monthly-insurance-v1.json). El seguro es fijo, se cobra por cada cuota proyectada y no devenga interés ni amortiza principal. La estimación no prorratea interés por días ni constituye una liquidación bancaria.
+
 ## Límites conocidos
 
-- No incorpora pagos extraordinarios recurrentes, seguros ni comisiones.
+- El motor genérico no incorpora seguros ni comisiones; la estimación contractual v2 aplica el seguro mensual fijo por separado.
 - No decide ni genera el calendario de pagos; esa política se incorporará de forma explícita cuando exista evidencia contractual.
 - No representa aún atrasos, pagos parciales ni cambios de cuota.
 

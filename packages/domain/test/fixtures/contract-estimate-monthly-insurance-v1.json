@@ -1,0 +1,44 @@
+{
+  "caseId": "contract-estimate-monthly-insurance-v1",
+  "version": 1,
+  "title": "Estimación mensual con seguro separado y pago final ajustado",
+  "source": {
+    "type": "synthetic",
+    "isBankValidated": false,
+    "reference": "Caso manual creado para CuotaClara; ilustra la política contractual v2 y no representa un contrato bancario.",
+    "containsPersonalData": false
+  },
+  "inputs": {
+    "currency": "CRC",
+    "startDate": "2026-01-01",
+    "totalInstallments": 4,
+    "openingBalance": "1000.00",
+    "annualNominalRate": "0.12",
+    "periodsPerYear": 12,
+    "monthlyInstallment": "340.00",
+    "monthlyInsurance": "5.00",
+    "rounding": {
+      "scale": 2,
+      "mode": "half_up",
+      "stage": "interest_each_period"
+    },
+    "interestRule": "opening_balance * annual_nominal_rate / 12",
+    "insuranceRule": "monthly_insurance_is_separate_and_not_financed",
+    "finalPaymentPolicy": "limit_installment_to_outstanding_balance_plus_interest"
+  },
+  "expected": {
+    "completionDate": "2026-05-01",
+    "installments": 4,
+    "totals": {
+      "interest": "20.07",
+      "principal": "1000.00",
+      "insurance": "20.00",
+      "total": "1040.07"
+    },
+    "final": {
+      "installment": "0.07",
+      "insurance": "5.00",
+      "totalDue": "5.07"
+    }
+  }
+}

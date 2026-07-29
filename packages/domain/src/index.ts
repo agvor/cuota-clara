@@ -59,6 +59,12 @@ export {
   type LoanContractV2,
   type LoanTerm,
 } from './loan/loan.js';
+export {
+  estimateLoanContract,
+  ContractEstimateError,
+  type ContractEstimatePeriod,
+  type LoanContractEstimate,
+} from './loan/contract-estimate.js';
 export type {
   LoanAggregate,
   LoanRepository,
