@@ -2,20 +2,20 @@
 
 ## Base del MVP
 
-| Área                  | Elección                                              | Motivo                                                                                |
-| --------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Lenguaje              | TypeScript estricto                                   | Tipos compartibles entre dominio, aplicación y PWA.                                   |
-| Interfaz              | React                                                 | Ecosistema maduro para interfaces ricas y responsive.                                 |
-| Construcción          | Vite                                                  | Entorno rápido, extensible y adecuado para una PWA estática.                          |
-| PWA                   | `vite-plugin-pwa` / Workbox                           | Instalación y funcionamiento sin conexión con configuración explícita.                |
-| Datos locales         | IndexedDB mediante Dexie                              | Base transaccional del navegador, abstraída tras repositorios.                        |
-| Validación de límites | Zod                                                   | Validación de formularios, CSV, respaldo y datos persistidos.                         |
-| Dinero decimal        | `decimal.js` (por confirmar en ADR de implementación) | Evita errores de punto flotante binario.                                              |
-| Estado de interfaz    | Zustand                                               | Estado de UI simple; los cálculos siguen fuera del store.                             |
-| Tablas y gráficos     | TanStack Table/Virtual y Apache ECharts               | Tablas extensas y comparaciones sin implementar virtualización o gráficos desde cero. |
-| CSV                   | Papa Parse                                            | Parseo robusto; la normalización regional queda en adaptador propio.                  |
-| Pruebas               | Vitest, Testing Library y Playwright                  | Unidades de dominio, componentes y recorridos críticos.                               |
-| Calidad               | ESLint, Prettier y TypeScript                         | Reglas uniformes y verificables en CI.                                                |
+| Área                  | Elección                                | Motivo                                                                                |
+| --------------------- | --------------------------------------- | ------------------------------------------------------------------------------------- |
+| Lenguaje              | TypeScript estricto                     | Tipos compartibles entre dominio, aplicación y PWA.                                   |
+| Interfaz              | React                                   | Ecosistema maduro para interfaces ricas y responsive.                                 |
+| Construcción          | Vite                                    | Entorno rápido, extensible y adecuado para una PWA estática.                          |
+| PWA                   | `vite-plugin-pwa` / Workbox             | Instalación y funcionamiento sin conexión con configuración explícita.                |
+| Datos locales         | IndexedDB mediante Dexie                | Base transaccional del navegador, abstraída tras repositorios.                        |
+| Validación de límites | Zod                                     | Validación de formularios, CSV, respaldo y datos persistidos.                         |
+| Dinero decimal        | `decimal.js` encapsulado por `Money`    | Evita errores de punto flotante binario y hace explícito el redondeo.                 |
+| Estado de interfaz    | Zustand                                 | Estado de UI simple; los cálculos siguen fuera del store.                             |
+| Tablas y gráficos     | TanStack Table/Virtual y Apache ECharts | Tablas extensas y comparaciones sin implementar virtualización o gráficos desde cero. |
+| CSV                   | Papa Parse                              | Parseo robusto; la normalización regional queda en adaptador propio.                  |
+| Pruebas               | Vitest, Testing Library y Playwright    | Unidades de dominio, componentes y recorridos críticos.                               |
+| Calidad               | ESLint, Prettier y TypeScript           | Reglas uniformes y verificables en CI.                                                |
 
 Las versiones concretas se fijarán en el primer cambio que instale dependencias y se registrarán en el lockfile; no se inventan versiones en la documentación.
 

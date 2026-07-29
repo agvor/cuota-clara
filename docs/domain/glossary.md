@@ -14,10 +14,13 @@
 | Serie manual de tasas            | Lista de tasas efectivas desde fechas concretas, introducida por la persona usuaria.               |
 | Reconciliación                   | Ajuste explícito que explica la diferencia entre saldo calculado y saldo informado por la entidad. |
 | Pago extraordinario              | Importe adicional aplicado al principal bajo una regla contractual declarada.                      |
+| Dinero (`Money`)                 | Importe inmutable en una moneda, representado con aritmética decimal y no con `number`.            |
+| Política de redondeo             | Escala y modo declarados que determinan cuándo y cómo se redondea un importe.                      |
 
 ## Invariantes iniciales
 
 - Todos los importes pertenecen a una moneda y precisan su escala decimal.
+- Una operación entre importes de monedas distintas falla de forma explícita.
 - Una fecha de pago no puede ser anterior al inicio del préstamo.
 - Ningún saldo, pago o cargo puede ser negativo, salvo un tipo de ajuste definido explícitamente.
 - El saldo final de cada periodo no puede ser menor que cero; el último pago se limita al importe necesario.

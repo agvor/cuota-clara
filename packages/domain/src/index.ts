@@ -2,7 +2,14 @@
  * Núcleo financiero de CuotaClara.
  *
  * Esta frontera se mantiene libre de React, IndexedDB y APIs del navegador.
- * Las primeras APIs públicas se añadirán junto con los casos de referencia del
- * motor de amortización; no se publican contratos financieros vacíos.
+ * Las APIs financieras siempre reciben importes decimales como texto o tipos
+ * de dominio; no aceptan números binarios para cálculos monetarios.
  */
-export {};
+export {
+  AmountScaleError,
+  CurrencyMismatchError,
+  Money,
+  MoneyValidationError,
+  type RoundingMode,
+  type RoundingPolicy,
+} from './money.js';

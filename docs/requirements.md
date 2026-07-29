@@ -37,20 +37,20 @@ Quedan fuera del MVP: cuentas, sincronización, cobros, colaboración, PDF/XLSX,
 
 ## Requisitos no funcionales
 
-| ID      | Requisito                         | Criterio verificable                                                                                                     |
-| ------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| RNF-001 | Precisión decimal.                | El dominio no usa punto flotante binario para valores financieros; las políticas de redondeo se prueban.                 |
-| RNF-002 | Determinismo y trazabilidad.      | Igual entrada y versión del motor producen igual salida; una proyección conserva versión y supuestos.                    |
-| RNF-003 | Separación arquitectónica.        | El motor de dominio no depende de React, IndexedDB, red ni gráficos.                                                     |
-| RNF-004 | Integridad histórica.             | Una simulación no puede mutar pagos históricos ni el préstamo real.                                                      |
-| RNF-005 | Privacidad local-first.           | El MVP no transmite datos financieros a un servidor.                                                                     |
-| RNF-006 | Importación segura y recuperable. | La importación valida antes de confirmar y los respaldos se validan antes de restaurar.                                  |
-| RNF-007 | Rendimiento.                      | Una proyección de hasta 600 periodos se calcula interactivamente en equipo convencional; se medirá antes de optimizar.   |
-| RNF-008 | Accesibilidad y adaptación.       | Flujos principales utilizables con teclado y pantallas pequeñas; objetivo WCAG 2.1 AA.                                   |
-| RNF-009 | Portabilidad.                     | Funciona en navegadores modernos de escritorio y móviles; la PWA es instalable.                                          |
-| RNF-010 | Evolución freemium.               | Persistencia, identidad y sincronización se consumen mediante puertos; el dominio no conoce planes de pago.              |
-| RNF-011 | Calidad del cálculo.              | Cada regla financiera tiene pruebas unitarias y casos de referencia comparados con fuente contractual u hoja de cálculo. |
-| RNF-012 | Seguridad de fórmulas.            | No hay ejecución de código arbitrario. Si se agregan fórmulas, usarán un lenguaje limitado validado.                     |
+| ID      | Requisito                         | Criterio verificable                                                                                                     | Estado   |
+| ------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------- |
+| RNF-001 | Precisión decimal.                | El dominio no usa punto flotante binario para valores financieros; las políticas de redondeo se prueban.                 | En curso |
+| RNF-002 | Determinismo y trazabilidad.      | Igual entrada y versión del motor producen igual salida; una proyección conserva versión y supuestos.                    | En curso |
+| RNF-003 | Separación arquitectónica.        | El motor de dominio no depende de React, IndexedDB, red ni gráficos.                                                     | Planeado |
+| RNF-004 | Integridad histórica.             | Una simulación no puede mutar pagos históricos ni el préstamo real.                                                      | Planeado |
+| RNF-005 | Privacidad local-first.           | El MVP no transmite datos financieros a un servidor.                                                                     | Planeado |
+| RNF-006 | Importación segura y recuperable. | La importación valida antes de confirmar y los respaldos se validan antes de restaurar.                                  | Planeado |
+| RNF-007 | Rendimiento.                      | Una proyección de hasta 600 periodos se calcula interactivamente en equipo convencional; se medirá antes de optimizar.   | Planeado |
+| RNF-008 | Accesibilidad y adaptación.       | Flujos principales utilizables con teclado y pantallas pequeñas; objetivo WCAG 2.1 AA.                                   | Planeado |
+| RNF-009 | Portabilidad.                     | Funciona en navegadores modernos de escritorio y móviles; la PWA es instalable.                                          | Planeado |
+| RNF-010 | Evolución freemium.               | Persistencia, identidad y sincronización se consumen mediante puertos; el dominio no conoce planes de pago.              | Planeado |
+| RNF-011 | Calidad del cálculo.              | Cada regla financiera tiene pruebas unitarias y casos de referencia comparados con fuente contractual u hoja de cálculo. | Planeado |
+| RNF-012 | Seguridad de fórmulas.            | No hay ejecución de código arbitrario. Si se agregan fórmulas, usarán un lenguaje limitado validado.                     | Planeado |
 
 ## Entregas
 
