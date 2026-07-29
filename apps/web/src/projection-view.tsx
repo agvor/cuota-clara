@@ -12,7 +12,7 @@ import {
   type ProjectionScenarioSnapshot,
 } from '@cuotaclara/domain';
 
-import { formatCompactMoney, formatDecimalMoney, formatMoney } from './money-format.js';
+import { formatCompactMoney, formatMoney } from './money-format.js';
 
 const PAGE_SIZE = 24;
 const CHART_RANGES = [12, 60, 120] as const;
@@ -494,61 +494,7 @@ function BalanceChart({
           hoveredPeriod ? extraPrincipalByPeriod.get(hoveredPeriod.period) : undefined
         }
       />
-      <ScenarioComparisonSummary loan={loan} scenarios={scenarioLines} />
     </figure>
-  );
-}
-
-function ScenarioComparisonSummary({
-  loan,
-  scenarios,
-}: Readonly<{
-  loan: Loan;
-  scenarios: readonly {
-    scenario: ComparableScenario;
-    comparison: ReturnType<typeof compareScenario>;
-    className: string;
-    values: readonly Loan['initialBalance'][];
-  }[];
-}>) {
-  if (!scenarios.length) return null;
-  return (
-    <section
-      className="scenario-comparison-summary"
-      aria-labelledby="scenario-comparison-summary-title"
-    >
-      <h4 id="scenario-comparison-summary-title">Resumen de escenarios comparados</h4>
-      <div className="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Escenario</th>
-              <th scope="col">Fecha final</th>
-              <th scope="col">Plazo ahorrado</th>
-              <th scope="col">Interés ahorrado</th>
-              <th scope="col">Total pagado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {scenarios.map(({ scenario, comparison }) => (
-              <tr key={scenario.id}>
-                <th scope="row">{scenario.name}</th>
-                <td>{comparison.alternative.summary.completionDate}</td>
-                <td>{comparison.comparison.periodsSaved} períodos</td>
-                <td>{formatMoney(comparison.comparison.interestSaved, loan.roundingPolicy)}</td>
-                <td>
-                  {formatDecimalMoney(
-                    comparison.alternative.summary.totalPaid,
-                    loan.initialBalance.currency,
-                    loan.roundingPolicy,
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
   );
 }
 

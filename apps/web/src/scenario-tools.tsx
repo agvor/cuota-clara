@@ -1,17 +1,24 @@
 import { useState, type FormEvent } from 'react';
 
 import {
+  compareLoanWithOneTimeExtraPayment,
+  compareLoanWithRecurringExtraPayment,
   createOneTimeExtraPaymentScenario,
   createRecurringExtraPaymentScenario,
   isOneTimeExtraPaymentScenario,
   isRecurringExtraPaymentScenario,
   Money,
   type Loan,
+  type OneTimeExtraPaymentComparison,
   type ProjectionScenarioSnapshot,
+  type RecurringExtraPaymentComparison,
 } from '@cuotaclara/domain';
+
+import { formatDecimalMoney, formatMoney } from './money-format.js';
 
 type ScenarioType = 'one_time' | 'constant_extra' | 'constant_principal';
 type ComparableScenario = ProjectionScenarioSnapshot;
+type ScenarioComparison = OneTimeExtraPaymentComparison | RecurringExtraPaymentComparison;
 
 export function ScenarioTools({
   loan,
@@ -26,6 +33,7 @@ export function ScenarioTools({
 }>) {
   const [editingScenario, setEditingScenario] = useState<ComparableScenario>();
   const [scenarioType, setScenarioType] = useState<ScenarioType>('one_time');
+  const [summaryScenario, setSummaryScenario] = useState<ComparableScenario>();
   const [error, setError] = useState<string>();
   const comparable = scenarios.filter(isComparableScenario);
   const formKey = `${editingScenario?.id ?? 'new'}-${scenarioType}`;
@@ -69,55 +77,78 @@ export function ScenarioTools({
     <section className="scenario-tools" aria-labelledby="scenarios-title">
       <h2 id="scenarios-title">Configuración de escenarios</h2>
       <p>Los escenarios no cambian el préstamo ni sus pagos históricos.</p>
-      <form key={formKey} onSubmit={(event) => void submit(event)}>
-        <label>
-          Tipo de escenario
-          <select
-            value={scenarioType}
-            onChange={(event) => setScenarioType(event.target.value as ScenarioType)}
-          >
-            <option value="one_time">Pago extraordinario único</option>
-            <option value="constant_extra">Extraordinario constante mensual</option>
-            <option value="constant_principal">Aporte constante al principal mensual</option>
-          </select>
-        </label>
-        <label>
-          Nombre del escenario
-          <input
-            required
-            name="name"
-            defaultValue={editingScenario?.name ?? defaultScenarioName(scenarioType)}
-          />
-        </label>
-        {scenarioType === 'one_time' ? (
+      <section className="scenario-form-panel" aria-labelledby="scenario-form-title">
+        <h3 id="scenario-form-title">
+          {editingScenario ? `Editar ${editingScenario.name}` : 'Crear escenario'}
+        </h3>
+        <form key={formKey} onSubmit={(event) => void submit(event)}>
           <label>
-            Fecha del pago extraordinario
-            <input required name="date" type="date" defaultValue={existingValues?.date} />
+            Tipo de escenario
+            <select
+              value={scenarioType}
+              onChange={(event) => setScenarioType(event.target.value as ScenarioType)}
+            >
+              <option value="one_time">Pago extraordinario único</option>
+              <option value="constant_extra">Extraordinario constante mensual</option>
+              <option value="constant_principal">Aporte constante al principal mensual</option>
+            </select>
           </label>
-        ) : (
-          <p className="field-hint">
-            El aporte se aplica después de cada cuota ordinaria, desde la primera cuota proyectada.
-          </p>
-        )}
-        <label>
-          {scenarioType === 'constant_principal'
-            ? 'Aporte total al principal por mes'
-            : scenarioType === 'constant_extra'
-              ? 'Extraordinario mensual'
-              : 'Importe adicional al principal'}
-          <input required name="amount" inputMode="decimal" defaultValue={existingValues?.amount} />
-        </label>
-        <div className="form-actions">
-          <button type="submit">{editingScenario ? 'Guardar cambios' : 'Crear escenario'}</button>
-          {editingScenario ? (
-            <button type="button" onClick={() => setEditingScenario(undefined)}>
-              Cancelar edición
-            </button>
-          ) : null}
-        </div>
-      </form>
+          <label>
+            Nombre del escenario
+            <input
+              required
+              name="name"
+              defaultValue={editingScenario?.name ?? defaultScenarioName(scenarioType)}
+            />
+          </label>
+          {scenarioType === 'one_time' ? (
+            <label>
+              Fecha del pago extraordinario
+              <input required name="date" type="date" defaultValue={existingValues?.date} />
+            </label>
+          ) : (
+            <p className="field-hint">
+              El aporte se aplica después de cada cuota ordinaria, desde la primera cuota
+              proyectada.
+            </p>
+          )}
+          <label>
+            {scenarioType === 'constant_principal'
+              ? 'Aporte total al principal por mes'
+              : scenarioType === 'constant_extra'
+                ? 'Extraordinario mensual'
+                : 'Importe adicional al principal'}
+            <input
+              required
+              name="amount"
+              inputMode="decimal"
+              defaultValue={existingValues?.amount}
+            />
+          </label>
+          <div className="form-actions">
+            <button type="submit">{editingScenario ? 'Guardar cambios' : 'Crear escenario'}</button>
+            {editingScenario ? (
+              <button type="button" onClick={() => setEditingScenario(undefined)}>
+                Cancelar edición
+              </button>
+            ) : null}
+          </div>
+        </form>
+      </section>
       {error ? <p role="alert">{error}</p> : null}
-      <SavedScenarios scenarios={comparable} onEdit={edit} onDelete={remove} />
+      <SavedScenarios
+        scenarios={comparable}
+        onEdit={edit}
+        onDelete={remove}
+        onViewSummary={setSummaryScenario}
+      />
+      {summaryScenario ? (
+        <ScenarioSummary
+          loan={loan}
+          scenario={summaryScenario}
+          onClose={() => setSummaryScenario(undefined)}
+        />
+      ) : null}
     </section>
   );
 }
@@ -192,33 +223,108 @@ function SavedScenarios({
   scenarios,
   onEdit,
   onDelete,
+  onViewSummary,
 }: Readonly<{
   scenarios: readonly ComparableScenario[];
   onEdit: (scenario: ComparableScenario) => void;
   onDelete: (scenario: ComparableScenario) => void;
+  onViewSummary: (scenario: ComparableScenario) => void;
 }>) {
   if (!scenarios.length) return <p>No hay escenarios configurados.</p>;
   return (
-    <ul aria-label="Escenarios configurados">
+    <div className="scenario-list" aria-label="Escenarios configurados">
       {scenarios.map((scenario) => (
-        <li key={scenario.id}>
-          <strong>{scenario.name}</strong>
-          <span className="scenario-description">{describeScenario(scenario)}</span>
-          <button type="button" onClick={() => onEdit(scenario)}>
-            Editar escenario
-          </button>
-          <button type="button" onClick={() => void onDelete(scenario)}>
-            Eliminar escenario
-          </button>
-        </li>
+        <article className="scenario-card" key={scenario.id}>
+          <div>
+            <h3>{scenario.name}</h3>
+            <p>{describeScenario(scenario)}</p>
+          </div>
+          <div className="scenario-card-actions">
+            <button type="button" onClick={() => onViewSummary(scenario)}>
+              Ver resumen
+            </button>
+            <button type="button" onClick={() => onEdit(scenario)}>
+              Editar escenario
+            </button>
+            <button
+              type="button"
+              className="secondary-action"
+              onClick={() => void onDelete(scenario)}
+            >
+              Eliminar escenario
+            </button>
+          </div>
+        </article>
       ))}
-    </ul>
+    </div>
   );
 }
 
+function ScenarioSummary({
+  loan,
+  scenario,
+  onClose,
+}: Readonly<{
+  loan: Loan;
+  scenario: ComparableScenario;
+  onClose: () => void;
+}>) {
+  const comparison = compareScenario(loan, scenario);
+  return (
+    <section
+      className="scenario-summary"
+      aria-live="polite"
+      aria-labelledby="scenario-summary-title"
+    >
+      <div className="section-heading-action">
+        <h3 id="scenario-summary-title">Resumen de {scenario.name}</h3>
+        <button type="button" className="secondary-action" onClick={onClose}>
+          Cerrar resumen
+        </button>
+      </div>
+      <dl>
+        <div>
+          <dt>Fecha final estimada</dt>
+          <dd>{comparison.alternative.summary.completionDate}</dd>
+        </div>
+        <div>
+          <dt>Plazo ahorrado</dt>
+          <dd>{comparison.comparison.periodsSaved} períodos</dd>
+        </div>
+        <div>
+          <dt>Interés ahorrado</dt>
+          <dd>{formatMoney(comparison.comparison.interestSaved, loan.roundingPolicy)}</dd>
+        </div>
+        <div>
+          <dt>Total pagado estimado</dt>
+          <dd>
+            {formatDecimalMoney(
+              comparison.alternative.summary.totalPaid,
+              loan.initialBalance.currency,
+              loan.roundingPolicy,
+            )}
+          </dd>
+        </div>
+      </dl>
+    </section>
+  );
+}
+
+function compareScenario(loan: Loan, scenario: ComparableScenario): ScenarioComparison {
+  if (isOneTimeExtraPaymentScenario(scenario)) {
+    return compareLoanWithOneTimeExtraPayment({ loan, scenario });
+  }
+  if (isRecurringExtraPaymentScenario(scenario)) {
+    return compareLoanWithRecurringExtraPayment({ loan, scenario });
+  }
+  throw new Error('El escenario no es compatible con el resumen.');
+}
+
 function describeScenario(scenario: ComparableScenario): string {
-  if (isOneTimeExtraPaymentScenario(scenario)) return 'Pago extraordinario único';
+  const values = valuesForScenario(scenario);
+  if (isOneTimeExtraPaymentScenario(scenario))
+    return `Pago único de ${values.amount} en ${values.date}`;
   return scenario.configuration.mode === 'constant_extra'
-    ? 'Extraordinario constante mensual'
-    : 'Aporte constante al principal mensual';
+    ? `Extraordinario mensual de ${values.amount}`
+    : `Objetivo mensual de principal: ${values.amount}`;
 }

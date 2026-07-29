@@ -101,8 +101,8 @@ describe('ProjectionView', () => {
 
     expect(container.querySelector('.chart-scenario-line.scenario-first')).toBeVisible();
     expect(container.querySelector('.chart-scenario-line.scenario-second')).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Resumen de escenarios comparados' })).toBeVisible();
-    expect(screen.getByRole('rowheader', { name: 'Extra mensual' })).toBeVisible();
-    expect(screen.getByRole('rowheader', { name: 'Principal objetivo' })).toBeVisible();
+    expect(
+      screen.queryByRole('heading', { name: 'Resumen de escenarios comparados' }),
+    ).not.toBeInTheDocument();
   });
 });

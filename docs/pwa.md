@@ -16,8 +16,8 @@ La PWA precachea la página, manifiesto, iconos y recursos de construcción. Des
 
 Desde el detalle de un préstamo se registran y corrigen pagos manuales, o se importa un CSV tras revisar sus filas, duplicados y meses faltantes. La confirmación no admite una previsualización con errores y los pagos se persisten dentro del agregado del préstamo seleccionado.
 
-La sección **Configuración de escenarios** permite crear, editar y eliminar pagos extraordinarios únicos, extraordinarios mensuales constantes o aportes mensuales constantes al principal. En el último caso, la PWA aporta únicamente la diferencia entre el objetivo y el principal ya cubierto por la cuota ordinaria. Los escenarios nunca modifican pagos reales ni la configuración del préstamo.
+La sección **Configuración de escenarios** presenta un formulario separado y tarjetas con descripción, resumen, edición y eliminación para pagos extraordinarios únicos, extraordinarios mensuales constantes o aportes mensuales constantes al principal. En el último caso, la PWA aporta únicamente la diferencia entre el objetivo y el principal ya cubierto por la cuota ordinaria. **Ver resumen** presenta ahí mismo fecha final, plazo e interés ahorrados y total pagado. Los escenarios nunca modifican pagos reales ni la configuración del préstamo.
 
-La comparación no duplica el gráfico: al abrir **Detalle de amortización**, la persona puede elegir hasta dos escenarios. El gráfico de saldo principal conserva la base, superpone sus líneas diferenciadas y presenta una tabla compacta con fecha final, plazo e interés ahorrados y total pagado.
+La comparación no duplica el gráfico: al abrir **Detalle de amortización**, la persona puede elegir hasta dos escenarios. El gráfico de saldo principal conserva la base y superpone sus líneas diferenciadas; los resúmenes permanecen en la gestión de escenarios.
 
 La vista de evolución presenta una tabla paginada y un gráfico SVG ligero bajo demanda. Los registros históricos y las filas proyectadas están marcados por separado; el cálculo de la proyección lo produce el dominio, no la interfaz.

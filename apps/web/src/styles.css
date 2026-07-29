@@ -626,33 +626,87 @@ h1 {
   stroke-dasharray: 3 4;
 }
 
-.scenario-comparison-summary {
+.scenario-form-panel,
+.scenario-summary {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.scenario-form-panel h3,
+.scenario-summary h3 {
+  margin-top: 0;
+}
+
+.scenario-list {
+  display: grid;
+  gap: 0.75rem;
   margin-top: 1rem;
 }
 
-.scenario-comparison-summary h4 {
-  margin-bottom: 0.5rem;
+.scenario-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 0.5rem;
+  background: #f8fafc;
 }
 
-.scenario-comparison-summary table {
-  width: 100%;
-  min-width: 44rem;
-  border-collapse: collapse;
+.scenario-card h3,
+.scenario-card p {
+  margin: 0;
 }
 
-.scenario-comparison-summary th,
-.scenario-comparison-summary td {
-  padding: 0.55rem 0.75rem;
-  border-top: 1px solid #e2e8f0;
+.scenario-card p {
+  margin-top: 0.25rem;
+  color: #475569;
 }
 
-.scenario-comparison-summary thead {
-  background: #f5f3ff;
+.scenario-card-actions,
+.section-heading-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.scenario-comparison-summary td:nth-child(n + 2) {
-  text-align: right;
+.section-heading-action {
+  justify-content: space-between;
+}
+
+.secondary-action {
+  border-color: #64748b;
+  color: #334155;
+  background: #fff;
+}
+
+.scenario-summary {
+  border-color: #c4b5fd;
+  background: #faf5ff;
+}
+
+.scenario-summary dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.scenario-summary dt {
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.scenario-summary dd {
+  margin: 0.2rem 0 0;
   font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 
 button {
