@@ -32,6 +32,12 @@ export function EstimateSummary({
               <td>{formatMoney(estimate.configuredTotalPayment, loan.roundingPolicy)}</td>
             </tr>
           ) : null}
+          {estimate.automaticTotalPayment ? (
+            <tr>
+              <th scope="row">Cuota mensual automática</th>
+              <td>{formatMoney(estimate.automaticTotalPayment, loan.roundingPolicy)}</td>
+            </tr>
+          ) : null}
           {estimate.projectedInitialTotalPayment ? (
             <tr>
               <th scope="row">Cuota total proyectada inicial</th>

@@ -13,7 +13,17 @@ const PAGE_SIZE = 24;
 const CHART_RANGES = [12, 60, 120] as const;
 const CHART = { left: 94, right: 770, top: 30, bottom: 276 } as const;
 
+const SERIES = [
+  { id: 'balance', label: 'Saldo proyectado', kind: 'projection' },
+  { id: 'payment', label: 'Cuota total proyectada', kind: 'projection' },
+  { id: 'interest', label: 'Interés proyectado', kind: 'projection' },
+  { id: 'principal', label: 'Principal proyectado', kind: 'projection' },
+  { id: 'extra', label: 'Cuota extraordinaria registrada', kind: 'historical' },
+] as const;
+
 type SortDirection = 'ascending' | 'descending';
+type SeriesId = (typeof SERIES)[number]['id'];
+type SelectedSeries = Readonly<Record<SeriesId, boolean>>;
 type DisplayProjectionPeriod = Readonly<{
   period: number;
   date: string;
@@ -23,7 +33,12 @@ type DisplayProjectionPeriod = Readonly<{
   payment: Loan['initialBalance'];
   closingBalance: Loan['initialBalance'];
 }>;
-type ChartPoint = Readonly<{ period: DisplayProjectionPeriod; x: number; y: number }>;
+type ChartPoint = Readonly<{
+  period: DisplayProjectionPeriod;
+  value: Loan['initialBalance'];
+  x: number;
+  y: number;
+}>;
 
 export function ProjectionView({
   loan,
@@ -81,7 +96,7 @@ export function ProjectionView({
         Los pagos históricos aparecen como registros reales; la proyección contractual se muestra
         por separado.
       </p>
-      <BalanceChart loan={loan} periods={result.periods} />
+      <BalanceChart loan={loan} payments={payments} periods={result.periods} />
       <div className="table-scroll">
         <table>
           <caption>Historial y proyección de amortización</caption>
@@ -166,34 +181,75 @@ export function ProjectionView({
 
 function BalanceChart({
   loan,
+  payments,
   periods,
 }: Readonly<{
   loan: Loan;
+  payments: readonly PaymentRecord[];
   periods: readonly DisplayProjectionPeriod[];
 }>) {
   const [range, setRange] = useState<number | 'all'>(60);
   const [hoveredPeriod, setHoveredPeriod] = useState<DisplayProjectionPeriod>();
+  const [selectedSeries, setSelectedSeries] = useState<SelectedSeries>({
+    balance: true,
+    payment: false,
+    interest: false,
+    principal: false,
+    extra: false,
+  });
   const visiblePeriods = range === 'all' ? periods : periods.slice(-range);
   const startPeriod = visiblePeriods[0];
   const endPeriod = visiblePeriods.at(-1);
   if (!startPeriod || !endPeriod) return null;
 
-  const maximumBalance = startPeriod.openingBalance;
-  const maximumBalanceAsNumber = Math.max(Number(maximumBalance.toDecimalString()), 1);
-  const points = toChartPoints(visiblePeriods, maximumBalanceAsNumber);
-  const hoveredPoint = points.find((point) => point.period.period === hoveredPeriod?.period);
+  const extraPrincipalByPeriod = mapExtraPrincipalByPeriod(payments, periods, loan);
+  const valuesBySeries: Readonly<Record<SeriesId, readonly Loan['initialBalance'][]>> = {
+    balance: visiblePeriods.map((period) => period.closingBalance),
+    payment: visiblePeriods.map((period) => period.payment),
+    interest: visiblePeriods.map((period) => period.interest),
+    principal: visiblePeriods.map((period) => period.principal),
+    extra: visiblePeriods.map(
+      (period) => extraPrincipalByPeriod.get(period.period) ?? zeroMoney(loan),
+    ),
+  };
+  const activeSeries = SERIES.filter((series) => selectedSeries[series.id]);
+  const maximumValue = findMaximumValue(
+    activeSeries.flatMap((series) => valuesBySeries[series.id]),
+    loan,
+  );
+  const maximumValueAsNumber = Math.max(Number(maximumValue.toDecimalString()), 1);
+  const pointsBySeries = new Map(
+    activeSeries.map((series) => [
+      series.id,
+      toChartPoints(visiblePeriods, valuesBySeries[series.id], maximumValueAsNumber),
+    ]),
+  );
+  const interactionPoints =
+    pointsBySeries.get('balance') ?? pointsBySeries.values().next().value ?? [];
+  const hoveredPoints = activeSeries.flatMap((series) =>
+    (pointsBySeries.get(series.id) ?? []).filter(
+      (point) => point.period.period === hoveredPeriod?.period,
+    ),
+  );
   const horizontalTicks = [0, 0.25, 0.5, 0.75, 1];
   const temporalTicks = [0, 0.25, 0.5, 0.75, 1];
 
   function inspectClosestPoint(clientX: number, chartLeft: number, chartWidth: number) {
-    const firstPoint = points[0];
+    const firstPoint = interactionPoints[0];
     if (!firstPoint || chartWidth === 0) return;
     const x = ((clientX - chartLeft) / chartWidth) * 800;
     let closestPoint = firstPoint;
-    for (const point of points) {
+    for (const point of interactionPoints) {
       if (Math.abs(point.x - x) < Math.abs(closestPoint.x - x)) closestPoint = point;
     }
     if (closestPoint.period.period !== hoveredPeriod?.period) setHoveredPeriod(closestPoint.period);
+  }
+
+  function toggleSeries(id: SeriesId) {
+    setSelectedSeries((current) => {
+      if (current[id] && activeSeries.length === 1) return current;
+      return { ...current, [id]: !current[id] };
+    });
   }
 
   return (
@@ -218,6 +274,19 @@ function BalanceChart({
         </label>
         <p>Desplaza el cursor sobre la línea para inspeccionar una cuota.</p>
       </div>
+      <fieldset className="chart-series" aria-label="Series del gráfico">
+        <legend>Series visibles</legend>
+        {SERIES.map((series) => (
+          <label key={series.id}>
+            <input
+              type="checkbox"
+              checked={selectedSeries[series.id]}
+              onChange={() => toggleSeries(series.id)}
+            />{' '}
+            {series.label}
+          </label>
+        ))}
+      </fieldset>
       <svg
         viewBox="0 0 800 330"
         role="img"
@@ -231,12 +300,12 @@ function BalanceChart({
       >
         <title id="balance-chart-title">Evolución estimada del saldo</title>
         <desc id="balance-chart-description">
-          Saldo proyectado desde {startPeriod.date} hasta {endPeriod.date}; el eje vertical usa la
-          moneda del préstamo y el horizontal representa las fechas de las cuotas.
+          Series seleccionables desde {startPeriod.date} hasta {endPeriod.date}; el eje vertical usa
+          la moneda del préstamo y el horizontal representa las fechas de las cuotas.
         </desc>
         {horizontalTicks.map((fraction) => {
           const y = CHART.bottom - fraction * (CHART.bottom - CHART.top);
-          const value = maximumBalance.multiplyBy(fraction.toString());
+          const value = maximumValue.multiplyBy(fraction.toString());
           return (
             <g key={`horizontal-${fraction}`}>
               <line className="chart-grid" x1={CHART.left} x2={CHART.right} y1={y} y2={y} />
@@ -280,11 +349,17 @@ function BalanceChart({
           y1={CHART.top}
           y2={CHART.bottom}
         />
-        <polyline
-          className="projection-line"
-          points={points.map((point) => `${point.x},${point.y}`).join(' ')}
-        />
-        {points.map((point) => (
+        {activeSeries.map((series) => {
+          const points = pointsBySeries.get(series.id) ?? [];
+          return (
+            <polyline
+              className={`chart-series-line ${series.id} ${series.kind}`}
+              key={series.id}
+              points={points.map((point) => `${point.x},${point.y}`).join(' ')}
+            />
+          );
+        })}
+        {interactionPoints.map((point) => (
           <circle
             aria-label={`Cuota ${point.period.period}, ${point.period.date}`}
             className="chart-point-target"
@@ -297,15 +372,31 @@ function BalanceChart({
             onPointerEnter={() => setHoveredPeriod(point.period)}
           />
         ))}
-        {hoveredPoint ? (
-          <circle className="chart-point-highlight" cx={hoveredPoint.x} cy={hoveredPoint.y} r="5" />
-        ) : null}
+        {hoveredPoints.map((point) => (
+          <circle
+            className="chart-point-highlight"
+            cx={point.x}
+            cy={point.y}
+            key={`highlight-${point.value.toDecimalString()}-${point.period.period}`}
+            r="5"
+          />
+        ))}
       </svg>
       <figcaption>
-        <span className="legend projection">Saldo proyectado</span>
-        <span>Los pagos reales se consultan en la tabla.</span>
+        {activeSeries.map((series) => (
+          <span className={`legend ${series.id} ${series.kind}`} key={series.id}>
+            {series.label}
+          </span>
+        ))}
+        <span>Las series proyectadas adicionales usan un trazo discontinuo.</span>
       </figcaption>
-      <ChartPointDetails loan={loan} period={hoveredPeriod} />
+      <ChartPointDetails
+        loan={loan}
+        period={hoveredPeriod}
+        extraPrincipal={
+          hoveredPeriod ? extraPrincipalByPeriod.get(hoveredPeriod.period) : undefined
+        }
+      />
     </figure>
   );
 }
@@ -313,7 +404,12 @@ function BalanceChart({
 function ChartPointDetails({
   loan,
   period,
-}: Readonly<{ loan: Loan; period: DisplayProjectionPeriod | undefined }>) {
+  extraPrincipal,
+}: Readonly<{
+  loan: Loan;
+  period: DisplayProjectionPeriod | undefined;
+  extraPrincipal: Loan['initialBalance'] | undefined;
+}>) {
   if (!period)
     return (
       <p className="chart-point-details" aria-live="polite">
@@ -342,6 +438,12 @@ function ChartPointDetails({
           <dt>Saldo</dt>
           <dd>{formatMoney(period.closingBalance, loan.roundingPolicy)}</dd>
         </div>
+        {extraPrincipal?.isPositive() ? (
+          <div>
+            <dt>Principal extraordinario registrado</dt>
+            <dd>{formatMoney(extraPrincipal, loan.roundingPolicy)}</dd>
+          </div>
+        ) : null}
       </dl>
     </div>
   );
@@ -349,19 +451,55 @@ function ChartPointDetails({
 
 function toChartPoints(
   periods: readonly DisplayProjectionPeriod[],
-  maximumBalance: number,
+  values: readonly Loan['initialBalance'][],
+  maximumValue: number,
 ): readonly ChartPoint[] {
   const denominator = Math.max(periods.length - 1, 1);
-  return periods.map((period, index) => ({
-    period,
-    x: CHART.left + (index / denominator) * (CHART.right - CHART.left),
-    y:
-      CHART.top +
-      (1 -
-        Math.max(0, Math.min(Number(period.closingBalance.toDecimalString()), maximumBalance)) /
-          maximumBalance) *
-        (CHART.bottom - CHART.top),
-  }));
+  return periods.flatMap((period, index) => {
+    const value = values[index];
+    if (!value) return [];
+    return {
+      period,
+      value,
+      x: CHART.left + (index / denominator) * (CHART.right - CHART.left),
+      y:
+        CHART.top +
+        (1 - Math.max(0, Math.min(Number(value.toDecimalString()), maximumValue)) / maximumValue) *
+          (CHART.bottom - CHART.top),
+    };
+  });
+}
+
+function zeroMoney(loan: Loan): Loan['initialBalance'] {
+  return loan.initialBalance.subtract(loan.initialBalance);
+}
+
+function findMaximumValue(
+  values: readonly Loan['initialBalance'][],
+  loan: Loan,
+): Loan['initialBalance'] {
+  return values.reduce(
+    (maximum, value) => (maximum.isLessThan(value) ? value : maximum),
+    zeroMoney(loan),
+  );
+}
+
+function mapExtraPrincipalByPeriod(
+  payments: readonly PaymentRecord[],
+  periods: readonly DisplayProjectionPeriod[],
+  loan: Loan,
+): ReadonlyMap<number, Loan['initialBalance']> {
+  const values = new Map<number, Loan['initialBalance']>();
+  for (const payment of payments) {
+    if (!payment.extraPrincipalAmount?.isPositive()) continue;
+    const period = periods.find((item) => item.date >= payment.date) ?? periods.at(-1);
+    if (!period) continue;
+    values.set(
+      period.period,
+      (values.get(period.period) ?? zeroMoney(loan)).add(payment.extraPrincipalAmount),
+    );
+  }
+  return values;
 }
 
 function formatChartDate(date: string): string {

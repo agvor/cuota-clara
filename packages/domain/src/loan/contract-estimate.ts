@@ -35,6 +35,7 @@ export type LoanContractEstimate = Readonly<{
   remainingPrincipal: Money;
   configuredTotalPayment?: Money;
   projectedInitialTotalPayment?: Money;
+  automaticTotalPayment?: Money;
   initialPaymentDifference?: Money;
   hasConfiguredPaymentDifference: boolean;
   periods: readonly ContractEstimatePeriod[];
@@ -147,7 +148,9 @@ export function estimateLoanContract(loan: Loan): LoanContractEstimate {
       ? 'settled_early'
       : 'settled_on_term'
     : 'remaining_balance';
-  const configuredTotalPayment = contract.version === 3 ? contract.monthlyTotalPayment : undefined;
+  const isAutomaticPayment = contract.version === 3 && contract.paymentMode === 'automatic';
+  const configuredTotalPayment =
+    contract.version === 3 && !isAutomaticPayment ? contract.monthlyTotalPayment : undefined;
   const initialPaymentDifference =
     configuredTotalPayment && projectedInitialTotalPayment
       ? projectedInitialTotalPayment.subtract(configuredTotalPayment)
@@ -172,7 +175,12 @@ export function estimateLoanContract(loan: Loan): LoanContractEstimate {
         : loan.ordinaryPayment.toDecimalString()),
     remainingPrincipal: finalPeriod.closingBalance,
     ...(configuredTotalPayment ? { configuredTotalPayment } : {}),
-    ...(projectedInitialTotalPayment ? { projectedInitialTotalPayment } : {}),
+    ...(projectedInitialTotalPayment && !isAutomaticPayment
+      ? { projectedInitialTotalPayment }
+      : {}),
+    ...(projectedInitialTotalPayment && isAutomaticPayment
+      ? { automaticTotalPayment: projectedInitialTotalPayment }
+      : {}),
     ...(initialPaymentDifference ? { initialPaymentDifference } : {}),
     hasConfiguredPaymentDifference:
       Boolean(initialPaymentDifference) && !initialPaymentDifference?.isZero(),

@@ -180,6 +180,41 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Guardar préstamo' })).toBeEnabled();
   });
 
+  test('calcula y conserva una cuota automática sin mostrar cuota proyectada inicial', async () => {
+    const repository = createRepository([]);
+    render(<App repository={repository} />);
+    await screen.findByRole('heading', { name: 'Aún no hay préstamos' });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear préstamo' }));
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Automático' } });
+    fireEvent.change(screen.getByLabelText('Fecha de inicio'), { target: { value: '2026-01-15' } });
+    fireEvent.change(screen.getByLabelText('Monto original'), { target: { value: '1000000' } });
+    fireEvent.change(screen.getByLabelText('Seguro mensual, incluido en la cuota total'), {
+      target: { value: '15000' },
+    });
+    fireEvent.change(screen.getByLabelText('Número total de cuotas'), {
+      target: { value: '120' },
+    });
+    fireEvent.change(screen.getByLabelText('Tasa nominal anual fija (%)'), {
+      target: { value: '8.5' },
+    });
+    fireEvent.click(screen.getByLabelText('Cuota automática'));
+
+    expect(screen.queryByLabelText('Cuota mensual total, incluido seguro')).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole('rowheader', { name: 'Cuota mensual automática' }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole('rowheader', { name: 'Cuota total proyectada inicial' }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar préstamo' }));
+
+    await waitFor(() => expect(repository.saveAggregate).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(repository.saveAggregate).mock.calls[0]?.[0]?.loan.contract).toMatchObject({
+      version: 3,
+      paymentMode: 'automatic',
+    });
+  });
+
   test('identifica préstamos sin contrato como heredados', async () => {
     const legacyLoan = createLoan({
       id: 'legacy-001',

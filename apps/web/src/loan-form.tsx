@@ -6,6 +6,7 @@ import {
   Money,
   type Loan,
   type LoanContractEstimate,
+  type PaymentMode,
   type TbpEvolution,
   type VariableRateReviewFrequency,
 } from '@cuotaclara/domain';
@@ -29,6 +30,7 @@ type FormValues = Readonly<{
   startDate: string;
   currency: string;
   originalPrincipal: string;
+  paymentMode: PaymentMode;
   monthlyTotalPayment: string;
   monthlyInsurance: string;
   termMode: TermMode;
@@ -60,6 +62,7 @@ function initialValues(loan: Loan | undefined): FormValues {
     currency: loan?.initialBalance.currency ?? 'CRC',
     originalPrincipal:
       contract?.originalPrincipal.toDecimalString() ?? loan?.initialBalance.toDecimalString() ?? '',
+    paymentMode: contract?.version === 3 ? contract.paymentMode : 'configured',
     monthlyTotalPayment:
       contract?.version === 3
         ? contract.monthlyTotalPayment.toDecimalString()
@@ -103,43 +106,56 @@ function parseVariableRates(value: string) {
 }
 
 function createConfiguredLoan(values: FormValues, id: string): Loan {
-  return createLoanV3({
-    id,
-    name: values.name,
-    startDate: values.startDate,
-    originalPrincipal: Money.from(values.originalPrincipal, values.currency),
-    monthlyTotalPayment: Money.from(values.monthlyTotalPayment, values.currency),
-    monthlyInsurance: Money.from(values.monthlyInsurance, values.currency),
-    term:
-      values.termMode === 'installments'
-        ? { totalInstallments: Number(values.totalInstallments) }
-        : { endDate: values.endDate },
-    annualNominalRate: percentToDecimal(values.annualNominalRate),
-    roundingPolicy: { scale: 2, mode: 'half_up' },
-    ...(values.rateScheme === 'tbp_margin'
-      ? {
-          tbpMarginRatePlan: {
-            kind: 'tbp_margin_v1' as const,
-            fixedPeriods: Number(values.fixedPeriods),
-            reviewFrequency: values.reviewFrequency,
-            tbpInitialAnnualRate: percentToDecimal(values.tbpInitialAnnualRate),
-            marginAnnualRate: percentToDecimal(values.marginAnnualRate),
-            evolution: values.evolution,
-            variationPerReview: percentToDecimal(values.variationPerReview),
-          },
-        }
-      : {}),
-    ...(values.rateScheme === 'manual_series'
-      ? {
-          variableRatePlan: {
-            kind: 'manual_series_v1' as const,
-            fixedPeriods: Number(values.fixedPeriods),
-            reviewFrequency: values.reviewFrequency,
-            variableRates: parseVariableRates(values.variableRates),
-          },
-        }
-      : {}),
-  });
+  const monthlyInsurance = Money.from(values.monthlyInsurance, values.currency);
+  const createWithPayment = (monthlyTotalPayment: Money) =>
+    createLoanV3({
+      id,
+      name: values.name,
+      startDate: values.startDate,
+      originalPrincipal: Money.from(values.originalPrincipal, values.currency),
+      monthlyTotalPayment,
+      monthlyInsurance,
+      paymentMode: values.paymentMode,
+      term:
+        values.termMode === 'installments'
+          ? { totalInstallments: Number(values.totalInstallments) }
+          : { endDate: values.endDate },
+      annualNominalRate: percentToDecimal(values.annualNominalRate),
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+      ...(values.rateScheme === 'tbp_margin'
+        ? {
+            tbpMarginRatePlan: {
+              kind: 'tbp_margin_v1' as const,
+              fixedPeriods: Number(values.fixedPeriods),
+              reviewFrequency: values.reviewFrequency,
+              tbpInitialAnnualRate: percentToDecimal(values.tbpInitialAnnualRate),
+              marginAnnualRate: percentToDecimal(values.marginAnnualRate),
+              evolution: values.evolution,
+              variationPerReview: percentToDecimal(values.variationPerReview),
+            },
+          }
+        : {}),
+      ...(values.rateScheme === 'manual_series'
+        ? {
+            variableRatePlan: {
+              kind: 'manual_series_v1' as const,
+              fixedPeriods: Number(values.fixedPeriods),
+              reviewFrequency: values.reviewFrequency,
+              variableRates: parseVariableRates(values.variableRates),
+            },
+          }
+        : {}),
+    });
+
+  if (values.paymentMode === 'configured') {
+    return createWithPayment(Money.from(values.monthlyTotalPayment, values.currency));
+  }
+  const provisionalLoan = createWithPayment(
+    monthlyInsurance.add(Money.from('0.01', values.currency)),
+  );
+  const automaticPayment = estimateLoanContract(provisionalLoan).automaticTotalPayment;
+  if (!automaticPayment) throw new Error('No se pudo calcular la cuota automática.');
+  return createWithPayment(automaticPayment);
 }
 
 function EstimatePreview({
@@ -239,15 +255,42 @@ export function LoanForm({ loan, onCancel, onSave }: LoanFormProps) {
               onChange={(event) => update('originalPrincipal', event.target.value)}
             />
           </label>
-          <label>
-            Cuota mensual total, incluido seguro
-            <input
-              required
-              inputMode="decimal"
-              value={values.monthlyTotalPayment}
-              onChange={(event) => update('monthlyTotalPayment', event.target.value)}
-            />
-          </label>
+          <div className="choice-group" role="radiogroup" aria-label="Modo de cuota mensual">
+            <label>
+              <input
+                type="radio"
+                name="payment-mode"
+                checked={values.paymentMode === 'configured'}
+                onChange={() => update('paymentMode', 'configured')}
+              />{' '}
+              Cuota configurada
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="payment-mode"
+                checked={values.paymentMode === 'automatic'}
+                onChange={() => update('paymentMode', 'automatic')}
+              />{' '}
+              Cuota automática
+            </label>
+          </div>
+          {values.paymentMode === 'configured' ? (
+            <label>
+              Cuota mensual total, incluido seguro
+              <input
+                required
+                inputMode="decimal"
+                value={values.monthlyTotalPayment}
+                onChange={(event) => update('monthlyTotalPayment', event.target.value)}
+              />
+            </label>
+          ) : (
+            <p className="field-hint">
+              La cuota se calculará con el monto, plazo, seguro y tasas configurados. El resultado
+              aparecerá como cuota mensual automática en el resumen.
+            </p>
+          )}
           <label>
             Seguro mensual, incluido en la cuota total
             <input

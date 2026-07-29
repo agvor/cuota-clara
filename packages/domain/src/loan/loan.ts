@@ -25,6 +25,7 @@ export type Loan = Readonly<{
 export type CreateLoanInput = Loan;
 
 export type LoanTerm = Readonly<{ endDate: string }> | Readonly<{ totalInstallments: number }>;
+export type PaymentMode = 'configured' | 'automatic';
 
 export type LoanContractV2 = Readonly<{
   version: 2;
@@ -39,6 +40,7 @@ export type LoanContractV3 = Readonly<{
   originalPrincipal: Money;
   monthlyTotalPayment: Money;
   monthlyInsurance: Money;
+  paymentMode: PaymentMode;
   term: LoanTerm;
 }>;
 
@@ -65,6 +67,7 @@ export type CreateLoanV3Input = Readonly<{
   originalPrincipal: Money;
   monthlyTotalPayment: Money;
   monthlyInsurance: Money;
+  paymentMode?: PaymentMode;
   term: LoanTerm;
   annualNominalRate: string;
   variableRatePlan?: ManualVariableRatePlan;
@@ -168,6 +171,7 @@ export function createLoanV3(input: CreateLoanV3Input): Loan {
     originalPrincipal: input.originalPrincipal,
     monthlyTotalPayment: input.monthlyTotalPayment,
     monthlyInsurance: input.monthlyInsurance,
+    paymentMode: input.paymentMode ?? 'configured',
     term: Object.freeze({ ...input.term }),
   });
   validateContract(contract, input.startDate, input.originalPrincipal.currency);
@@ -200,6 +204,13 @@ function validateContract(contract: LoanContract, startDate: string, currency: s
     throw new LoanValidationError('La versión del contrato no es compatible.');
   if (!contract.originalPrincipal.isPositive()) {
     throw new LoanValidationError('El monto original debe ser positivo.');
+  }
+  if (
+    contract.version === 3 &&
+    contract.paymentMode !== 'configured' &&
+    contract.paymentMode !== 'automatic'
+  ) {
+    throw new LoanValidationError('El modo de cuota no es compatible.');
   }
   if (contract.monthlyInsurance.isNegative()) {
     throw new LoanValidationError('El seguro mensual no puede ser negativo.');

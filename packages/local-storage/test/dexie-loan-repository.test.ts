@@ -280,6 +280,7 @@ describe('DexieLoanRepository', () => {
       originalPrincipal: aggregate.loan.initialBalance,
       monthlyTotalPayment: Money.from('1015', 'CRC'),
       monthlyInsurance: Money.from('15', 'CRC'),
+      paymentMode: 'automatic',
       term: { totalInstallments: 180 },
       annualNominalRate: aggregate.loan.annualNominalRate,
       roundingPolicy,
@@ -287,7 +288,9 @@ describe('DexieLoanRepository', () => {
     await repository.saveAggregate({ ...aggregate, loan });
 
     await expect(repository.loadAggregate(loan.id)).resolves.toMatchObject({
-      loan: { contract: { version: 3, term: { totalInstallments: 180 } } },
+      loan: {
+        contract: { version: 3, paymentMode: 'automatic', term: { totalInstallments: 180 } },
+      },
     });
     const loaded = await repository.loadAggregate(loan.id);
     expect(loaded?.loan.ordinaryPayment.toFixed(roundingPolicy)).toBe('1000.00');

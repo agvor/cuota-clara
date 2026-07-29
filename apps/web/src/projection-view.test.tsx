@@ -24,7 +24,7 @@ const loan = createLoan({
 
 describe('ProjectionView', () => {
   test('separa historial y proyección con gráfico accesible y rango ajustable', () => {
-    render(<ProjectionView loan={loan} payments={[]} />);
+    const { container } = render(<ProjectionView loan={loan} payments={[]} />);
 
     expect(screen.getByRole('img', { name: 'Evolución estimada del saldo' })).toBeVisible();
     expect(screen.getByLabelText('Rango del gráfico')).toHaveValue('60');
@@ -38,6 +38,11 @@ describe('ProjectionView', () => {
     if (!firstPoint) throw new Error('Se esperaba al menos un punto de proyección.');
     fireEvent.pointerEnter(firstPoint);
     expect(screen.getByText(/Cuota 1 · 2026-02-01/)).toBeVisible();
+    const paymentSeries = screen.getByLabelText('Cuota total proyectada');
+    expect(paymentSeries).not.toBeChecked();
+    fireEvent.click(paymentSeries);
+    expect(paymentSeries).toBeChecked();
+    expect(container.querySelector('.chart-series-line.payment')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Siguiente' })).not.toBeInTheDocument();
   });
 

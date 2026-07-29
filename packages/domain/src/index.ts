@@ -69,6 +69,7 @@ export {
   type LoanContract,
   type LoanContractV2,
   type LoanContractV3,
+  type PaymentMode,
   type LoanTerm,
 } from './loan/loan.js';
 export {

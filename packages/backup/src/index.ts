@@ -137,6 +137,7 @@ function storeContract(contract: LoanContract) {
     originalPrincipal: storeMoney(contract.originalPrincipal),
     monthlyTotalPayment: storeMoney(contract.monthlyTotalPayment),
     monthlyInsurance: storeMoney(contract.monthlyInsurance),
+    paymentMode: contract.paymentMode,
     term: Object.freeze({ ...contract.term }),
   });
 }
@@ -172,7 +173,14 @@ function parseContract(value: unknown): LoanContract {
     version: 3,
     ...common,
     monthlyTotalPayment: parseMoney(contract.monthlyTotalPayment, 'préstamo.contrato.cuotaTotal'),
+    paymentMode: parsePaymentMode(contract.paymentMode),
   }) as LoanContractV3;
+}
+
+function parsePaymentMode(value: unknown): LoanContractV3['paymentMode'] {
+  if (value === undefined) return 'configured';
+  if (value === 'configured' || value === 'automatic') return value;
+  throw new BackupValidationError('el modo de cuota no es compatible.');
 }
 function parseMoney(value: unknown, field: string): Money {
   const money = record(value, field);

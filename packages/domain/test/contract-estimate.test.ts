@@ -195,4 +195,25 @@ describe('estimateLoanContract', () => {
     expect(estimate.finalInstallmentDate).toBe('2056-01-15');
     expect(estimate.estimatedInstallments).toBe(360);
   });
+
+  test('identifica una cuota automática sin exponer una comparación configurada', () => {
+    const loan = createLoanV3({
+      id: 'loan-automatic',
+      name: 'Cuota automática',
+      startDate: '2026-01-15',
+      originalPrincipal: Money.from('1000000', 'CRC'),
+      monthlyTotalPayment: Money.from('100', 'CRC'),
+      monthlyInsurance: Money.from('0', 'CRC'),
+      paymentMode: 'automatic',
+      term: { totalInstallments: 120 },
+      annualNominalRate: '0.085',
+      roundingPolicy,
+    });
+
+    const estimate = estimateLoanContract(loan);
+    expect(estimate.automaticTotalPayment).toBeDefined();
+    expect(estimate.projectedInitialTotalPayment).toBeUndefined();
+    expect(estimate.configuredTotalPayment).toBeUndefined();
+    expect(estimate.hasConfiguredPaymentDifference).toBe(false);
+  });
 });

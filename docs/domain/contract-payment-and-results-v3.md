@@ -31,6 +31,8 @@ La primera cuota se programa un mes después de la fecha de inicio. La cuota nú
 
 La cuota base configurada no cubre ese interés inicial. El plazo sigue siendo contractual: la proyección contiene 360 cuotas, termina el `2056-01-15` y muestra una cuota total inicial proyectada de `1,034,250.51` bajo la convención nominal mensual actual. La diferencia con 900,000 queda visible; no se atribuye silenciosamente al seguro ni se usa para acortar el plazo. El fixture ejecutable es [`contract-total-payment-insufficient-v1`](../../packages/domain/test/fixtures/contract-total-payment-insufficient-v1.json).
 
+Un contrato v3 también puede declarar `paymentMode: automatic`. La PWA obtiene su cuota total inicial con el mismo estimador decimal —monto, plazo, seguro y plan de tasas— y guarda ese resultado junto con el modo. Para esta modalidad el resumen presenta **Cuota mensual automática** y no presenta **Cuota total proyectada inicial** ni una diferencia contra una cuota configurada. Los contratos v3 anteriores que no contienen el campo se leen como `configured` para preservar su significado.
+
 ## Plazo contractual y cuota proyectada
 
 Para v3, la fecha final o cantidad total de cuotas es autoritativa. En cada período, la PWA calcula la cuota base que liquida el saldo en las cuotas restantes usando la tasa prevista; el seguro se agrega después. La cuota total configurada permanece como dato contractual declarado y se compara con la cuota total proyectada inicial. Esto no intenta reproducir automáticamente un estado de cuenta bancario: cargos, convenciones de días y reglas de recálculo pueden diferir. La decisión completa está en [ADR-0007](../adr/0007-contract-term-is-authoritative.md).
@@ -40,7 +42,7 @@ Para v3, la fecha final o cantidad total de cuotas es autoritativa. En cada per�
 1. Un único formateador monetario se usa en toda la PWA, con separadores de miles y decimales coherentes con el locale seleccionado (`es-CR` inicialmente), sin convertir el decimal financiero a `number`. Los campos editables conservan el literal canónico.
 2. El resumen inmediato usa una tabla compacta de importes: principal, interés, seguro y total; además muestra fecha/número de última cuota y saldo pendiente si existe.
 3. La página inicial del préstamo no ejecuta la tabla completa ni renderiza el gráfico. La acción **Ver detalle de amortización** los calcula bajo demanda.
-4. El gráfico tiene eje X temporal, eje Y monetario, cuadrícula, etiquetas compactas, nombre y descripción accesibles, controles de rango y detalle al enfocar o pasar el cursor por un punto. La tabla conserva cabecera, contraste, columnas numéricas alineadas, navegación de páginas y orden alternable por fecha.
+4. El gráfico tiene eje X temporal, eje Y monetario, cuadrícula, etiquetas compactas, nombre y descripción accesibles, controles de rango y detalle al enfocar o pasar el cursor por un punto. Permite seleccionar saldo, cuota total, interés, principal y cuota extraordinaria registrada; las componentes proyectadas adicionales usan trazos claros y discontinuos. La tabla conserva cabecera, contraste, columnas numéricas alineadas, navegación de páginas y orden alternable por fecha.
 
 ## Secuencia de entrega
 
@@ -49,3 +51,4 @@ Para v3, la fecha final o cantidad total de cuotas es autoritativa. En cada per�
 - **US-023:** detalle de amortización y gráfico ajustable bajo demanda. **Completado.**
 - **US-024:** preservar plazo contractual y exponer discrepancia de cuota. **Completado.**
 - **US-025:** presentar porcentajes legibles y exploración accesible de la proyección. **Completado.**
+- **US-026:** calcular cuota automática y seleccionar componentes de la proyección. **Completado.**

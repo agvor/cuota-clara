@@ -51,6 +51,7 @@ type StoredLoanContractV3 = Readonly<{
   originalPrincipal: StoredMoney;
   monthlyTotalPayment: StoredMoney;
   monthlyInsurance: StoredMoney;
+  paymentMode?: 'configured' | 'automatic';
   term: Readonly<{ endDate: string }> | Readonly<{ totalInstallments: number }>;
 }>;
 
@@ -261,6 +262,7 @@ function serializeContract(contract: LoanContract): StoredLoanContract {
     originalPrincipal: serializeMoney(contract.originalPrincipal),
     monthlyTotalPayment: serializeMoney(contract.monthlyTotalPayment),
     monthlyInsurance: serializeMoney(contract.monthlyInsurance),
+    paymentMode: contract.paymentMode,
     term: Object.freeze({ ...contract.term }),
   });
 }
@@ -303,7 +305,14 @@ function deserializeContract(value: unknown): LoanContract {
       record.monthlyTotalPayment,
       'loan.contract.monthlyTotalPayment',
     ),
+    paymentMode: deserializePaymentMode(record.paymentMode),
   }) as LoanContractV3;
+}
+
+function deserializePaymentMode(value: unknown): LoanContractV3['paymentMode'] {
+  if (value === undefined) return 'configured';
+  if (value === 'configured' || value === 'automatic') return value;
+  throw new Error('loan.contract.paymentMode no es compatible');
 }
 
 function serializePayment(payment: PaymentRecord, loanId: string, currency: string): StoredPayment {

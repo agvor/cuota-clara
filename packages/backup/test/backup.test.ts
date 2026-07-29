@@ -73,6 +73,7 @@ describe('backup', () => {
       originalPrincipal: Money.from('1000.00', 'CRC'),
       monthlyTotalPayment: Money.from('105.00', 'CRC'),
       monthlyInsurance: Money.from('5.00', 'CRC'),
+      paymentMode: 'automatic',
       term: { totalInstallments: 12 },
       annualNominalRate: '0.12',
       roundingPolicy: { scale: 2, mode: 'half_up' },
@@ -81,6 +82,7 @@ describe('backup', () => {
     expect(v3.schemaVersion).toBe(3);
     expect(parseBackup(JSON.stringify(v3)).aggregates[0]?.loan.contract).toMatchObject({
       version: 3,
+      paymentMode: 'automatic',
       monthlyTotalPayment: expect.objectContaining({ currency: 'CRC' }),
     });
 
