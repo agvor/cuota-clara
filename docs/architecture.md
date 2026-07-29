@@ -1,0 +1,63 @@
+# Arquitectura
+
+## Decisión principal
+
+Se construirá un monolito modular TypeScript, local-first. El dominio financiero es un paquete independiente y determinista; la PWA es un adaptador de presentación. No hay backend en el MVP.
+
+```text
+Persona usuaria
+       │
+       ▼
+Web/PWA (apps/web)
+  ├─ presentación React
+  ├─ casos de uso
+  └─ adaptadores de archivo y almacenamiento
+       │                     │
+       ▼                     ▼
+packages/domain        IndexedDB local
+  ├─ préstamos          (adaptador reemplazable)
+  ├─ pagos históricos
+  ├─ interés y redondeo
+  └─ amortización
+```
+
+## Módulos y límites
+
+| Módulo                            | Responsabilidad                                                    | No puede conocer                               |
+| --------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------- |
+| `packages/domain`                 | Tipos, invariantes, políticas, motor de amortización y resultados. | UI, navegador, almacenamiento, HTTP.           |
+| Aplicación web                    | Orquesta casos de uso, convierte datos de UI y presenta errores.   | Detalles internos de algoritmos.               |
+| Infraestructura local             | Implementa repositorios, migraciones, CSV, respaldo y PWA.         | Reglas financieras duplicadas.                 |
+| Futuro servicio de sincronización | Sincroniza datos consentidos mediante puertos.                     | Motor financiero como fuente de verdad remota. |
+
+## Persistencia y evolución freemium
+
+El código de aplicación dependerá de puertos como `LoanRepository`, `BackupService` y, en el futuro, `SyncService`. IndexedDB será el adaptador MVP. Cuentas, sincronización y funciones premium se agregan como adaptadores y políticas de aplicación; los cálculos y datos locales no dependen de una suscripción.
+
+## Flujo de importación de pagos
+
+```text
+CSV → parseo regional → filas normalizadas → validación y detección de duplicados
+    → previsualización y resolución de errores → confirmación → repositorio local
+```
+
+La previsualización es obligatoria. Las filas rechazadas no se persisten y la importación confirmada conserva su procedencia.
+
+## Flujo de proyección
+
+```text
+Préstamo + pagos históricos + fecha de corte + escenario
+  → reconstrucción/reconciliación
+  → resolver tasa por periodo
+  → aplicar interés, cuota, cargos y pago extraordinario
+  → periodos y resumen trazables
+```
+
+## Reglas de diseño
+
+- Dependencias dirigidas hacia el dominio; los adaptadores dependen de interfaces del núcleo.
+- Las decisiones de días, tasa, cuota ante cambios y redondeo son políticas explícitas e inyectables.
+- El resultado guarda versiones de motor y políticas para poder explicarlo y repetirlo.
+- Las transacciones de importación, restauración y borrado se confirman y son recuperables cuando sea posible.
+
+Los ADR actuales se encuentran en [`adr/`](adr/).

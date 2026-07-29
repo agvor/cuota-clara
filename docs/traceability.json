@@ -1,0 +1,29 @@
+{
+  "updatedAt": "2026-07-28",
+  "requirements": [
+    { "id": "RF-001", "status": "planned", "milestone": "MVP local" },
+    { "id": "RF-002", "status": "planned", "milestone": "MVP local" },
+    { "id": "RF-003", "status": "planned", "milestone": "MVP local" },
+    { "id": "RF-004", "status": "planned", "milestone": "Motor verificable" },
+    { "id": "RF-005", "status": "planned", "milestone": "MVP local" },
+    { "id": "RF-006", "status": "planned", "milestone": "MVP local" },
+    { "id": "RF-007", "status": "planned", "milestone": "MVP local" },
+    { "id": "RF-008", "status": "planned", "milestone": "Motor verificable" },
+    { "id": "RF-009", "status": "planned", "milestone": "MVP local" },
+    { "id": "RF-010", "status": "planned", "milestone": "MVP local" },
+    { "id": "RF-011", "status": "planned", "milestone": "MVP local" },
+    { "id": "RF-012", "status": "planned", "milestone": "MVP local" },
+    { "id": "RNF-001", "status": "planned", "milestone": "Motor verificable" },
+    { "id": "RNF-002", "status": "planned", "milestone": "Motor verificable" },
+    { "id": "RNF-003", "status": "planned", "milestone": "Motor verificable" },
+    { "id": "RNF-004", "status": "planned", "milestone": "Motor verificable" },
+    { "id": "RNF-005", "status": "planned", "milestone": "MVP local" },
+    { "id": "RNF-006", "status": "planned", "milestone": "MVP local" },
+    { "id": "RNF-007", "status": "planned", "milestone": "Motor verificable" },
+    { "id": "RNF-008", "status": "planned", "milestone": "Producto público" },
+    { "id": "RNF-009", "status": "planned", "milestone": "MVP local" },
+    { "id": "RNF-010", "status": "planned", "milestone": "MVP local" },
+    { "id": "RNF-011", "status": "planned", "milestone": "Motor verificable" },
+    { "id": "RNF-012", "status": "planned", "milestone": "Estrategias avanzadas" }
+  ]
+}
