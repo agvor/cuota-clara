@@ -376,7 +376,19 @@ function LoanLibrary({
         <ul className="loan-list" aria-label="Préstamos guardados">
           {state.loans.map((loan) => (
             <li key={loan.id}>
-              <article className="loan-card">
+              <article
+                className="loan-card loan-card-selectable"
+                role="button"
+                tabIndex={0}
+                aria-label={`Abrir préstamo ${loan.name}`}
+                onClick={() => onOpen(loan.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onOpen(loan.id);
+                  }
+                }}
+              >
                 <h2>{loan.name}</h2>
                 <dl>
                   <div>
@@ -402,9 +414,6 @@ function LoanLibrary({
                 {!loan.contract ? (
                   <p className="inherited-notice">Préstamo heredado: falta plazo y seguro</p>
                 ) : null}
-                <button type="button" onClick={() => onOpen(loan.id)}>
-                  Ver préstamo
-                </button>
               </article>
             </li>
           ))}

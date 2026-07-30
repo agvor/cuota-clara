@@ -40,16 +40,21 @@ export function PaymentTools({
 
   return (
     <section className="payment-tools" aria-labelledby="payments-title">
-      <h2 id="payments-title">Pagos históricos</h2>
-      <p>Los pagos reales se guardan separados de las proyecciones.</p>
+      <header className="task-page-heading">
+        <div>
+          <p className="eyebrow">Actividad real</p>
+          <h2 id="payments-title">Pagos históricos</h2>
+          <p>Los pagos reales se guardan separados de las proyecciones.</p>
+        </div>
+        <button type="button" onClick={() => setPayment(createEmptyPayment(loan))}>
+          Registrar pago manual
+        </button>
+      </header>
       <p className="reconciliation-note">
         El corte proyectado comienza después del último pago histórico. Los meses ausentes se
         señalan durante la importación; si el saldo del banco difiere, deberá registrarse un ajuste
         de reconciliación explícito antes de confiar en la proyección.
       </p>
-      <button type="button" onClick={() => setPayment(createEmptyPayment(loan))}>
-        Registrar pago manual
-      </button>
       {payment ? (
         <PaymentForm
           loan={loan}
@@ -62,21 +67,38 @@ export function PaymentTools({
         />
       ) : null}
       {payments.length ? (
-        <ul aria-label="Pagos registrados">
-          {[...payments]
-            .sort((left, right) => right.date.localeCompare(left.date))
-            .map((record) => (
-              <li key={record.id}>
-                <time dateTime={record.date}>{record.date}</time> ·{' '}
-                {formatMoney(record.totalAmount, loan.roundingPolicy)}
-                <button type="button" onClick={() => setPayment(record)}>
-                  Corregir
-                </button>
-              </li>
-            ))}
-        </ul>
+        <section className="payment-history" aria-labelledby="payment-history-title">
+          <div className="section-heading-action">
+            <div>
+              <h3 id="payment-history-title">Registro de pagos</h3>
+              <p>{payments.length} pago(s) guardado(s).</p>
+            </div>
+          </div>
+          <ul className="payment-list" aria-label="Pagos registrados">
+            {[...payments]
+              .sort((left, right) => right.date.localeCompare(left.date))
+              .map((record) => (
+                <li key={record.id}>
+                  <div>
+                    <time dateTime={record.date}>{record.date}</time>
+                    <strong>{formatMoney(record.totalAmount, loan.roundingPolicy)}</strong>
+                  </div>
+                  <button
+                    type="button"
+                    className="secondary-action"
+                    onClick={() => setPayment(record)}
+                  >
+                    Corregir
+                  </button>
+                </li>
+              ))}
+          </ul>
+        </section>
       ) : (
-        <p>No hay pagos registrados.</p>
+        <section className="payment-history payment-history-empty" aria-label="Pagos registrados">
+          <h3>Registro de pagos</h3>
+          <p>No hay pagos registrados.</p>
+        </section>
       )}
       <section className="payment-import" aria-labelledby="payment-import-title">
         <div className="section-heading-action">

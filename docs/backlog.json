@@ -525,6 +525,20 @@
         "La edición de préstamo separa contrato y tasas en secciones desplegables sin alterar la validación ni la estimación previa al guardado.",
         "El compositor de escenarios y la importación CSV permanecen cerrados hasta que la persona los solicita."
       ]
+    },
+    {
+      "id": "US-037",
+      "epic": "E3 · PWA y gestión de préstamos",
+      "title": "Unificar el lenguaje visual de las tareas locales",
+      "story": "Como persona usuaria, quiero abrir préstamos y gestionar pagos o respaldos con controles y paneles coherentes para reconocer las acciones sin depender de enlaces o pantallas dispares.",
+      "requirements": ["RF-001", "RF-005", "RF-006", "RNF-008", "RNF-009"],
+      "dependsOn": ["US-036"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "Cada préstamo guardado se abre desde una tarjeta completa operable con clic, Enter y Espacio, sin enlaces visuales simulados.",
+        "La vista de pagos usa una cabecera de tarea, una acción principal y paneles consistentes para el registro, el formulario y la importación.",
+        "La vista de respaldo presenta las acciones de descargar y restaurar como paneles claros, con controles accesibles y mensajes de resultado."
+      ]
     }
   ]
 }

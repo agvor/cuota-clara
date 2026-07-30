@@ -117,16 +117,6 @@ h1 {
   font-weight: 600;
 }
 
-.loan-card button {
-  padding: 0;
-  border: 0;
-  color: #1d4ed8;
-  background: transparent;
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
 .loan-detail {
   margin-top: 1rem;
   padding: 1.25rem;
@@ -1040,9 +1030,13 @@ body {
   box-shadow: 0 0.8rem 1.75rem rgb(15 23 42 / 9%);
 }
 
-.loan-card button {
-  margin-top: 0.35rem;
-  font-weight: 650;
+.loan-card-selectable {
+  cursor: pointer;
+}
+
+.loan-card-selectable:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 3px;
 }
 
 .loan-editor,
@@ -1183,6 +1177,169 @@ body {
   background: #fff;
 }
 
+.task-page-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.task-page-heading h2,
+.task-page-heading p {
+  margin-top: 0;
+}
+
+.task-page-heading h2 {
+  margin-bottom: 0.35rem;
+}
+
+.task-page-heading > div > p:last-child {
+  max-width: 44rem;
+  margin-bottom: 0;
+  color: #64748b;
+}
+
+.reconciliation-note {
+  margin: 1.25rem 0;
+  padding: 0.85rem 1rem;
+  border-left: 3px solid #93c5fd;
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: #475569;
+  background: #f0f7ff;
+}
+
+.payment-history,
+.payment-import,
+.payment-form {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid #dbe3ef;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+}
+
+.payment-history h3,
+.payment-import h3,
+.payment-form h3 {
+  margin-top: 0;
+}
+
+.payment-history-empty p {
+  margin-bottom: 0;
+  color: #64748b;
+}
+
+.payment-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.payment-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.8rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.6rem;
+  background: #fff;
+}
+
+.payment-list li > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.payment-list time {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.payment-list strong {
+  color: #172033;
+}
+
+.payment-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.payment-form h3,
+.payment-form [role='alert'],
+.payment-form .form-actions {
+  grid-column: 1 / -1;
+}
+
+.payment-form label {
+  display: grid;
+  gap: 0.35rem;
+  color: #334155;
+  font-weight: 650;
+}
+
+.backup-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.backup-action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  padding: 1rem;
+  border: 1px solid #dbe3ef;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+}
+
+.backup-action-card h3,
+.backup-action-card p {
+  margin-top: 0;
+}
+
+.backup-action-card p {
+  flex: 1;
+  color: #64748b;
+}
+
+.backup-file-control {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  color: #334155;
+  background: #fff;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.backup-file-control input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.backup-file-control:focus-within {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .loan-card {
     transition: none;
@@ -1211,5 +1368,18 @@ body {
   .loan-workspace,
   .loan-tab-panel {
     padding: 1rem;
+  }
+
+  .task-page-heading {
+    align-items: stretch;
+  }
+
+  .task-page-heading > button {
+    width: 100%;
+  }
+
+  .payment-form,
+  .backup-action-grid {
+    grid-template-columns: 1fr;
   }
 }

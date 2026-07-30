@@ -51,7 +51,9 @@ describe('App', () => {
     render(<App repository={createRepository([loan])} />);
 
     expect(await screen.findByRole('heading', { name: 'Hipoteca principal' })).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Ver préstamo' }));
+    const loanCard = screen.getByRole('button', { name: 'Abrir préstamo Hipoteca principal' });
+    loanCard.focus();
+    fireEvent.keyDown(loanCard, { key: 'Enter' });
     expect(screen.getByRole('heading', { name: 'Hipoteca principal' })).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Resumen' })).toHaveAttribute('aria-selected', 'true');
   });
@@ -72,7 +74,7 @@ describe('App', () => {
     render(<App repository={repository} />);
 
     await screen.findByRole('heading', { name: 'Préstamo organizado' });
-    fireEvent.click(screen.getByRole('button', { name: 'Ver préstamo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir préstamo Préstamo organizado' }));
 
     expect(screen.getByRole('tablist', { name: 'Secciones del préstamo' })).toBeVisible();
     expect(screen.queryByRole('heading', { name: 'Pagos históricos' })).not.toBeInTheDocument();
@@ -112,7 +114,7 @@ describe('App', () => {
     expect(
       await screen.findByText((content) => content.replaceAll('\u00a0', ' ') === '₡115 000 000,00'),
     ).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Ver préstamo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir préstamo Hipoteca formateada' }));
 
     expect(
       await screen.findByRole('heading', { name: 'Resumen financiero estimado' }),
@@ -272,7 +274,7 @@ describe('App', () => {
 
     await screen.findByRole('heading', { name: 'Préstamo anterior' });
     expect(screen.getByText('Préstamo heredado: falta plazo y seguro')).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Ver préstamo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir préstamo Préstamo anterior' }));
     expect(screen.getByText(/Este préstamo es heredado/)).toBeVisible();
   });
 
@@ -297,7 +299,7 @@ describe('App', () => {
     render(<App repository={repository} />);
 
     await screen.findByRole('heading', { name: 'Préstamo anterior' });
-    fireEvent.click(screen.getByRole('button', { name: 'Ver préstamo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir préstamo Préstamo anterior' }));
     fireEvent.click(screen.getByRole('tab', { name: 'Configuración' }));
     expect(await screen.findByRole('button', { name: 'Editar préstamo' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Editar préstamo' }));

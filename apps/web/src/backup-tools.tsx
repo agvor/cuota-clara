@@ -51,22 +51,37 @@ export function BackupTools({
   }
   return (
     <section className="backup-tools" aria-labelledby="backup-title">
-      <h2 id="backup-title">Respaldo local</h2>
-      <p>
-        Exporta una copia versionada de préstamos, pagos y escenarios. La restauración valida todo
-        el archivo antes de cambiar datos.
-      </p>
-      <button type="button" onClick={() => void downloadBackup()}>
-        Descargar respaldo
-      </button>
-      <label>
-        Restaurar respaldo
-        <input
-          type="file"
-          accept="application/json,.json"
-          onChange={(event) => void restore(event)}
-        />
-      </label>
+      <header className="task-page-heading">
+        <div>
+          <p className="eyebrow">Datos locales</p>
+          <h2 id="backup-title">Respaldo local</h2>
+          <p>
+            Conserva una copia versionada de préstamos, pagos y escenarios en un archivo que tú
+            controlas.
+          </p>
+        </div>
+      </header>
+      <div className="backup-action-grid">
+        <section className="backup-action-card" aria-labelledby="backup-download-title">
+          <h3 id="backup-download-title">Descargar una copia</h3>
+          <p>Genera un archivo JSON para guardar fuera de este dispositivo.</p>
+          <button type="button" onClick={() => void downloadBackup()}>
+            Descargar respaldo
+          </button>
+        </section>
+        <section className="backup-action-card" aria-labelledby="backup-restore-title">
+          <h3 id="backup-restore-title">Restaurar una copia</h3>
+          <p>El archivo se valida antes de actualizar los datos locales.</p>
+          <label className="backup-file-control">
+            <span>Seleccionar respaldo</span>
+            <input
+              type="file"
+              accept="application/json,.json"
+              onChange={(event) => void restore(event)}
+            />
+          </label>
+        </section>
+      </div>
       {message ? <p aria-live="polite">{message}</p> : null}
       {error ? <p role="alert">{error}</p> : null}
     </section>
