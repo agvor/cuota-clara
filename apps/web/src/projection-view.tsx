@@ -68,6 +68,7 @@ export function ProjectionView({
 }>) {
   const [page, setPage] = useState(0);
   const [sortDirection, setSortDirection] = useState<SortDirection>('ascending');
+  const [selectedTableSourceId, setSelectedTableSourceId] = useState('base');
   const result = useMemo(() => {
     try {
       const periods: readonly DisplayProjectionPeriod[] = loan.contract
@@ -96,7 +97,39 @@ export function ProjectionView({
       </section>
     );
 
-  const orderedPeriods = [...result.periods].sort((left, right) =>
+  const comparableScenarios = scenarios.filter(isComparableScenario);
+  const selectedScenario = comparableScenarios.find(
+    (scenario) => scenario.id === selectedTableSourceId,
+  );
+  const tableSourceId =
+    selectedScenario || selectedTableSourceId === 'base' ? selectedTableSourceId : 'base';
+  let tableProjectionLabel = 'Configuración base';
+  let tableProjectionPeriods = result.periods;
+  let tableProjectionError: string | undefined;
+  let isScenarioProjection = Boolean(selectedScenario);
+  if (selectedScenario) {
+    tableProjectionLabel = selectedScenario.name;
+    try {
+      tableProjectionPeriods = compareScenario(loan, selectedScenario).alternative.periods.map(
+        (period) => ({
+          period: period.period,
+          date: period.date,
+          openingBalance: period.openingBalance,
+          interest: period.interest,
+          principal: period.principal,
+          payment: period.payment,
+          closingBalance: period.closingBalance,
+        }),
+      );
+    } catch (cause) {
+      tableProjectionLabel = 'Configuración base';
+      tableProjectionPeriods = result.periods;
+      isScenarioProjection = false;
+      tableProjectionError =
+        cause instanceof Error ? cause.message : 'No se pudo generar la proyección del escenario.';
+    }
+  }
+  const orderedPeriods = [...tableProjectionPeriods].sort((left, right) =>
     sortDirection === 'ascending'
       ? left.date.localeCompare(right.date)
       : right.date.localeCompare(left.date),
@@ -124,9 +157,29 @@ export function ProjectionView({
         periods={result.periods}
         scenarios={scenarios}
       />
+      <div className="table-projection-controls">
+        <label>
+          Mostrar en la tabla
+          <select
+            value={tableSourceId}
+            onChange={(event) => {
+              setSelectedTableSourceId(event.target.value);
+              setPage(0);
+            }}
+          >
+            <option value="base">Configuración base</option>
+            {comparableScenarios.map((scenario) => (
+              <option key={scenario.id} value={scenario.id}>
+                {scenario.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {tableProjectionError ? <p role="alert">{tableProjectionError}</p> : null}
       <div className="table-scroll">
         <table>
-          <caption>Historial y proyección de amortización</caption>
+          <caption>Historial y proyección de amortización — {tableProjectionLabel}</caption>
           <thead>
             <tr>
               <th scope="col">Tipo</th>
@@ -170,7 +223,7 @@ export function ProjectionView({
             ))}
             {visiblePeriods.map((period) => (
               <tr className="projection-row" key={`projection-${period.period}`}>
-                <td>Proyección</td>
+                <td>{isScenarioProjection ? 'Proyección de escenario' : 'Proyección base'}</td>
                 <td>{period.date}</td>
                 <td>{formatMoney(period.payment, loan.roundingPolicy)}</td>
                 <td>{formatMoney(period.interest, loan.roundingPolicy)}</td>

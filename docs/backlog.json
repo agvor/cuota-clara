@@ -482,6 +482,20 @@
         "La persona puede definir una fecha Desde y una fecha Hasta dentro de las fechas proyectadas; el rango nunca queda invertido.",
         "La interfaz informa las cuotas visibles y ofrece una acción para restablecer el plazo total."
       ]
+    },
+    {
+      "id": "US-034",
+      "epic": "E4 · Escenarios y resultados",
+      "title": "Elegir la fuente de la tabla de amortización",
+      "story": "Como persona usuaria, quiero elegir la configuración base o un escenario en la tabla para inspeccionar su calendario sin perder el historial real.",
+      "requirements": ["RF-009", "RF-010", "RNF-008"],
+      "dependsOn": ["US-033"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "La tabla inicia mostrando Configuración base y ofrece un selector con los escenarios compatibles guardados.",
+        "Al seleccionar un escenario, sus filas proyectadas sustituyen a las de la base y la paginación vuelve a la primera página.",
+        "Los pagos históricos permanecen visibles e inalterados para todas las fuentes."
+      ]
     }
   ]
 }

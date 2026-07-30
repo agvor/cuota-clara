@@ -37,9 +37,11 @@ describe('ProjectionView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Restablecer todo el plazo' }));
     expect(screen.getByLabelText('Desde')).toHaveValue('2026-02-01');
     expect(screen.getByLabelText('Hasta')).toHaveValue('2026-12-01');
-    expect(screen.getAllByText('Proyección').length).toBeGreaterThan(1);
+    expect(screen.getAllByText('Proyección base').length).toBeGreaterThan(1);
     expect(
-      screen.getByRole('table', { name: 'Historial y proyección de amortización' }),
+      screen.getByRole('table', {
+        name: 'Historial y proyección de amortización — Configuración base',
+      }),
     ).toBeVisible();
     const firstPoint = screen.getAllByLabelText(/^Cuota \d+, \d{4}-\d{2}-\d{2}$/)[0];
     if (!firstPoint) throw new Error('Se esperaba al menos un punto de proyección.');
@@ -68,10 +70,12 @@ describe('ProjectionView', () => {
 
     expect(screen.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
     const firstProjectedRowBefore = screen
-      .getAllByText('Proyección')[0]
+      .getAllByText('Proyección base')[0]
       ?.closest('tr')?.textContent;
     fireEvent.click(screen.getByRole('button', { name: /Ordenar cuotas por fecha descendente/ }));
-    const firstProjectedRowAfter = screen.getAllByText('Proyección')[0]?.closest('tr')?.textContent;
+    const firstProjectedRowAfter = screen
+      .getAllByText('Proyección base')[0]
+      ?.closest('tr')?.textContent;
     expect(firstProjectedRowAfter).not.toBe(firstProjectedRowBefore);
     expect(screen.getByRole('columnheader', { name: /Fecha/ })).toHaveAttribute(
       'aria-sort',
@@ -105,6 +109,14 @@ describe('ProjectionView', () => {
 
     fireEvent.change(screen.getByLabelText('Escenario A'), { target: { value: 'scenario-a' } });
     fireEvent.change(screen.getByLabelText('Escenario B'), { target: { value: 'scenario-b' } });
+    expect(screen.getByLabelText('Mostrar en la tabla')).toHaveValue('base');
+    fireEvent.change(screen.getByLabelText('Mostrar en la tabla'), {
+      target: { value: 'scenario-a' },
+    });
+    expect(
+      screen.getByRole('table', { name: 'Historial y proyección de amortización — Extra mensual' }),
+    ).toBeVisible();
+    expect(screen.getAllByText('Proyección de escenario').length).toBeGreaterThan(1);
     fireEvent.click(screen.getByLabelText('Cuota total'));
     fireEvent.click(screen.getByLabelText('Aporte extraordinario a principal'));
 
