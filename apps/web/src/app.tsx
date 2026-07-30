@@ -555,7 +555,7 @@ function LoanWorkspace({
           <p aria-live="polite">Cargando escenarios…</p>
         ) : null}
         {activeTab === 'projection' && aggregate?.loan.id === loan.id ? (
-          <AmortizationDetail
+          <ProjectionView
             loan={loan}
             payments={aggregate.payments}
             scenarios={aggregate.scenarios}
@@ -650,35 +650,6 @@ function LoanSettings({
           Eliminar préstamo
         </button>
       </section>
-    </section>
-  );
-}
-
-function AmortizationDetail({
-  loan,
-  payments,
-  scenarios,
-}: Readonly<{
-  loan: Loan;
-  payments: readonly PaymentRecord[];
-  scenarios: readonly ProjectionScenarioSnapshot[];
-}>) {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <section className="amortization-detail" aria-labelledby="amortization-detail-title">
-      <h3 id="amortization-detail-title">Detalle de amortización</h3>
-      <p>Abre la tabla paginada y el gráfico solo cuando necesites revisar cada cuota.</p>
-      <button
-        type="button"
-        aria-expanded={isOpen}
-        aria-controls="amortization-projection"
-        onClick={() => setIsOpen((current) => !current)}
-      >
-        {isOpen ? 'Ocultar detalle de amortización' : 'Ver detalle de amortización'}
-      </button>
-      <div id="amortization-projection" hidden={!isOpen}>
-        {isOpen ? <ProjectionView loan={loan} payments={payments} scenarios={scenarios} /> : null}
-      </div>
     </section>
   );
 }

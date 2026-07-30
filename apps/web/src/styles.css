@@ -346,7 +346,7 @@ h1 {
 }
 
 .financial-table-projection {
-  min-width: 48rem;
+  min-width: 65rem;
 }
 
 .financial-table-projection td {
@@ -817,6 +817,12 @@ h1 {
 .scenario-card h3,
 .scenario-card p {
   margin: 0;
+}
+
+.scenario-card .scenario-summary {
+  flex-basis: 100%;
+  width: 100%;
+  margin-top: 0.25rem;
 }
 
 .scenario-card p {

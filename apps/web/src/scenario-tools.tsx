@@ -34,7 +34,7 @@ export function ScenarioTools({
   const [editingScenario, setEditingScenario] = useState<ComparableScenario>();
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [scenarioType, setScenarioType] = useState<ScenarioType>('one_time');
-  const [summaryScenario, setSummaryScenario] = useState<ComparableScenario>();
+  const [summaryScenarioId, setSummaryScenarioId] = useState<string>();
   const [error, setError] = useState<string>();
   const comparable = scenarios.filter(isComparableScenario);
   const formKey = `${editingScenario?.id ?? 'new'}-${scenarioType}`;
@@ -66,6 +66,7 @@ export function ScenarioTools({
     if (!window.confirm(`¿Eliminar el escenario “${scenario.name}”?`)) return;
     await onDeleteScenario(scenario.id);
     if (editingScenario?.id === scenario.id) setEditingScenario(undefined);
+    if (summaryScenarioId === scenario.id) setSummaryScenarioId(undefined);
   }
 
   function edit(scenario: ComparableScenario) {
@@ -162,18 +163,15 @@ export function ScenarioTools({
       ) : null}
       {error ? <p role="alert">{error}</p> : null}
       <SavedScenarios
+        loan={loan}
         scenarios={comparable}
         onEdit={edit}
         onDelete={remove}
-        onViewSummary={setSummaryScenario}
+        {...(summaryScenarioId ? { summaryScenarioId } : {})}
+        onToggleSummary={(scenarioId) =>
+          setSummaryScenarioId((current) => (current === scenarioId ? undefined : scenarioId))
+        }
       />
-      {summaryScenario ? (
-        <ScenarioSummary
-          loan={loan}
-          scenario={summaryScenario}
-          onClose={() => setSummaryScenario(undefined)}
-        />
-      ) : null}
     </section>
   );
 }
@@ -245,42 +243,61 @@ function defaultScenarioName(type: ScenarioType): string {
 }
 
 function SavedScenarios({
+  loan,
   scenarios,
   onEdit,
   onDelete,
-  onViewSummary,
+  summaryScenarioId,
+  onToggleSummary,
 }: Readonly<{
+  loan: Loan;
   scenarios: readonly ComparableScenario[];
   onEdit: (scenario: ComparableScenario) => void;
   onDelete: (scenario: ComparableScenario) => void;
-  onViewSummary: (scenario: ComparableScenario) => void;
+  summaryScenarioId?: string;
+  onToggleSummary: (scenarioId: string) => void;
 }>) {
   if (!scenarios.length) return <p>No hay escenarios configurados.</p>;
   return (
     <div className="scenario-list" aria-label="Escenarios configurados">
-      {scenarios.map((scenario) => (
-        <article className="scenario-card" key={scenario.id}>
-          <div>
-            <h3>{scenario.name}</h3>
-            <p>{describeScenario(scenario)}</p>
-          </div>
-          <div className="scenario-card-actions">
-            <button type="button" onClick={() => onViewSummary(scenario)}>
-              Ver resumen
-            </button>
-            <button type="button" onClick={() => onEdit(scenario)}>
-              Editar escenario
-            </button>
-            <button
-              type="button"
-              className="secondary-action"
-              onClick={() => void onDelete(scenario)}
-            >
-              Eliminar escenario
-            </button>
-          </div>
-        </article>
-      ))}
+      {scenarios.map((scenario) => {
+        const isSummaryOpen = summaryScenarioId === scenario.id;
+        return (
+          <article className="scenario-card" key={scenario.id}>
+            <div>
+              <h3>{scenario.name}</h3>
+              <p>{describeScenario(scenario)}</p>
+            </div>
+            <div className="scenario-card-actions">
+              <button
+                type="button"
+                aria-expanded={isSummaryOpen}
+                aria-controls={`scenario-summary-${scenario.id}`}
+                onClick={() => onToggleSummary(scenario.id)}
+              >
+                {isSummaryOpen ? 'Ocultar resumen' : 'Ver resumen'}
+              </button>
+              <button type="button" onClick={() => onEdit(scenario)}>
+                Editar escenario
+              </button>
+              <button
+                type="button"
+                className="secondary-action"
+                onClick={() => void onDelete(scenario)}
+              >
+                Eliminar escenario
+              </button>
+            </div>
+            {isSummaryOpen ? (
+              <ScenarioSummary
+                loan={loan}
+                scenario={scenario}
+                onClose={() => onToggleSummary(scenario.id)}
+              />
+            ) : null}
+          </article>
+        );
+      })}
     </div>
   );
 }
@@ -297,12 +314,13 @@ function ScenarioSummary({
   const comparison = compareScenario(loan, scenario);
   return (
     <section
+      id={`scenario-summary-${scenario.id}`}
       className="scenario-summary"
       aria-live="polite"
-      aria-labelledby="scenario-summary-title"
+      aria-labelledby={`scenario-summary-title-${scenario.id}`}
     >
       <div className="section-heading-action">
-        <h3 id="scenario-summary-title">Resumen de {scenario.name}</h3>
+        <h3 id={`scenario-summary-title-${scenario.id}`}>Resumen de {scenario.name}</h3>
         <button type="button" className="secondary-action" onClick={onClose}>
           Cerrar resumen
         </button>

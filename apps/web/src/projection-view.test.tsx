@@ -43,6 +43,9 @@ describe('ProjectionView', () => {
         name: 'Historial y proyección de amortización — Configuración base',
       }),
     ).toBeVisible();
+    expect(screen.getByRole('columnheader', { name: 'Principal total' })).toBeVisible();
+    expect(screen.getByRole('columnheader', { name: 'Principal ordinario' })).toBeVisible();
+    expect(screen.getByRole('columnheader', { name: 'Principal extraordinario' })).toBeVisible();
     const firstPoint = screen.getAllByLabelText(/^Cuota \d+, \d{4}-\d{2}-\d{2}$/)[0];
     if (!firstPoint) throw new Error('Se esperaba al menos un punto de proyección.');
     fireEvent.pointerEnter(firstPoint);
@@ -84,6 +87,7 @@ describe('ProjectionView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
     expect(screen.getByText(/Página 2 de \d+/)).toBeVisible();
     expect(screen.getByRole('columnheader', { name: 'Saldo final' })).toBeVisible();
+    expect(screen.getByRole('columnheader', { name: 'Principal extraordinario' })).toBeVisible();
   });
 
   test('aplica cada señal a base y escenarios, agrupa el detalle y permite fijar un punto', () => {
@@ -117,6 +121,11 @@ describe('ProjectionView', () => {
       screen.getByRole('table', { name: 'Historial y proyección de amortización — Extra mensual' }),
     ).toBeVisible();
     expect(screen.getAllByText('Proyección de escenario').length).toBeGreaterThan(1);
+    expect(
+      screen.getAllByRole('row', {
+        name: /Proyección de escenario.*₡20,00/,
+      }).length,
+    ).toBeGreaterThan(0);
     fireEvent.click(screen.getByLabelText('Cuota total'));
     fireEvent.click(screen.getByLabelText('Aporte extraordinario a principal'));
 

@@ -87,7 +87,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Escenarios' }));
     expect(screen.getByRole('heading', { name: 'Configuración de escenarios' })).toBeVisible();
     fireEvent.click(screen.getByRole('tab', { name: 'Proyección' }));
-    expect(screen.getByRole('heading', { name: 'Detalle de amortización' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Evolución del saldo' })).toBeVisible();
     fireEvent.click(screen.getByRole('tab', { name: 'Configuración' }));
     expect(screen.getByRole('heading', { name: 'Zona de riesgo' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: '← Todos los préstamos' }));
@@ -130,13 +130,11 @@ describe('App', () => {
     ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Proyección' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle de amortización' }));
 
     expect(screen.getByRole('img', { name: 'Evolución estimada del saldo' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Ocultar detalle de amortización' })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    );
+    expect(
+      screen.queryByRole('button', { name: 'Ver detalle de amortización' }),
+    ).not.toBeInTheDocument();
   });
 
   test('guarda contrato v3 con cuota total, estimación y escenario TBP en un agregado nuevo', async () => {

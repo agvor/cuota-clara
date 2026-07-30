@@ -35,6 +35,8 @@ type DisplayProjectionPeriod = Readonly<{
   openingBalance: Loan['initialBalance'];
   interest: Loan['initialBalance'];
   principal: Loan['initialBalance'];
+  ordinaryPrincipal: Loan['initialBalance'];
+  extraordinaryPrincipal: Loan['initialBalance'];
   payment: Loan['initialBalance'];
   closingBalance: Loan['initialBalance'];
 }>;
@@ -78,10 +80,22 @@ export function ProjectionView({
             openingBalance: period.openingBalance,
             interest: period.interest,
             principal: period.principal,
+            ordinaryPrincipal: period.principal,
+            extraordinaryPrincipal: zeroMoney(loan),
             payment: period.totalDue,
             closingBalance: period.closingBalance,
           }))
-        : projectLoanAmortization(loan).periods;
+        : projectLoanAmortization(loan).periods.map((period) => ({
+            period: period.period,
+            date: period.date,
+            openingBalance: period.openingBalance,
+            interest: period.interest,
+            principal: period.principal,
+            ordinaryPrincipal: period.principal.subtract(period.extraPayment),
+            extraordinaryPrincipal: period.extraPayment,
+            payment: period.payment,
+            closingBalance: period.closingBalance,
+          }));
       return { periods };
     } catch (cause) {
       return {
@@ -117,6 +131,8 @@ export function ProjectionView({
           openingBalance: period.openingBalance,
           interest: period.interest,
           principal: period.principal,
+          ordinaryPrincipal: period.principal.subtract(period.extraPayment),
+          extraordinaryPrincipal: period.extraPayment,
           payment: period.payment,
           closingBalance: period.closingBalance,
         }),
@@ -198,7 +214,9 @@ export function ProjectionView({
               </th>
               <th scope="col">Pago</th>
               <th scope="col">Interés</th>
-              <th scope="col">Principal</th>
+              <th scope="col">Principal total</th>
+              <th scope="col">Principal ordinario</th>
+              <th scope="col">Principal extraordinario</th>
               <th scope="col">Saldo final</th>
             </tr>
           </thead>
@@ -215,8 +233,23 @@ export function ProjectionView({
                 </td>
                 <td>
                   {payment.principalAmount
+                    ? formatMoney(
+                        payment.principalAmount.add(
+                          payment.extraPrincipalAmount ?? zeroMoney(loan),
+                        ),
+                        loan.roundingPolicy,
+                      )
+                    : 'Pendiente'}
+                </td>
+                <td>
+                  {payment.principalAmount
                     ? formatMoney(payment.principalAmount, loan.roundingPolicy)
                     : 'Pendiente'}
+                </td>
+                <td>
+                  {payment.extraPrincipalAmount
+                    ? formatMoney(payment.extraPrincipalAmount, loan.roundingPolicy)
+                    : '—'}
                 </td>
                 <td>—</td>
               </tr>
@@ -228,6 +261,8 @@ export function ProjectionView({
                 <td>{formatMoney(period.payment, loan.roundingPolicy)}</td>
                 <td>{formatMoney(period.interest, loan.roundingPolicy)}</td>
                 <td>{formatMoney(period.principal, loan.roundingPolicy)}</td>
+                <td>{formatMoney(period.ordinaryPrincipal, loan.roundingPolicy)}</td>
+                <td>{formatMoney(period.extraordinaryPrincipal, loan.roundingPolicy)}</td>
                 <td>{formatMoney(period.closingBalance, loan.roundingPolicy)}</td>
               </tr>
             ))}
