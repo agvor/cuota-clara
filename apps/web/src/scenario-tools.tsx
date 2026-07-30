@@ -32,6 +32,7 @@ export function ScenarioTools({
   onDeleteScenario?: (scenarioId: string) => Promise<void>;
 }>) {
   const [editingScenario, setEditingScenario] = useState<ComparableScenario>();
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [scenarioType, setScenarioType] = useState<ScenarioType>('one_time');
   const [summaryScenario, setSummaryScenario] = useState<ComparableScenario>();
   const [error, setError] = useState<string>();
@@ -53,6 +54,7 @@ export function ScenarioTools({
       });
       await onSaveScenario(scenario);
       setEditingScenario(undefined);
+      setIsComposerOpen(false);
       setScenarioType('one_time');
       setError(undefined);
     } catch (cause) {
@@ -68,6 +70,7 @@ export function ScenarioTools({
 
   function edit(scenario: ComparableScenario) {
     setEditingScenario(scenario);
+    setIsComposerOpen(true);
     setScenarioType(typeForScenario(scenario));
     setError(undefined);
   }
@@ -77,64 +80,86 @@ export function ScenarioTools({
     <section className="scenario-tools" aria-labelledby="scenarios-title">
       <h2 id="scenarios-title">Configuración de escenarios</h2>
       <p>Los escenarios no cambian el préstamo ni sus pagos históricos.</p>
-      <section className="scenario-form-panel" aria-labelledby="scenario-form-title">
-        <h3 id="scenario-form-title">
-          {editingScenario ? `Editar ${editingScenario.name}` : 'Crear escenario'}
-        </h3>
-        <form key={formKey} onSubmit={(event) => void submit(event)}>
-          <label>
-            Tipo de escenario
-            <select
-              value={scenarioType}
-              onChange={(event) => setScenarioType(event.target.value as ScenarioType)}
-            >
-              <option value="one_time">Pago extraordinario único</option>
-              <option value="constant_extra">Extraordinario constante mensual</option>
-              <option value="constant_principal">Aporte constante al principal mensual</option>
-            </select>
-          </label>
-          <label>
-            Nombre del escenario
-            <input
-              required
-              name="name"
-              defaultValue={editingScenario?.name ?? defaultScenarioName(scenarioType)}
-            />
-          </label>
-          {scenarioType === 'one_time' ? (
+      {!isComposerOpen ? (
+        <button
+          type="button"
+          onClick={() => {
+            setEditingScenario(undefined);
+            setScenarioType('one_time');
+            setError(undefined);
+            setIsComposerOpen(true);
+          }}
+        >
+          Nuevo escenario
+        </button>
+      ) : null}
+      {isComposerOpen ? (
+        <section className="scenario-form-panel" aria-labelledby="scenario-form-title">
+          <h3 id="scenario-form-title">
+            {editingScenario ? `Editar ${editingScenario.name}` : 'Crear escenario'}
+          </h3>
+          <form key={formKey} onSubmit={(event) => void submit(event)}>
             <label>
-              Fecha del pago extraordinario
-              <input required name="date" type="date" defaultValue={existingValues?.date} />
+              Tipo de escenario
+              <select
+                value={scenarioType}
+                onChange={(event) => setScenarioType(event.target.value as ScenarioType)}
+              >
+                <option value="one_time">Pago extraordinario único</option>
+                <option value="constant_extra">Extraordinario constante mensual</option>
+                <option value="constant_principal">Aporte constante al principal mensual</option>
+              </select>
             </label>
-          ) : (
-            <p className="field-hint">
-              El aporte se aplica después de cada cuota ordinaria, desde la primera cuota
-              proyectada.
-            </p>
-          )}
-          <label>
-            {scenarioType === 'constant_principal'
-              ? 'Aporte total al principal por mes'
-              : scenarioType === 'constant_extra'
-                ? 'Extraordinario mensual'
-                : 'Importe adicional al principal'}
-            <input
-              required
-              name="amount"
-              inputMode="decimal"
-              defaultValue={existingValues?.amount}
-            />
-          </label>
-          <div className="form-actions">
-            <button type="submit">{editingScenario ? 'Guardar cambios' : 'Crear escenario'}</button>
-            {editingScenario ? (
-              <button type="button" onClick={() => setEditingScenario(undefined)}>
-                Cancelar edición
+            <label>
+              Nombre del escenario
+              <input
+                required
+                name="name"
+                defaultValue={editingScenario?.name ?? defaultScenarioName(scenarioType)}
+              />
+            </label>
+            {scenarioType === 'one_time' ? (
+              <label>
+                Fecha del pago extraordinario
+                <input required name="date" type="date" defaultValue={existingValues?.date} />
+              </label>
+            ) : (
+              <p className="field-hint">
+                El aporte se aplica después de cada cuota ordinaria, desde la primera cuota
+                proyectada.
+              </p>
+            )}
+            <label>
+              {scenarioType === 'constant_principal'
+                ? 'Aporte total al principal por mes'
+                : scenarioType === 'constant_extra'
+                  ? 'Extraordinario mensual'
+                  : 'Importe adicional al principal'}
+              <input
+                required
+                name="amount"
+                inputMode="decimal"
+                defaultValue={existingValues?.amount}
+              />
+            </label>
+            <div className="form-actions">
+              <button type="submit">
+                {editingScenario ? 'Guardar cambios' : 'Crear escenario'}
               </button>
-            ) : null}
-          </div>
-        </form>
-      </section>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingScenario(undefined);
+                  setIsComposerOpen(false);
+                  setError(undefined);
+                }}
+              >
+                {editingScenario ? 'Cancelar edición' : 'Cancelar'}
+              </button>
+            </div>
+          </form>
+        </section>
+      ) : null}
       {error ? <p role="alert">{error}</p> : null}
       <SavedScenarios
         scenarios={comparable}

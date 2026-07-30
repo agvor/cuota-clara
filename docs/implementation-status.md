@@ -8,7 +8,7 @@
 | --- | ---: | ---: | ---: | ---: | ---: |
 | E1 · Motor financiero verificable | 0 | 0 | 0 | 0 | 7 |
 | E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 3 |
-| E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 4 |
+| E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 5 |
 | E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 9 |
 | E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 1 |
 | E6 · Contrato financiero v2 | 1 | 0 | 0 | 0 | 4 |
@@ -54,3 +54,4 @@
 | US-033 | E4 · Escenarios y resultados | Configurar el rango temporal del gráfico | Completado | US-032 |
 | US-034 | E4 · Escenarios y resultados | Elegir la fuente de la tabla de amortización | Completado | US-033 |
 | US-035 | E3 · PWA y gestión de préstamos | Organizar el préstamo como espacio de trabajo por tareas | Completado | US-034 |
+| US-036 | E3 · PWA y gestión de préstamos | Conservar navegación y reducir formularios permanentes | Completado | US-035 |

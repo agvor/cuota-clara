@@ -511,6 +511,20 @@
         "La navegación de pestañas es accesible con roles ARIA, clic, flechas, Inicio y Fin, y existe una acción para volver a todos los préstamos.",
         "La creación/edición y los datos y respaldo se muestran como vistas dedicadas fuera del espacio de trabajo."
       ]
+    },
+    {
+      "id": "US-036",
+      "epic": "E3 · PWA y gestión de préstamos",
+      "title": "Conservar navegación y reducir formularios permanentes",
+      "story": "Como persona usuaria, quiero retomar la sección exacta de un préstamo y abrir formularios solo cuando los necesite para trabajar con una interfaz más ligera.",
+      "requirements": ["RF-001", "RF-005", "RF-006", "RF-008", "RNF-008", "RNF-009"],
+      "dependsOn": ["US-035"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "La URL hash local identifica cartera, datos y la combinación préstamo/pestaña; una recarga o navegación Atrás reconstruye esa vista.",
+        "La edición de préstamo separa contrato y tasas en secciones desplegables sin alterar la validación ni la estimación previa al guardado.",
+        "El compositor de escenarios y la importación CSV permanecen cerrados hasta que la persona los solicita."
+      ]
     }
   ]
 }

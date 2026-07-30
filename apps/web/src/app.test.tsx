@@ -15,7 +15,10 @@ import {
 
 import { App } from './app.js';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  window.history.replaceState(null, '', '#/prestamos');
+});
 
 function createRepository(loans: Awaited<ReturnType<LoanRepository['listLoans']>>): LoanRepository {
   return {
@@ -77,6 +80,7 @@ describe('App', () => {
     summaryTab.focus();
     fireEvent.keyDown(summaryTab, { key: 'ArrowRight' });
     expect(screen.getByRole('tab', { name: 'Pagos' })).toHaveAttribute('aria-selected', 'true');
+    expect(window.location.hash).toBe('#/prestamos/loan-workspace/payments');
     expect(await screen.findByRole('heading', { name: 'Pagos históricos' })).toBeVisible();
     fireEvent.click(screen.getByRole('tab', { name: 'Escenarios' }));
     expect(screen.getByRole('heading', { name: 'Configuración de escenarios' })).toBeVisible();
@@ -86,6 +90,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Zona de riesgo' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: '← Todos los préstamos' }));
     expect(screen.getByRole('heading', { name: 'Tus préstamos' })).toBeVisible();
+    expect(window.location.hash).toBe('#/prestamos');
   });
 
   test('muestra importes grandes formateados y el resumen financiero contractual', async () => {

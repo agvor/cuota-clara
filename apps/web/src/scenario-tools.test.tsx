@@ -26,6 +26,8 @@ describe('ScenarioTools', () => {
   test('guarda un escenario alternativo para compararlo desde la amortización', async () => {
     const onSaveScenario = vi.fn().mockResolvedValue(undefined);
     render(<ScenarioTools loan={loan} scenarios={[]} onSaveScenario={onSaveScenario} />);
+    expect(screen.queryByLabelText('Tipo de escenario')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Nuevo escenario' }));
     fireEvent.change(screen.getByLabelText('Fecha del pago extraordinario'), {
       target: { value: '2026-03-01' },
     });
@@ -40,6 +42,7 @@ describe('ScenarioTools', () => {
   test('configura un extraordinario mensual constante', async () => {
     const onSaveScenario = vi.fn().mockResolvedValue(undefined);
     render(<ScenarioTools loan={loan} scenarios={[]} onSaveScenario={onSaveScenario} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Nuevo escenario' }));
     fireEvent.change(screen.getByLabelText('Tipo de escenario'), {
       target: { value: 'constant_extra' },
     });

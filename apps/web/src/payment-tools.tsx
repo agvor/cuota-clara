@@ -19,6 +19,7 @@ export function PaymentTools({
   onImportPayments,
 }: PaymentToolsProps) {
   const [payment, setPayment] = useState<PaymentRecord | undefined>();
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [csvText, setCsvText] = useState<string>();
   const [error, setError] = useState<string>();
   const preview = csvText
@@ -77,53 +78,76 @@ export function PaymentTools({
       ) : (
         <p>No hay pagos registrados.</p>
       )}
-      <h3>Importar CSV</h3>
-      <p>
-        Formato inicial: encabezados en inglés, punto y coma, importes con coma decimal y fechas
-        DD/MM/YYYY.
-      </p>
-      <input
-        type="file"
-        accept=".csv,text/csv"
-        aria-label="Archivo CSV de pagos"
-        onChange={(event) => void readCsv(event)}
-      />
-      {preview ? (
-        <div className="csv-preview" aria-live="polite">
-          <p>
-            {preview.validRecords.length} filas válidas; {preview.errors.length} con error.
-          </p>
-          {preview.missingPeriods.length ? (
-            <p>Meses sin pago detectados: {preview.missingPeriods.join(', ')}.</p>
-          ) : null}
-          {preview.errors.length ? (
-            <ul>
-              {preview.errors.map((item, index) => (
-                <li key={`${item.rowNumber}-${item.code}-${index}`}>
-                  Fila {item.rowNumber ?? '—'}: {item.message}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>La importación está lista para confirmar.</p>
-          )}
+      <section className="payment-import" aria-labelledby="payment-import-title">
+        <div className="section-heading-action">
+          <div>
+            <h3 id="payment-import-title">Importar CSV</h3>
+            <p>Agrega varios pagos después de revisar su previsualización.</p>
+          </div>
           <button
             type="button"
-            disabled={preview.errors.length > 0 || preview.validRecords.length === 0}
-            onClick={() =>
-              void onImportPayments(preview.validRecords)
-                .then(() => setCsvText(undefined))
-                .catch((cause: unknown) =>
-                  setError(
-                    cause instanceof Error ? cause.message : 'No se pudo importar el archivo.',
-                  ),
-                )
-            }
+            className="secondary-action"
+            onClick={() => setIsImportOpen((current) => !current)}
           >
-            Confirmar importación
+            {isImportOpen ? 'Cerrar importación' : 'Importar CSV'}
           </button>
         </div>
-      ) : null}
+        {isImportOpen ? (
+          <>
+            <p>
+              Formato inicial: encabezados en inglés, punto y coma, importes con coma decimal y
+              fechas DD/MM/YYYY.
+            </p>
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              aria-label="Archivo CSV de pagos"
+              onChange={(event) => void readCsv(event)}
+            />
+            {preview ? (
+              <div className="csv-preview" aria-live="polite">
+                <p>
+                  {preview.validRecords.length} filas válidas; {preview.errors.length} con error.
+                </p>
+                {preview.missingPeriods.length ? (
+                  <p>Meses sin pago detectados: {preview.missingPeriods.join(', ')}.</p>
+                ) : null}
+                {preview.errors.length ? (
+                  <ul>
+                    {preview.errors.map((item, index) => (
+                      <li key={`${item.rowNumber}-${item.code}-${index}`}>
+                        Fila {item.rowNumber ?? '—'}: {item.message}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>La importación está lista para confirmar.</p>
+                )}
+                <button
+                  type="button"
+                  disabled={preview.errors.length > 0 || preview.validRecords.length === 0}
+                  onClick={() =>
+                    void onImportPayments(preview.validRecords)
+                      .then(() => {
+                        setCsvText(undefined);
+                        setIsImportOpen(false);
+                      })
+                      .catch((cause: unknown) =>
+                        setError(
+                          cause instanceof Error
+                            ? cause.message
+                            : 'No se pudo importar el archivo.',
+                        ),
+                      )
+                  }
+                >
+                  Confirmar importación
+                </button>
+              </div>
+            ) : null}
+          </>
+        ) : null}
+      </section>
       {error ? <p role="alert">{error}</p> : null}
     </section>
   );

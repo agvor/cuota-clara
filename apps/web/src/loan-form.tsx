@@ -218,196 +218,202 @@ export function LoanForm({ loan, onCancel, onSave }: LoanFormProps) {
         </p>
       ) : null}
       <form onSubmit={(event) => void submit(event)}>
-        <fieldset>
-          <legend>Contrato mensual</legend>
-          <label>
-            Nombre
-            <input
-              required
-              value={values.name}
-              onChange={(event) => update('name', event.target.value)}
-            />
-          </label>
-          <label>
-            Fecha de inicio
-            <input
-              required
-              type="date"
-              value={values.startDate}
-              onChange={(event) => update('startDate', event.target.value)}
-            />
-          </label>
-          <label>
-            Moneda
-            <input
-              required
-              pattern="[A-Za-z]{3}"
-              value={values.currency}
-              onChange={(event) => update('currency', event.target.value.toUpperCase())}
-            />
-          </label>
-          <label>
-            Monto original
-            <input
-              required
-              inputMode="decimal"
-              value={values.originalPrincipal}
-              onChange={(event) => update('originalPrincipal', event.target.value)}
-            />
-          </label>
-          <div className="choice-group" role="radiogroup" aria-label="Modo de cuota mensual">
+        <details className="loan-form-section" open>
+          <summary>1. Contrato, cuota y plazo</summary>
+          <fieldset>
+            <legend>Contrato mensual</legend>
             <label>
-              <input
-                type="radio"
-                name="payment-mode"
-                checked={values.paymentMode === 'configured'}
-                onChange={() => update('paymentMode', 'configured')}
-              />{' '}
-              Cuota configurada
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="payment-mode"
-                checked={values.paymentMode === 'automatic'}
-                onChange={() => update('paymentMode', 'automatic')}
-              />{' '}
-              Cuota automática
-            </label>
-          </div>
-          {values.paymentMode === 'configured' ? (
-            <label>
-              Cuota mensual total, incluido seguro
+              Nombre
               <input
                 required
-                inputMode="decimal"
-                value={values.monthlyTotalPayment}
-                onChange={(event) => update('monthlyTotalPayment', event.target.value)}
+                value={values.name}
+                onChange={(event) => update('name', event.target.value)}
               />
             </label>
-          ) : (
-            <p className="field-hint">
-              La cuota se calculará con el monto, plazo, seguro y tasas configurados. El resultado
-              aparecerá como cuota mensual automática en el resumen.
-            </p>
-          )}
-          <label>
-            Seguro mensual, incluido en la cuota total
-            <input
-              required
-              inputMode="decimal"
-              value={values.monthlyInsurance}
-              onChange={(event) => update('monthlyInsurance', event.target.value)}
-            />
-          </label>
-          <p className="field-hint">
-            Periodicidad: mensual (12 pagos por año). Todas las tasas se expresan como porcentaje
-            anual; por ejemplo, 8.5 significa 8.5%.
-          </p>
-          <div className="choice-group" role="radiogroup" aria-label="Definición de plazo">
             <label>
-              <input
-                type="radio"
-                name="term"
-                checked={values.termMode === 'installments'}
-                onChange={() => update('termMode', 'installments')}
-              />{' '}
-              Cantidad total de cuotas
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="term"
-                checked={values.termMode === 'end_date'}
-                onChange={() => update('termMode', 'end_date')}
-              />{' '}
-              Fecha final
-            </label>
-          </div>
-          {values.termMode === 'installments' ? (
-            <label>
-              Número total de cuotas
-              <input
-                required
-                type="number"
-                min="1"
-                step="1"
-                value={values.totalInstallments}
-                onChange={(event) => update('totalInstallments', event.target.value)}
-              />
-            </label>
-          ) : (
-            <label>
-              Fecha de última cuota
+              Fecha de inicio
               <input
                 required
                 type="date"
-                value={values.endDate}
-                onChange={(event) => update('endDate', event.target.value)}
+                value={values.startDate}
+                onChange={(event) => update('startDate', event.target.value)}
               />
             </label>
-          )}
-        </fieldset>
-        <fieldset>
-          <legend>Tasa de interés</legend>
-          <label>
-            Tasa nominal anual fija (%)
-            <input
-              required
-              inputMode="decimal"
-              value={values.annualNominalRate}
-              onChange={(event) => update('annualNominalRate', event.target.value)}
-            />
-          </label>
-          <div className="choice-group" role="radiogroup" aria-label="Regla de tasa variable">
             <label>
-              <input
-                type="radio"
-                name="rate-scheme"
-                checked={values.rateScheme === 'fixed'}
-                onChange={() => update('rateScheme', 'fixed')}
-              />{' '}
-              Solo tasa fija
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="rate-scheme"
-                checked={values.rateScheme === 'tbp_margin'}
-                onChange={() => update('rateScheme', 'tbp_margin')}
-              />{' '}
-              TBP + margen (predeterminada)
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="rate-scheme"
-                checked={values.rateScheme === 'manual_series'}
-                onChange={() => update('rateScheme', 'manual_series')}
-              />{' '}
-              Serie manual heredada
-            </label>
-          </div>
-          {values.rateScheme !== 'fixed' ? (
-            <label>
-              Cuotas iniciales a tasa fija
+              Moneda
               <input
                 required
-                type="number"
-                min="0"
-                step="1"
-                value={values.fixedPeriods}
-                onChange={(event) => update('fixedPeriods', event.target.value)}
+                pattern="[A-Za-z]{3}"
+                value={values.currency}
+                onChange={(event) => update('currency', event.target.value.toUpperCase())}
               />
             </label>
-          ) : null}
-          {values.rateScheme === 'tbp_margin' ? (
-            <TbpFields values={values} update={update} />
-          ) : null}
-          {values.rateScheme === 'manual_series' ? (
-            <ManualRateFields values={values} update={update} />
-          ) : null}
-        </fieldset>
+            <label>
+              Monto original
+              <input
+                required
+                inputMode="decimal"
+                value={values.originalPrincipal}
+                onChange={(event) => update('originalPrincipal', event.target.value)}
+              />
+            </label>
+            <div className="choice-group" role="radiogroup" aria-label="Modo de cuota mensual">
+              <label>
+                <input
+                  type="radio"
+                  name="payment-mode"
+                  checked={values.paymentMode === 'configured'}
+                  onChange={() => update('paymentMode', 'configured')}
+                />{' '}
+                Cuota configurada
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="payment-mode"
+                  checked={values.paymentMode === 'automatic'}
+                  onChange={() => update('paymentMode', 'automatic')}
+                />{' '}
+                Cuota automática
+              </label>
+            </div>
+            {values.paymentMode === 'configured' ? (
+              <label>
+                Cuota mensual total, incluido seguro
+                <input
+                  required
+                  inputMode="decimal"
+                  value={values.monthlyTotalPayment}
+                  onChange={(event) => update('monthlyTotalPayment', event.target.value)}
+                />
+              </label>
+            ) : (
+              <p className="field-hint">
+                La cuota se calculará con el monto, plazo, seguro y tasas configurados. El resultado
+                aparecerá como cuota mensual automática en el resumen.
+              </p>
+            )}
+            <label>
+              Seguro mensual, incluido en la cuota total
+              <input
+                required
+                inputMode="decimal"
+                value={values.monthlyInsurance}
+                onChange={(event) => update('monthlyInsurance', event.target.value)}
+              />
+            </label>
+            <p className="field-hint">
+              Periodicidad: mensual (12 pagos por año). Todas las tasas se expresan como porcentaje
+              anual; por ejemplo, 8.5 significa 8.5%.
+            </p>
+            <div className="choice-group" role="radiogroup" aria-label="Definición de plazo">
+              <label>
+                <input
+                  type="radio"
+                  name="term"
+                  checked={values.termMode === 'installments'}
+                  onChange={() => update('termMode', 'installments')}
+                />{' '}
+                Cantidad total de cuotas
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="term"
+                  checked={values.termMode === 'end_date'}
+                  onChange={() => update('termMode', 'end_date')}
+                />{' '}
+                Fecha final
+              </label>
+            </div>
+            {values.termMode === 'installments' ? (
+              <label>
+                Número total de cuotas
+                <input
+                  required
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={values.totalInstallments}
+                  onChange={(event) => update('totalInstallments', event.target.value)}
+                />
+              </label>
+            ) : (
+              <label>
+                Fecha de última cuota
+                <input
+                  required
+                  type="date"
+                  value={values.endDate}
+                  onChange={(event) => update('endDate', event.target.value)}
+                />
+              </label>
+            )}
+          </fieldset>
+        </details>
+        <details className="loan-form-section">
+          <summary>2. Tasas y regla variable</summary>
+          <fieldset>
+            <legend>Tasa de interés</legend>
+            <label>
+              Tasa nominal anual fija (%)
+              <input
+                required
+                inputMode="decimal"
+                value={values.annualNominalRate}
+                onChange={(event) => update('annualNominalRate', event.target.value)}
+              />
+            </label>
+            <div className="choice-group" role="radiogroup" aria-label="Regla de tasa variable">
+              <label>
+                <input
+                  type="radio"
+                  name="rate-scheme"
+                  checked={values.rateScheme === 'fixed'}
+                  onChange={() => update('rateScheme', 'fixed')}
+                />{' '}
+                Solo tasa fija
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="rate-scheme"
+                  checked={values.rateScheme === 'tbp_margin'}
+                  onChange={() => update('rateScheme', 'tbp_margin')}
+                />{' '}
+                TBP + margen (predeterminada)
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="rate-scheme"
+                  checked={values.rateScheme === 'manual_series'}
+                  onChange={() => update('rateScheme', 'manual_series')}
+                />{' '}
+                Serie manual heredada
+              </label>
+            </div>
+            {values.rateScheme !== 'fixed' ? (
+              <label>
+                Cuotas iniciales a tasa fija
+                <input
+                  required
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={values.fixedPeriods}
+                  onChange={(event) => update('fixedPeriods', event.target.value)}
+                />
+              </label>
+            ) : null}
+            {values.rateScheme === 'tbp_margin' ? (
+              <TbpFields values={values} update={update} />
+            ) : null}
+            {values.rateScheme === 'manual_series' ? (
+              <ManualRateFields values={values} update={update} />
+            ) : null}
+          </fieldset>
+        </details>
         {'estimate' in preview ? (
           <EstimatePreview estimate={preview.estimate} loan={preview.loan} />
         ) : (

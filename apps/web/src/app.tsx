@@ -34,6 +34,7 @@ type LoadState =
 
 type AppView = 'loans' | 'backup';
 type LoanTab = 'summary' | 'payments' | 'scenarios' | 'projection' | 'settings';
+type AppRoute = Readonly<{ view: 'loans' | 'backup'; loanId?: string; tab?: LoanTab }>;
 
 const LOAN_TABS: readonly Readonly<{ id: LoanTab; label: string }>[] = [
   { id: 'summary', label: 'Resumen' },
@@ -42,6 +43,20 @@ const LOAN_TABS: readonly Readonly<{ id: LoanTab; label: string }>[] = [
   { id: 'projection', label: 'Proyección' },
   { id: 'settings', label: 'Configuración' },
 ];
+
+function parseRoute(hash: string): AppRoute | undefined {
+  if (hash === '#/prestamos' || hash === '') return { view: 'loans' };
+  if (hash === '#/datos') return { view: 'backup' };
+  const match = /^#\/prestamos\/([^/]+)\/(summary|payments|scenarios|projection|settings)$/.exec(
+    hash,
+  );
+  if (!match?.[1] || !match[2]) return undefined;
+  return { view: 'loans', loanId: decodeURIComponent(match[1]), tab: match[2] as LoanTab };
+}
+
+function routeForLoan(loanId: string, tab: LoanTab): string {
+  return `#/prestamos/${encodeURIComponent(loanId)}/${tab}`;
+}
 
 export function App({ repository }: AppProps) {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
@@ -54,6 +69,31 @@ export function App({ repository }: AppProps) {
   async function reloadLoans() {
     const loans = await repository.listLoans();
     setState({ status: 'ready', loans });
+  }
+
+  function writeRoute(route: string) {
+    if (window.location.hash === route) return;
+    window.history.pushState(null, '', route);
+  }
+
+  function showLoanLibrary() {
+    setAppView('loans');
+    setSelectedLoanId(undefined);
+    setSelectedAggregate(undefined);
+    writeRoute('#/prestamos');
+  }
+
+  function showBackup() {
+    setAppView('backup');
+    setSelectedLoanId(undefined);
+    setSelectedAggregate(undefined);
+    writeRoute('#/datos');
+  }
+
+  function changeLoanTab(tab: LoanTab) {
+    if (!selectedLoanId) return;
+    setActiveLoanTab(tab);
+    writeRoute(routeForLoan(selectedLoanId, tab));
   }
 
   useEffect(() => {
@@ -71,6 +111,46 @@ export function App({ repository }: AppProps) {
     };
   }, [repository]);
 
+  useEffect(() => {
+    let active = true;
+    async function applyRoute() {
+      const route = parseRoute(window.location.hash);
+      if (!route) return;
+      if (route.view === 'backup') {
+        if (active) {
+          setAppView('backup');
+          setSelectedLoanId(undefined);
+          setSelectedAggregate(undefined);
+        }
+        return;
+      }
+      if (!route.loanId || !route.tab) {
+        if (active) {
+          setAppView('loans');
+          setSelectedLoanId(undefined);
+          setSelectedAggregate(undefined);
+        }
+        return;
+      }
+      if (active) {
+        setAppView('loans');
+        setSelectedLoanId(route.loanId);
+        setActiveLoanTab(route.tab);
+        setSelectedAggregate(undefined);
+      }
+      const aggregate = await repository.loadAggregate(route.loanId);
+      if (active) setSelectedAggregate(aggregate);
+    }
+    void applyRoute();
+    window.addEventListener('popstate', applyRoute);
+    window.addEventListener('hashchange', applyRoute);
+    return () => {
+      active = false;
+      window.removeEventListener('popstate', applyRoute);
+      window.removeEventListener('hashchange', applyRoute);
+    };
+  }, [repository]);
+
   async function saveLoan(loan: Loan) {
     const existing = await repository.loadAggregate(loan.id);
     const scenarios = saveTbpScenario(loan, existing?.scenarios ?? []);
@@ -85,6 +165,7 @@ export function App({ repository }: AppProps) {
     setSelectedAggregate(aggregate);
     setActiveLoanTab('summary');
     setAppView('loans');
+    writeRoute(routeForLoan(loan.id, 'summary'));
     setFormLoan(undefined);
   }
 
@@ -99,6 +180,7 @@ export function App({ repository }: AppProps) {
     setSelectedAggregate(aggregate);
     setActiveLoanTab('summary');
     setAppView('loans');
+    writeRoute(routeForLoan(duplicate.id, 'summary'));
   }
 
   async function deleteLoan(loan: Loan) {
@@ -113,13 +195,15 @@ export function App({ repository }: AppProps) {
     setSelectedLoanId(undefined);
     setSelectedAggregate(undefined);
     setActiveLoanTab('summary');
+    writeRoute('#/prestamos');
   }
 
-  async function selectLoan(loanId: string) {
+  async function selectLoan(loanId: string, tab: LoanTab = 'summary') {
     setSelectedLoanId(loanId);
     setSelectedAggregate(undefined);
-    setActiveLoanTab('summary');
+    setActiveLoanTab(tab);
     setAppView('loans');
+    writeRoute(routeForLoan(loanId, tab));
     setSelectedAggregate(await repository.loadAggregate(loanId));
   }
 
@@ -178,9 +262,7 @@ export function App({ repository }: AppProps) {
           type="button"
           aria-label="CuotaClara, préstamos"
           onClick={() => {
-            setAppView('loans');
-            setSelectedLoanId(undefined);
-            setSelectedAggregate(undefined);
+            showLoanLibrary();
           }}
         >
           CuotaClara
@@ -190,9 +272,7 @@ export function App({ repository }: AppProps) {
             type="button"
             aria-current={appView === 'loans' ? 'page' : undefined}
             onClick={() => {
-              setAppView('loans');
-              setSelectedLoanId(undefined);
-              setSelectedAggregate(undefined);
+              showLoanLibrary();
             }}
           >
             Préstamos
@@ -201,9 +281,7 @@ export function App({ repository }: AppProps) {
             type="button"
             aria-current={appView === 'backup' ? 'page' : undefined}
             onClick={() => {
-              setAppView('backup');
-              setSelectedLoanId(undefined);
-              setSelectedAggregate(undefined);
+              showBackup();
             }}
           >
             Datos y respaldo
@@ -231,11 +309,8 @@ export function App({ repository }: AppProps) {
           <LoanWorkspace
             loan={state.loans.find((loan) => loan.id === selectedLoanId)}
             activeTab={activeLoanTab}
-            onChangeTab={setActiveLoanTab}
-            onBack={() => {
-              setSelectedLoanId(undefined);
-              setSelectedAggregate(undefined);
-            }}
+            onChangeTab={changeLoanTab}
+            onBack={showLoanLibrary}
             onEdit={() => setFormLoan(state.loans.find((loan) => loan.id === selectedLoanId))}
             onDuplicate={duplicateLoan}
             onDelete={deleteLoan}
