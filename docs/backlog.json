@@ -539,6 +539,20 @@
         "La vista de pagos usa una cabecera de tarea, una acción principal y paneles consistentes para el registro, el formulario y la importación.",
         "La vista de respaldo presenta las acciones de descargar y restaurar como paneles claros, con controles accesibles y mensajes de resultado."
       ]
+    },
+    {
+      "id": "US-038",
+      "epic": "E3 · PWA y gestión de préstamos",
+      "title": "Unificar la presentación de tablas financieras",
+      "story": "Como persona usuaria, quiero que los resúmenes y el calendario de amortización compartan una tabla legible para interpretar importes y resultados sin reaprender cada vista.",
+      "requirements": ["RF-009", "RF-010", "RF-013", "RF-015", "RNF-008", "RNF-009"],
+      "dependsOn": ["US-037"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "El resumen financiero del préstamo, el resumen de escenario y las tablas de proyección usan el mismo tratamiento de contenedor, caption, encabezados, filas y cifras.",
+        "El resumen de escenario se presenta como una tabla semántica con filas etiquetadas y valores alineados.",
+        "Las tablas anchas conservan desplazamiento horizontal en pantallas pequeñas sin ocultar información."
+      ]
     }
   ]
 }

@@ -178,7 +178,7 @@ export function ProjectionView({
       </div>
       {tableProjectionError ? <p role="alert">{tableProjectionError}</p> : null}
       <div className="table-scroll">
-        <table>
+        <table className="financial-table financial-table-projection">
           <caption>Historial y proyección de amortización — {tableProjectionLabel}</caption>
           <thead>
             <tr>
@@ -668,7 +668,7 @@ function ChartPointDetails({
         {isLocked ? ' · Punto fijado' : ''}
       </strong>
       <div className="table-scroll chart-point-table-scroll">
-        <table className="chart-point-table">
+        <table className="financial-table financial-table-chart chart-point-table">
           <caption>Comparación de señales activas en la cuota {period.period}</caption>
           <thead>
             <tr>

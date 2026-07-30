@@ -96,6 +96,7 @@ describe('ScenarioTools', () => {
     expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeVisible();
     fireEvent.click(screen.getAllByRole('button', { name: 'Ver resumen' })[0]!);
     expect(screen.getByRole('heading', { name: 'Resumen de Extra A' })).toBeVisible();
+    expect(screen.getByRole('table', { name: 'Resultado estimado del escenario' })).toBeVisible();
     expect(screen.getByText('Interés ahorrado')).toBeVisible();
     fireEvent.click(screen.getAllByRole('button', { name: 'Eliminar escenario' })[1]!);
 

@@ -307,30 +307,35 @@ function ScenarioSummary({
           Cerrar resumen
         </button>
       </div>
-      <dl>
-        <div>
-          <dt>Fecha final estimada</dt>
-          <dd>{comparison.alternative.summary.completionDate}</dd>
-        </div>
-        <div>
-          <dt>Plazo ahorrado</dt>
-          <dd>{comparison.comparison.periodsSaved} períodos</dd>
-        </div>
-        <div>
-          <dt>Interés ahorrado</dt>
-          <dd>{formatMoney(comparison.comparison.interestSaved, loan.roundingPolicy)}</dd>
-        </div>
-        <div>
-          <dt>Total pagado estimado</dt>
-          <dd>
-            {formatDecimalMoney(
-              comparison.alternative.summary.totalPaid,
-              loan.initialBalance.currency,
-              loan.roundingPolicy,
-            )}
-          </dd>
-        </div>
-      </dl>
+      <div className="table-scroll table-scroll-summary">
+        <table className="financial-table">
+          <caption>Resultado estimado del escenario</caption>
+          <tbody>
+            <tr>
+              <th scope="row">Fecha final estimada</th>
+              <td>{comparison.alternative.summary.completionDate}</td>
+            </tr>
+            <tr>
+              <th scope="row">Plazo ahorrado</th>
+              <td>{comparison.comparison.periodsSaved} períodos</td>
+            </tr>
+            <tr>
+              <th scope="row">Interés ahorrado</th>
+              <td>{formatMoney(comparison.comparison.interestSaved, loan.roundingPolicy)}</td>
+            </tr>
+            <tr>
+              <th scope="row">Total pagado estimado</th>
+              <td>
+                {formatDecimalMoney(
+                  comparison.alternative.summary.totalPaid,
+                  loan.initialBalance.currency,
+                  loan.roundingPolicy,
+                )}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
