@@ -15,7 +15,6 @@ import {
 import { formatCompactMoney, formatMoney } from './money-format.js';
 
 const PAGE_SIZE = 24;
-const CHART_RANGES = [12, 60, 120] as const;
 const CHART = { left: 94, right: 770, top: 30, bottom: 276 } as const;
 
 const SERIES = [
@@ -218,7 +217,10 @@ function BalanceChart({
   periods: readonly DisplayProjectionPeriod[];
   scenarios: readonly ProjectionScenarioSnapshot[];
 }>) {
-  const [range, setRange] = useState<number | 'all'>(60);
+  const totalStartDate = periods[0]?.date ?? '';
+  const totalEndDate = periods.at(-1)?.date ?? '';
+  const [rangeStartDate, setRangeStartDate] = useState(totalStartDate);
+  const [rangeEndDate, setRangeEndDate] = useState(totalEndDate);
   const [hoveredPeriod, setHoveredPeriod] = useState<DisplayProjectionPeriod>();
   const [lockedPeriod, setLockedPeriod] = useState<DisplayProjectionPeriod>();
   const [selectedSeries, setSelectedSeries] = useState<SelectedSeries>({
@@ -230,7 +232,9 @@ function BalanceChart({
   });
   const [firstScenarioId, setFirstScenarioId] = useState('');
   const [secondScenarioId, setSecondScenarioId] = useState('');
-  const visiblePeriods = range === 'all' ? periods : periods.slice(-range);
+  const visiblePeriods = periods.filter(
+    (period) => period.date >= rangeStartDate && period.date <= rangeEndDate,
+  );
   const startPeriod = visiblePeriods[0];
   const endPeriod = visiblePeriods.at(-1);
   if (!startPeriod || !endPeriod) return null;
@@ -312,31 +316,67 @@ function BalanceChart({
     );
   }
 
+  function resetChartRange() {
+    setRangeStartDate(totalStartDate);
+    setRangeEndDate(totalEndDate);
+    setHoveredPeriod(undefined);
+    setLockedPeriod(undefined);
+  }
+
+  function setChartRangeStart(value: string) {
+    setRangeStartDate(value);
+    if (value > rangeEndDate) setRangeEndDate(value);
+    setHoveredPeriod(undefined);
+    setLockedPeriod(undefined);
+  }
+
+  function setChartRangeEnd(value: string) {
+    setRangeEndDate(value);
+    if (value < rangeStartDate) setRangeStartDate(value);
+    setHoveredPeriod(undefined);
+    setLockedPeriod(undefined);
+  }
+
   return (
     <figure className="balance-chart">
       <div className="chart-controls">
-        <label>
-          Rango del gráfico
-          <select
-            value={range}
-            onChange={(event) => {
-              setRange(event.target.value === 'all' ? 'all' : Number(event.target.value));
-              setHoveredPeriod(undefined);
-              setLockedPeriod(undefined);
-            }}
+        <div className="chart-range-controls" aria-label="Rango del gráfico">
+          <label>
+            Desde
+            <input
+              type="date"
+              value={rangeStartDate}
+              min={totalStartDate}
+              max={rangeEndDate}
+              onChange={(event) => setChartRangeStart(event.target.value)}
+            />
+          </label>
+          <label>
+            Hasta
+            <input
+              type="date"
+              value={rangeEndDate}
+              min={rangeStartDate}
+              max={totalEndDate}
+              onChange={(event) => setChartRangeEnd(event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            onClick={resetChartRange}
+            disabled={rangeStartDate === totalStartDate && rangeEndDate === totalEndDate}
           >
-            {CHART_RANGES.map((periodCount) => (
-              <option key={periodCount} value={periodCount}>
-                Últimos {periodCount} períodos
-              </option>
-            ))}
-            <option value="all">Todo el plazo</option>
-          </select>
-        </label>
+            Restablecer todo el plazo
+          </button>
+        </div>
         <p>
           Desplaza el cursor para inspeccionar una cuota; haz clic para fijar o liberar el punto.
         </p>
       </div>
+      <p className="chart-range-status" aria-live="polite">
+        Mostrando {visiblePeriods.length} {visiblePeriods.length === 1 ? 'cuota' : 'cuotas'}:{' '}
+        {startPeriod.date} a {endPeriod.date}.
+      </p>
       <fieldset className="chart-series" aria-label="Series del gráfico">
         <legend>Señales visibles en base y escenarios</legend>
         {SERIES.map((series) => (

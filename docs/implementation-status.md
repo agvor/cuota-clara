@@ -9,7 +9,7 @@
 | E1 · Motor financiero verificable | 0 | 0 | 0 | 0 | 7 |
 | E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 3 |
 | E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 3 |
-| E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 7 |
+| E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 8 |
 | E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 1 |
 | E6 · Contrato financiero v2 | 1 | 0 | 0 | 0 | 4 |
 | E7 · Contrato y resultados legibles | 0 | 0 | 0 | 0 | 6 |
@@ -51,3 +51,4 @@
 | US-030 | E4 · Escenarios y resultados | Mejorar la experiencia de gestión y resumen de escenarios | Completado | US-028 |
 | US-031 | E4 · Escenarios y resultados | Comparar señales de amortización con un punto fijable | Completado | US-030 |
 | US-032 | E4 · Escenarios y resultados | Clarificar señales y lectura de comparación gráfica | Completado | US-031 |
+| US-033 | E4 · Escenarios y resultados | Configurar el rango temporal del gráfico | Completado | US-032 |

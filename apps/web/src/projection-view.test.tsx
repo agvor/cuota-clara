@@ -23,13 +23,20 @@ const loan = createLoan({
 });
 
 describe('ProjectionView', () => {
-  test('separa historial y proyección con gráfico accesible y rango ajustable', () => {
+  test('separa historial y proyección con gráfico accesible y rango por fechas', () => {
     const { container } = render(<ProjectionView loan={loan} payments={[]} />);
 
     expect(screen.getByRole('img', { name: 'Evolución estimada del saldo' })).toBeVisible();
-    expect(screen.getByLabelText('Rango del gráfico')).toHaveValue('60');
-    fireEvent.change(screen.getByLabelText('Rango del gráfico'), { target: { value: 'all' } });
-    expect(screen.getByLabelText('Rango del gráfico')).toHaveValue('all');
+    expect(screen.getByLabelText('Desde')).toHaveValue('2026-02-01');
+    expect(screen.getByLabelText('Hasta')).toHaveValue('2026-12-01');
+    expect(screen.getByText('Mostrando 11 cuotas: 2026-02-01 a 2026-12-01.')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Restablecer todo el plazo' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-04-01' } });
+    fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '2026-09-01' } });
+    expect(screen.getByText('Mostrando 6 cuotas: 2026-04-01 a 2026-09-01.')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Restablecer todo el plazo' }));
+    expect(screen.getByLabelText('Desde')).toHaveValue('2026-02-01');
+    expect(screen.getByLabelText('Hasta')).toHaveValue('2026-12-01');
     expect(screen.getAllByText('Proyección').length).toBeGreaterThan(1);
     expect(
       screen.getByRole('table', { name: 'Historial y proyección de amortización' }),

@@ -468,6 +468,20 @@
         "La leyenda separa explícitamente colores de señales y trazos de fuentes.",
         "El detalle del punto usa una tabla con señales como filas y configuración base/escenarios como columnas."
       ]
+    },
+    {
+      "id": "US-033",
+      "epic": "E4 · Escenarios y resultados",
+      "title": "Configurar el rango temporal del gráfico",
+      "story": "Como persona usuaria, quiero iniciar viendo todo el plazo y acotar el gráfico por fechas para explorar cualquier tramo de mi préstamo.",
+      "requirements": ["RF-010", "RNF-008"],
+      "dependsOn": ["US-032"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "El gráfico inicia con todas las cuotas del plazo visibles.",
+        "La persona puede definir una fecha Desde y una fecha Hasta dentro de las fechas proyectadas; el rango nunca queda invertido.",
+        "La interfaz informa las cuotas visibles y ofrece una acción para restablecer el plazo total."
+      ]
     }
   ]
 }

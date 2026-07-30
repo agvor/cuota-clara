@@ -406,6 +406,23 @@ h1 {
   font-size: 0.9rem;
 }
 
+.chart-range-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem;
+}
+
+.chart-range-controls button {
+  min-height: 2.15rem;
+}
+
+.chart-range-status {
+  margin: 0.65rem 0 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
 .chart-series {
   display: flex;
   flex-wrap: wrap;
@@ -438,7 +455,8 @@ h1 {
   font-weight: 600;
 }
 
-.balance-chart select {
+.balance-chart select,
+.balance-chart input[type='date'] {
   padding: 0.35rem 0.5rem;
   border: 1px solid #64748b;
   border-radius: 0.35rem;
