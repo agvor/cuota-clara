@@ -49,7 +49,43 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: 'Hipoteca principal' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Ver préstamo' }));
-    expect(screen.getByRole('heading', { name: 'Resumen de Hipoteca principal' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Hipoteca principal' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Resumen' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('separa las tareas del préstamo en vistas navegables', async () => {
+    const loan = createLoan({
+      id: 'loan-workspace',
+      name: 'Préstamo organizado',
+      startDate: '2026-01-01',
+      initialBalance: Money.from('1000.00', 'CRC'),
+      ordinaryPayment: Money.from('100.00', 'CRC'),
+      annualNominalRate: '0.12',
+      periodsPerYear: 12,
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+    });
+    const repository = createRepository([loan]);
+    vi.mocked(repository.loadAggregate).mockResolvedValue({ loan, payments: [], scenarios: [] });
+    render(<App repository={repository} />);
+
+    await screen.findByRole('heading', { name: 'Préstamo organizado' });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver préstamo' }));
+
+    expect(screen.getByRole('tablist', { name: 'Secciones del préstamo' })).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Pagos históricos' })).not.toBeInTheDocument();
+    const summaryTab = screen.getByRole('tab', { name: 'Resumen' });
+    summaryTab.focus();
+    fireEvent.keyDown(summaryTab, { key: 'ArrowRight' });
+    expect(screen.getByRole('tab', { name: 'Pagos' })).toHaveAttribute('aria-selected', 'true');
+    expect(await screen.findByRole('heading', { name: 'Pagos históricos' })).toBeVisible();
+    fireEvent.click(screen.getByRole('tab', { name: 'Escenarios' }));
+    expect(screen.getByRole('heading', { name: 'Configuración de escenarios' })).toBeVisible();
+    fireEvent.click(screen.getByRole('tab', { name: 'Proyección' }));
+    expect(screen.getByRole('heading', { name: 'Detalle de amortización' })).toBeVisible();
+    fireEvent.click(screen.getByRole('tab', { name: 'Configuración' }));
+    expect(screen.getByRole('heading', { name: 'Zona de riesgo' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: '← Todos los préstamos' }));
+    expect(screen.getByRole('heading', { name: 'Tus préstamos' })).toBeVisible();
   });
 
   test('muestra importes grandes formateados y el resumen financiero contractual', async () => {
@@ -86,6 +122,7 @@ describe('App', () => {
       screen.queryByRole('img', { name: 'Evolución estimada del saldo' }),
     ).not.toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('tab', { name: 'Proyección' }));
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalle de amortización' }));
 
     expect(screen.getByRole('img', { name: 'Evolución estimada del saldo' })).toBeVisible();
@@ -256,6 +293,7 @@ describe('App', () => {
 
     await screen.findByRole('heading', { name: 'Préstamo anterior' });
     fireEvent.click(screen.getByRole('button', { name: 'Ver préstamo' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Configuración' }));
     expect(await screen.findByRole('button', { name: 'Editar préstamo' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Editar préstamo' }));
     expect(screen.getByText(/Contrato v2 heredado/)).toBeVisible();

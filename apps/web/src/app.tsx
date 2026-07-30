@@ -32,9 +32,22 @@ type LoadState =
   | Readonly<{ status: 'ready'; loans: readonly Loan[] }>
   | Readonly<{ status: 'error' }>;
 
+type AppView = 'loans' | 'backup';
+type LoanTab = 'summary' | 'payments' | 'scenarios' | 'projection' | 'settings';
+
+const LOAN_TABS: readonly Readonly<{ id: LoanTab; label: string }>[] = [
+  { id: 'summary', label: 'Resumen' },
+  { id: 'payments', label: 'Pagos' },
+  { id: 'scenarios', label: 'Escenarios' },
+  { id: 'projection', label: 'Proyección' },
+  { id: 'settings', label: 'Configuración' },
+];
+
 export function App({ repository }: AppProps) {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
+  const [appView, setAppView] = useState<AppView>('loans');
   const [selectedLoanId, setSelectedLoanId] = useState<string>();
+  const [activeLoanTab, setActiveLoanTab] = useState<LoanTab>('summary');
   const [formLoan, setFormLoan] = useState<Loan | null | undefined>(undefined);
   const [selectedAggregate, setSelectedAggregate] = useState<LoanAggregate>();
 
@@ -69,6 +82,9 @@ export function App({ repository }: AppProps) {
     await repository.saveAggregate(aggregate);
     await reloadLoans();
     setSelectedLoanId(loan.id);
+    setSelectedAggregate(aggregate);
+    setActiveLoanTab('summary');
+    setAppView('loans');
     setFormLoan(undefined);
   }
 
@@ -76,9 +92,13 @@ export function App({ repository }: AppProps) {
     if (!window.confirm(`¿Duplicar el préstamo “${loan.name}” sin sus pagos ni escenarios?`))
       return;
     const duplicate = { ...loan, id: crypto.randomUUID(), name: `${loan.name} (copia)` };
-    await repository.saveAggregate({ loan: duplicate, payments: [], scenarios: [] });
+    const aggregate: LoanAggregate = { loan: duplicate, payments: [], scenarios: [] };
+    await repository.saveAggregate(aggregate);
     await reloadLoans();
     setSelectedLoanId(duplicate.id);
+    setSelectedAggregate(aggregate);
+    setActiveLoanTab('summary');
+    setAppView('loans');
   }
 
   async function deleteLoan(loan: Loan) {
@@ -92,10 +112,14 @@ export function App({ repository }: AppProps) {
     await reloadLoans();
     setSelectedLoanId(undefined);
     setSelectedAggregate(undefined);
+    setActiveLoanTab('summary');
   }
 
   async function selectLoan(loanId: string) {
     setSelectedLoanId(loanId);
+    setSelectedAggregate(undefined);
+    setActiveLoanTab('summary');
+    setAppView('loans');
     setSelectedAggregate(await repository.loadAggregate(loanId));
   }
 
@@ -145,102 +169,93 @@ export function App({ repository }: AppProps) {
 
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#loans">
-        Ir a préstamos
+      <a className="skip-link" href="#main-content">
+        Ir al contenido principal
       </a>
       <header className="site-header">
-        <a className="brand" href="#loans" aria-label="CuotaClara, inicio">
+        <button
+          className="brand"
+          type="button"
+          aria-label="CuotaClara, préstamos"
+          onClick={() => {
+            setAppView('loans');
+            setSelectedLoanId(undefined);
+            setSelectedAggregate(undefined);
+          }}
+        >
           CuotaClara
-        </a>
+        </button>
         <nav aria-label="Principal">
-          <a href="#loans">Préstamos</a>
-          <a href="#about">Acerca de</a>
+          <button
+            type="button"
+            aria-current={appView === 'loans' ? 'page' : undefined}
+            onClick={() => {
+              setAppView('loans');
+              setSelectedLoanId(undefined);
+              setSelectedAggregate(undefined);
+            }}
+          >
+            Préstamos
+          </button>
+          <button
+            type="button"
+            aria-current={appView === 'backup' ? 'page' : undefined}
+            onClick={() => {
+              setAppView('backup');
+              setSelectedLoanId(undefined);
+              setSelectedAggregate(undefined);
+            }}
+          >
+            Datos y respaldo
+          </button>
         </nav>
       </header>
-      <main>
-        <section id="loans" aria-labelledby="loans-title">
-          <p className="eyebrow">Local-first · sin cuenta</p>
-          <h1 id="loans-title">Tus préstamos</h1>
-          <p className="section-introduction">
-            Consulta cada préstamo por separado y conserva los datos en este dispositivo.
-          </p>
-          <button type="button" onClick={() => setFormLoan(null)}>
-            Crear préstamo
-          </button>
-          {state.status === 'loading' ? <p aria-live="polite">Cargando préstamos…</p> : null}
-          {state.status === 'error' ? (
-            <p role="alert">
-              No fue posible leer los préstamos locales. Intenta recargar la página.
+      <main id="main-content">
+        {formLoan !== undefined ? (
+          <LoanEditor
+            {...(formLoan ? { loan: formLoan } : {})}
+            onCancel={() => setFormLoan(undefined)}
+            onSave={saveLoan}
+          />
+        ) : appView === 'backup' ? (
+          <section className="data-workspace" aria-labelledby="data-workspace-title">
+            <p className="eyebrow">Datos locales</p>
+            <h1 id="data-workspace-title">Datos y respaldo</h1>
+            <p className="section-introduction">
+              Tu información permanece en este dispositivo. Puedes crear una copia o restaurar una
+              previamente validada.
             </p>
-          ) : null}
-          {state.status === 'ready' && state.loans.length === 0 ? <EmptyLoans /> : null}
-          {formLoan !== undefined ? (
-            <LoanForm
-              {...(formLoan ? { loan: formLoan } : {})}
-              onCancel={() => setFormLoan(undefined)}
-              onSave={saveLoan}
-            />
-          ) : null}
-          {state.status === 'ready' && state.loans.length > 0 ? (
-            <>
-              <ul className="loan-list" aria-label="Préstamos guardados">
-                {state.loans.map((loan) => (
-                  <li key={loan.id}>
-                    <article className="loan-card">
-                      <h2>{loan.name}</h2>
-                      <dl>
-                        <div>
-                          <dt>Saldo inicial</dt>
-                          <dd>{formatMoney(loan.initialBalance, loan.roundingPolicy)}</dd>
-                        </div>
-                        <div>
-                          <dt>Cuota mensual</dt>
-                          <dd>
-                            {formatMoney(
-                              loan.contract?.version === 3
-                                ? loan.contract.monthlyTotalPayment
-                                : loan.ordinaryPayment,
-                              loan.roundingPolicy,
-                            )}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>Tasa nominal anual</dt>
-                          <dd>{decimalRateToPercent(loan.annualNominalRate)}%</dd>
-                        </div>
-                      </dl>
-                      {!loan.contract ? (
-                        <p className="inherited-notice">Préstamo heredado: falta plazo y seguro</p>
-                      ) : null}
-                      <button type="button" onClick={() => void selectLoan(loan.id)}>
-                        Ver préstamo
-                      </button>
-                    </article>
-                  </li>
-                ))}
-              </ul>
-              {selectedLoanId ? (
-                <LoanDetail
-                  loan={state.loans.find((loan) => loan.id === selectedLoanId)}
-                  onEdit={() => setFormLoan(state.loans.find((loan) => loan.id === selectedLoanId))}
-                  onDuplicate={duplicateLoan}
-                  onDelete={deleteLoan}
-                  aggregate={selectedAggregate}
-                  onSavePayment={savePayment}
-                  onImportPayments={importPayments}
-                  onSaveScenario={saveScenario}
-                  onDeleteScenario={deleteScenario}
-                />
-              ) : null}
-            </>
-          ) : null}
-        </section>
-        <section id="about" className="about" aria-labelledby="about-title">
-          <h2 id="about-title">Datos bajo tu control</h2>
-          <p>CuotaClara guarda los préstamos localmente y no requiere una cuenta para el MVP.</p>
-        </section>
-        <BackupTools repository={repository} onRestored={reloadLoans} />
+            <BackupTools repository={repository} onRestored={reloadLoans} />
+          </section>
+        ) : selectedLoanId && state.status === 'ready' ? (
+          <LoanWorkspace
+            loan={state.loans.find((loan) => loan.id === selectedLoanId)}
+            activeTab={activeLoanTab}
+            onChangeTab={setActiveLoanTab}
+            onBack={() => {
+              setSelectedLoanId(undefined);
+              setSelectedAggregate(undefined);
+            }}
+            onEdit={() => setFormLoan(state.loans.find((loan) => loan.id === selectedLoanId))}
+            onDuplicate={duplicateLoan}
+            onDelete={deleteLoan}
+            aggregate={selectedAggregate}
+            onSavePayment={savePayment}
+            onImportPayments={importPayments}
+            onSaveScenario={saveScenario}
+            onDeleteScenario={deleteScenario}
+          />
+        ) : (
+          <LoanLibrary
+            state={state}
+            onCreate={() => setFormLoan(null)}
+            onOpen={(loanId) => void selectLoan(loanId)}
+          />
+        )}
       </main>
+      <footer className="site-footer">
+        CuotaClara guarda tus datos localmente y no requiere cuenta.
+      </footer>
     </div>
   );
 }
@@ -254,8 +269,103 @@ function EmptyLoans() {
   );
 }
 
-function LoanDetail({
+function LoanLibrary({
+  state,
+  onCreate,
+  onOpen,
+}: Readonly<{
+  state: LoadState;
+  onCreate: () => void;
+  onOpen: (loanId: string) => void;
+}>) {
+  return (
+    <section id="loans" className="loan-library" aria-labelledby="loans-title">
+      <p className="eyebrow">Local-first · sin cuenta</p>
+      <div className="workspace-title-row">
+        <div>
+          <h1 id="loans-title">Tus préstamos</h1>
+          <p className="section-introduction">
+            Consulta cada préstamo por separado y conserva los datos en este dispositivo.
+          </p>
+        </div>
+        <button type="button" onClick={onCreate}>
+          Crear préstamo
+        </button>
+      </div>
+      {state.status === 'loading' ? <p aria-live="polite">Cargando préstamos…</p> : null}
+      {state.status === 'error' ? (
+        <p role="alert">No fue posible leer los préstamos locales. Intenta recargar la página.</p>
+      ) : null}
+      {state.status === 'ready' && state.loans.length === 0 ? <EmptyLoans /> : null}
+      {state.status === 'ready' && state.loans.length > 0 ? (
+        <ul className="loan-list" aria-label="Préstamos guardados">
+          {state.loans.map((loan) => (
+            <li key={loan.id}>
+              <article className="loan-card">
+                <h2>{loan.name}</h2>
+                <dl>
+                  <div>
+                    <dt>Saldo inicial</dt>
+                    <dd>{formatMoney(loan.initialBalance, loan.roundingPolicy)}</dd>
+                  </div>
+                  <div>
+                    <dt>Cuota mensual</dt>
+                    <dd>
+                      {formatMoney(
+                        loan.contract?.version === 3
+                          ? loan.contract.monthlyTotalPayment
+                          : loan.ordinaryPayment,
+                        loan.roundingPolicy,
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Tasa nominal anual</dt>
+                    <dd>{decimalRateToPercent(loan.annualNominalRate)}%</dd>
+                  </div>
+                </dl>
+                {!loan.contract ? (
+                  <p className="inherited-notice">Préstamo heredado: falta plazo y seguro</p>
+                ) : null}
+                <button type="button" onClick={() => onOpen(loan.id)}>
+                  Ver préstamo
+                </button>
+              </article>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
+
+function LoanEditor({
   loan,
+  onCancel,
+  onSave,
+}: Readonly<{
+  loan?: Loan;
+  onCancel: () => void;
+  onSave: (loan: Loan) => Promise<void>;
+}>) {
+  return (
+    <section className="loan-editor" aria-labelledby="loan-editor-title">
+      <p className="eyebrow">{loan ? 'Configuración del préstamo' : 'Nuevo préstamo'}</p>
+      <h1 id="loan-editor-title">{loan ? `Editar ${loan.name}` : 'Crear préstamo'}</h1>
+      <p className="section-introduction">
+        Define primero las condiciones financieras. Podrás registrar pagos y comparar escenarios
+        después de guardar.
+      </p>
+      <LoanForm {...(loan ? { loan } : {})} onCancel={onCancel} onSave={onSave} />
+    </section>
+  );
+}
+
+function LoanWorkspace({
+  loan,
+  activeTab,
+  onChangeTab,
+  onBack,
   onEdit,
   onDuplicate,
   onDelete,
@@ -266,6 +376,9 @@ function LoanDetail({
   onDeleteScenario,
 }: Readonly<{
   loan: Loan | undefined;
+  activeTab: LoanTab;
+  onChangeTab: (tab: LoanTab) => void;
+  onBack: () => void;
   onEdit: () => void;
   onDuplicate: (loan: Loan) => Promise<void>;
   onDelete: (loan: Loan) => Promise<void>;
@@ -277,12 +390,112 @@ function LoanDetail({
 }>) {
   if (!loan) return null;
   return (
-    <section className="loan-detail" aria-labelledby="loan-detail-title" aria-live="polite">
-      <h2 id="loan-detail-title">Resumen de {loan.name}</h2>
+    <section className="loan-workspace" aria-labelledby="loan-workspace-title">
+      <button className="back-link" type="button" onClick={onBack}>
+        ← Todos los préstamos
+      </button>
+      <header className="loan-workspace-header">
+        <p className="eyebrow">Préstamo</p>
+        <h1 id="loan-workspace-title">{loan.name}</h1>
+        <p>
+          Inicio: <time dateTime={loan.startDate}>{loan.startDate}</time> · {loan.periodsPerYear}{' '}
+          pagos por año
+        </p>
+      </header>
+      <nav className="loan-tabs" aria-label="Secciones del préstamo" role="tablist">
+        {LOAN_TABS.map((tab) => (
+          <button
+            type="button"
+            role="tab"
+            id={`loan-tab-${tab.id}`}
+            aria-selected={activeTab === tab.id}
+            aria-controls={`loan-panel-${tab.id}`}
+            tabIndex={activeTab === tab.id ? 0 : -1}
+            key={tab.id}
+            onClick={() => onChangeTab(tab.id)}
+            onKeyDown={(event) => {
+              const currentIndex = LOAN_TABS.findIndex((item) => item.id === tab.id);
+              const nextIndex =
+                event.key === 'ArrowRight'
+                  ? (currentIndex + 1) % LOAN_TABS.length
+                  : event.key === 'ArrowLeft'
+                    ? (currentIndex - 1 + LOAN_TABS.length) % LOAN_TABS.length
+                    : event.key === 'Home'
+                      ? 0
+                      : event.key === 'End'
+                        ? LOAN_TABS.length - 1
+                        : undefined;
+              if (nextIndex === undefined) return;
+              event.preventDefault();
+              const nextTab = LOAN_TABS[nextIndex];
+              if (!nextTab) return;
+              onChangeTab(nextTab.id);
+              document.getElementById(`loan-tab-${nextTab.id}`)?.focus();
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+      <div
+        className="loan-tab-panel"
+        id={`loan-panel-${activeTab}`}
+        role="tabpanel"
+        aria-labelledby={`loan-tab-${activeTab}`}
+      >
+        {activeTab === 'summary' ? <LoanSummary loan={loan} /> : null}
+        {activeTab === 'payments' ? (
+          aggregate?.loan.id === loan.id ? (
+            <PaymentTools
+              loan={loan}
+              payments={aggregate.payments}
+              onSavePayment={onSavePayment}
+              onImportPayments={onImportPayments}
+            />
+          ) : (
+            <p aria-live="polite">Cargando pagos…</p>
+          )
+        ) : null}
+        {activeTab === 'scenarios' && aggregate?.loan.id === loan.id ? (
+          <>
+            <ScenarioTools
+              loan={loan}
+              scenarios={aggregate.scenarios}
+              onSaveScenario={onSaveScenario}
+              onDeleteScenario={onDeleteScenario}
+            />
+            <TbpScenarios scenarios={aggregate.scenarios} />
+          </>
+        ) : null}
+        {activeTab === 'scenarios' && aggregate?.loan.id !== loan.id ? (
+          <p aria-live="polite">Cargando escenarios…</p>
+        ) : null}
+        {activeTab === 'projection' && aggregate?.loan.id === loan.id ? (
+          <AmortizationDetail
+            loan={loan}
+            payments={aggregate.payments}
+            scenarios={aggregate.scenarios}
+          />
+        ) : null}
+        {activeTab === 'projection' && aggregate?.loan.id !== loan.id ? (
+          <p aria-live="polite">Cargando proyección…</p>
+        ) : null}
+        {activeTab === 'settings' ? (
+          <LoanSettings loan={loan} onEdit={onEdit} onDuplicate={onDuplicate} onDelete={onDelete} />
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function LoanSummary({ loan }: Readonly<{ loan: Loan }>) {
+  return (
+    <section className="loan-summary-view" aria-labelledby="loan-summary-title">
+      <h2 id="loan-summary-title">Resumen</h2>
       <p>
-        Inicio: <time dateTime={loan.startDate}>{loan.startDate}</time>
+        Revisa las condiciones acordadas y el costo estimado antes de registrar actividad o crear
+        alternativas.
       </p>
-      <p>Periodicidad: {loan.periodsPerYear} pagos por año.</p>
       {!loan.contract ? (
         <p className="inherited-notice" role="status">
           Este préstamo es heredado. Puedes consultarlo, pero completa plazo y seguro al editarlo
@@ -317,6 +530,27 @@ function LoanDetail({
         </dl>
       ) : null}
       {loan.contract ? <ContractEstimateSummary loan={loan} /> : null}
+    </section>
+  );
+}
+
+function LoanSettings({
+  loan,
+  onEdit,
+  onDuplicate,
+  onDelete,
+}: Readonly<{
+  loan: Loan;
+  onEdit: () => void;
+  onDuplicate: (loan: Loan) => Promise<void>;
+  onDelete: (loan: Loan) => Promise<void>;
+}>) {
+  return (
+    <section className="loan-settings" aria-labelledby="loan-settings-title">
+      <h2 id="loan-settings-title">Configuración</h2>
+      <p>
+        Actualiza las condiciones del préstamo sin mezclar esta tarea con su seguimiento diario.
+      </p>
       <div className="form-actions">
         <button type="button" onClick={onEdit}>
           Editar préstamo
@@ -324,36 +558,14 @@ function LoanDetail({
         <button type="button" onClick={() => void onDuplicate(loan)}>
           Duplicar préstamo
         </button>
+      </div>
+      <section className="danger-zone" aria-labelledby="danger-zone-title">
+        <h3 id="danger-zone-title">Zona de riesgo</h3>
+        <p>Eliminar borra el préstamo, sus pagos y sus escenarios de este dispositivo.</p>
         <button type="button" onClick={() => void onDelete(loan)}>
           Eliminar préstamo
         </button>
-      </div>
-      {aggregate?.loan.id === loan.id ? (
-        <PaymentTools
-          loan={loan}
-          payments={aggregate.payments}
-          onSavePayment={onSavePayment}
-          onImportPayments={onImportPayments}
-        />
-      ) : (
-        <p aria-live="polite">Cargando pagos…</p>
-      )}
-      {aggregate?.loan.id === loan.id ? (
-        <ScenarioTools
-          loan={loan}
-          scenarios={aggregate.scenarios}
-          onSaveScenario={onSaveScenario}
-          onDeleteScenario={onDeleteScenario}
-        />
-      ) : null}
-      {aggregate?.loan.id === loan.id ? <TbpScenarios scenarios={aggregate.scenarios} /> : null}
-      {aggregate?.loan.id === loan.id ? (
-        <AmortizationDetail
-          loan={loan}
-          payments={aggregate.payments}
-          scenarios={aggregate.scenarios}
-        />
-      ) : null}
+      </section>
     </section>
   );
 }

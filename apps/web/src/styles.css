@@ -909,3 +909,272 @@ button[disabled] {
     padding: 2rem 0;
   }
 }
+
+/* Espacio de trabajo: jerarquía visual y navegación por tarea. */
+:root {
+  color: #172033;
+  background: #f4f7fb;
+}
+
+body {
+  background:
+    radial-gradient(circle at top right, rgb(219 234 254 / 65%), transparent 28rem), #f4f7fb;
+}
+
+.app-shell {
+  width: min(100% - 2rem, 76rem);
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 1rem 0;
+  background: rgb(244 247 251 / 92%);
+  backdrop-filter: blur(12px);
+}
+
+.brand {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: #172033;
+  background: transparent;
+  font-size: 1.2rem;
+  font-weight: 750;
+}
+
+.site-header nav {
+  gap: 0.25rem;
+}
+
+.site-header nav button,
+.back-link {
+  padding: 0.45rem 0.65rem;
+  border: 0;
+  border-radius: 0.45rem;
+  color: #475569;
+  background: transparent;
+  font-weight: 600;
+}
+
+.site-header nav button[aria-current='page'] {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.site-footer {
+  padding: 1.5rem 0 2.5rem;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.workspace-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.workspace-title-row h1,
+.loan-editor h1,
+.data-workspace h1,
+.loan-workspace h1 {
+  margin-top: 0.15rem;
+}
+
+.loan-card,
+.empty-state,
+.data-workspace,
+.loan-editor,
+.loan-workspace {
+  border-color: #dbe3ef;
+  box-shadow: 0 0.5rem 1.5rem rgb(15 23 42 / 5%);
+}
+
+.loan-card {
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.loan-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.8rem 1.75rem rgb(15 23 42 / 9%);
+}
+
+.loan-card button {
+  margin-top: 0.35rem;
+  font-weight: 650;
+}
+
+.loan-editor,
+.data-workspace,
+.loan-workspace {
+  padding: clamp(1rem, 3vw, 2rem);
+  border: 1px solid #dbe3ef;
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 94%);
+}
+
+.loan-editor .loan-form {
+  max-width: 52rem;
+  margin-top: 1.5rem;
+}
+
+.loan-workspace {
+  border-left: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.back-link {
+  margin: -0.45rem 0 0.75rem -0.65rem;
+  color: #475569;
+}
+
+.loan-workspace-header {
+  margin-bottom: 1.25rem;
+}
+
+.loan-workspace-header h1 {
+  margin-bottom: 0.35rem;
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+
+.loan-workspace-header > p:last-child {
+  margin: 0;
+  color: #64748b;
+}
+
+.loan-tabs {
+  display: flex;
+  gap: 0.2rem;
+  overflow-x: auto;
+  padding: 0.3rem;
+  border: 1px solid #dbe3ef;
+  border-radius: 0.7rem;
+  background: #eaf0f8;
+  scrollbar-width: thin;
+}
+
+.loan-tabs button {
+  flex: 0 0 auto;
+  padding: 0.55rem 0.8rem;
+  border: 0;
+  border-radius: 0.45rem;
+  color: #475569;
+  background: transparent;
+  font-weight: 650;
+}
+
+.loan-tabs button[aria-selected='true'] {
+  color: #172033;
+  background: #fff;
+  box-shadow: 0 0.15rem 0.4rem rgb(15 23 42 / 10%);
+}
+
+.loan-tabs button:focus-visible,
+.site-header button:focus-visible,
+.back-link:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.loan-tab-panel {
+  min-height: 22rem;
+  margin-top: 1rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid #dbe3ef;
+  border-radius: 0.85rem;
+  background: #fff;
+  box-shadow: 0 0.5rem 1.5rem rgb(15 23 42 / 4%);
+}
+
+.loan-summary-view > h2,
+.loan-settings > h2 {
+  margin-top: 0;
+}
+
+.loan-summary-view > p,
+.loan-settings > p {
+  max-width: 44rem;
+  color: #64748b;
+}
+
+.loan-tab-panel .payment-tools,
+.loan-tab-panel .scenario-tools,
+.loan-tab-panel .amortization-detail,
+.loan-tab-panel .tbp-scenarios {
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.loan-tab-panel .tbp-scenarios {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.danger-zone {
+  margin-top: 2rem;
+  padding: 1rem;
+  border: 1px solid #fecaca;
+  border-radius: 0.65rem;
+  background: #fff7f7;
+}
+
+.danger-zone h3 {
+  margin-top: 0;
+  color: #991b1b;
+}
+
+.danger-zone button {
+  border-color: #b91c1c;
+  background: #b91c1c;
+}
+
+.data-workspace .backup-tools {
+  max-width: 46rem;
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid #dbe3ef;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loan-card {
+    transition: none;
+  }
+}
+
+@media (max-width: 32rem) {
+  .app-shell {
+    width: min(100% - 1.25rem, 76rem);
+  }
+
+  .site-header {
+    position: static;
+  }
+
+  .workspace-title-row {
+    align-items: stretch;
+  }
+
+  .workspace-title-row > button {
+    width: 100%;
+  }
+
+  .loan-editor,
+  .data-workspace,
+  .loan-workspace,
+  .loan-tab-panel {
+    padding: 1rem;
+  }
+}
