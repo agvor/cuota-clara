@@ -581,6 +581,20 @@
         "El resumen expandido de escenario no duplica encabezado ni acción de cierre: se controla desde el botón de su tarjeta.",
         "La tabla de proyección usa encabezados visuales abreviados y nombres accesibles completos para reducir su ancho sin perder significado."
       ]
+    },
+    {
+      "id": "US-041",
+      "epic": "E3 · PWA y gestión de préstamos",
+      "title": "Pulir controles y referencias globales",
+      "story": "Como persona usuaria, quiero controles de formulario coherentes y referencias compactas para concentrarme en los datos sin repetir avisos en cada resumen.",
+      "requirements": ["RF-008", "RF-010", "RF-013", "RF-015", "RNF-008", "RNF-009"],
+      "dependsOn": ["US-040"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "El selector de tipo de escenario comparte ancho, borde, tipografía y espaciado con los demás campos editables.",
+        "El aviso sobre estimaciones se muestra una vez en el pie global y no ocupa el resumen financiero del préstamo.",
+        "La columna de origen usa H y P con una leyenda visible y nombres accesibles completos."
+      ]
     }
   ]
 }

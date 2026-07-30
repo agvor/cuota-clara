@@ -14,8 +14,7 @@ export function EstimateSummary({
     <section className="estimate-summary" aria-labelledby={titleId}>
       <h3 id={titleId}>{heading}</h3>
       <div className="table-scroll table-scroll-summary">
-        <table className="financial-table">
-          <caption>Estimación local; no es una promesa ni liquidación bancaria.</caption>
+        <table className="financial-table" aria-labelledby={titleId}>
           <tbody>
             <tr>
               <th scope="row">Última cuota estimada</th>

@@ -185,7 +185,8 @@ h1 {
 .loan-form input,
 .loan-form select,
 .loan-form textarea,
-.scenario-tools input {
+.scenario-tools input,
+.scenario-tools select {
   width: 100%;
   padding: 0.5rem;
   border: 1px solid #94a3b8;
@@ -351,6 +352,19 @@ h1 {
 
 .financial-table-projection td {
   text-align: left;
+}
+
+.financial-table-projection th:first-child,
+.financial-table-projection td:first-child {
+  width: 3rem;
+  text-align: center;
+}
+
+.projection-table-key {
+  margin-left: 0.75rem;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .table-sort-button {

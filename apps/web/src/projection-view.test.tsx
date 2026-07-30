@@ -37,12 +37,13 @@ describe('ProjectionView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Restablecer todo el plazo' }));
     expect(screen.getByLabelText('Desde')).toHaveValue('2026-02-01');
     expect(screen.getByLabelText('Hasta')).toHaveValue('2026-12-01');
-    expect(screen.getAllByText('Proyección base').length).toBeGreaterThan(1);
+    expect(screen.getAllByRole('cell', { name: 'Proyección base' }).length).toBeGreaterThan(1);
     expect(
       screen.getByRole('table', {
-        name: 'Historial y proyección de amortización — Configuración base',
+        name: /Historial y proyección de amortización — Configuración base/,
       }),
     ).toBeVisible();
+    expect(screen.getByText('H: histórico · P: proyección')).toBeVisible();
     expect(screen.getByRole('columnheader', { name: 'Principal total' })).toBeVisible();
     expect(screen.getByRole('columnheader', { name: 'Principal ordinario' })).toBeVisible();
     expect(screen.getByRole('columnheader', { name: 'Principal extraordinario' })).toBeVisible();
@@ -74,11 +75,11 @@ describe('ProjectionView', () => {
 
     expect(screen.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
     const firstProjectedRowBefore = screen
-      .getAllByText('Proyección base')[0]
+      .getAllByRole('cell', { name: 'Proyección base' })[0]
       ?.closest('tr')?.textContent;
     fireEvent.click(screen.getByRole('button', { name: /Ordenar cuotas por fecha descendente/ }));
     const firstProjectedRowAfter = screen
-      .getAllByText('Proyección base')[0]
+      .getAllByRole('cell', { name: 'Proyección base' })[0]
       ?.closest('tr')?.textContent;
     expect(firstProjectedRowAfter).not.toBe(firstProjectedRowBefore);
     expect(screen.getByRole('columnheader', { name: /Fecha/ })).toHaveAttribute(
@@ -119,9 +120,11 @@ describe('ProjectionView', () => {
       target: { value: 'scenario-a' },
     });
     expect(
-      screen.getByRole('table', { name: 'Historial y proyección de amortización — Extra mensual' }),
+      screen.getByRole('table', { name: /Historial y proyección de amortización — Extra mensual/ }),
     ).toBeVisible();
-    expect(screen.getAllByText('Proyección de escenario').length).toBeGreaterThan(1);
+    expect(screen.getAllByRole('cell', { name: 'Proyección de escenario' }).length).toBeGreaterThan(
+      1,
+    );
     expect(
       screen.getAllByRole('row', {
         name: /Proyección de escenario.*₡20,00/,

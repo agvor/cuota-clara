@@ -8,7 +8,7 @@
 | --- | ---: | ---: | ---: | ---: | ---: |
 | E1 · Motor financiero verificable | 0 | 0 | 0 | 0 | 7 |
 | E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 3 |
-| E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 9 |
+| E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 10 |
 | E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 9 |
 | E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 1 |
 | E6 · Contrato financiero v2 | 1 | 0 | 0 | 0 | 4 |
@@ -59,3 +59,4 @@
 | US-038 | E3 · PWA y gestión de préstamos | Unificar la presentación de tablas financieras | Completado | US-037 |
 | US-039 | E3 · PWA y gestión de préstamos | Afinar el detalle de proyección y escenarios | Completado | US-038 |
 | US-040 | E3 · PWA y gestión de préstamos | Conservar el contexto de análisis del préstamo | Completado | US-039 |
+| US-041 | E3 · PWA y gestión de préstamos | Pulir controles y referencias globales | Completado | US-040 |

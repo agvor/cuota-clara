@@ -349,7 +349,11 @@ export function App({ repository }: AppProps) {
         )}
       </main>
       <footer className="site-footer">
-        CuotaClara guarda tus datos localmente y no requiere cuenta.
+        <p>CuotaClara guarda tus datos localmente y no requiere cuenta.</p>
+        <p>
+          Las estimaciones son informativas, se calculan localmente y no constituyen una promesa ni
+          liquidación bancaria.
+        </p>
       </footer>
     </div>
   );

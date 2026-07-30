@@ -209,10 +209,13 @@ export function ProjectionView({
       {tableProjectionError ? <p role="alert">{tableProjectionError}</p> : null}
       <div className="table-scroll">
         <table className="financial-table financial-table-projection">
-          <caption>Historial y proyección de amortización — {tableProjectionLabel}</caption>
+          <caption>
+            Historial y proyección de amortización — {tableProjectionLabel}
+            <span className="projection-table-key">H: histórico · P: proyección</span>
+          </caption>
           <thead>
             <tr>
-              <th scope="col">Tipo</th>
+              <th scope="col">Origen</th>
               <th
                 scope="col"
                 aria-sort={sortDirection === 'ascending' ? 'ascending' : 'descending'}
@@ -245,7 +248,9 @@ export function ProjectionView({
           <tbody>
             {payments.map((payment) => (
               <tr className="historical-row" key={`historical-${payment.id}`}>
-                <td>Histórico</td>
+                <td aria-label="Histórico" title="Histórico">
+                  H
+                </td>
                 <td>{payment.date}</td>
                 <td>{formatMoney(payment.totalAmount, loan.roundingPolicy)}</td>
                 <td>
@@ -278,7 +283,12 @@ export function ProjectionView({
             ))}
             {visiblePeriods.map((period) => (
               <tr className="projection-row" key={`projection-${period.period}`}>
-                <td>{isScenarioProjection ? 'Proyección de escenario' : 'Proyección base'}</td>
+                <td
+                  aria-label={isScenarioProjection ? 'Proyección de escenario' : 'Proyección base'}
+                  title={isScenarioProjection ? 'Proyección de escenario' : 'Proyección base'}
+                >
+                  P
+                </td>
                 <td>{period.date}</td>
                 <td>{formatMoney(period.payment, loan.roundingPolicy)}</td>
                 <td>{formatMoney(period.interest, loan.roundingPolicy)}</td>

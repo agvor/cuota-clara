@@ -35,6 +35,7 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: 'Aún no hay préstamos' })).toBeVisible();
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeVisible();
+    expect(screen.getByText(/Las estimaciones son informativas/)).toBeVisible();
   });
 
   test('muestra el resumen de cada préstamo sin recalcularlo en la interfaz', async () => {
