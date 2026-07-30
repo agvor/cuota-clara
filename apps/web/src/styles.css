@@ -485,33 +485,33 @@ h1 {
 
 .chart-signal-line.payment {
   stroke: #7c3aed;
-  stroke-dasharray: 8 4;
 }
 
 .chart-signal-line.interest {
   stroke: #f59e0b;
-  stroke-dasharray: 3 4;
 }
 
 .chart-signal-line.principal {
   stroke: #14b8a6;
-  stroke-dasharray: 10 4 2 4;
 }
 
 .chart-signal-line.extra {
   stroke: #15803d;
   stroke-width: 3;
-  stroke-dasharray: 5 3;
 }
 
-.chart-signal-line.source-scenario-first,
-.chart-point-highlight.source-scenario-first {
-  opacity: 0.78;
+.chart-signal-line.source-base {
+  opacity: 1;
 }
 
-.chart-signal-line.source-scenario-second,
-.chart-point-highlight.source-scenario-second {
+.chart-signal-line.source-scenario-first {
+  opacity: 0.72;
+  stroke-dasharray: 9 5;
+}
+
+.chart-signal-line.source-scenario-second {
   opacity: 0.56;
+  stroke-dasharray: 2 5;
 }
 .chart-point-target {
   fill: transparent;
@@ -548,6 +548,14 @@ h1 {
   stroke: #15803d;
 }
 
+.chart-point-highlight.source-scenario-first {
+  opacity: 0.72;
+}
+
+.chart-point-highlight.source-scenario-second {
+  opacity: 0.56;
+}
+
 .chart-lock-status {
   margin: 0.75rem 0 0;
   color: #475569;
@@ -570,59 +578,38 @@ h1 {
   margin: 0.5rem 0 0;
 }
 
-.chart-source-details-list {
+.chart-legend {
   display: grid;
-  gap: 0.65rem;
-  margin-top: 0.65rem;
-}
-
-.chart-source-details {
-  padding: 0.6rem 0.7rem;
-  border-left: 3px solid #1d4ed8;
-  border-radius: 0.25rem;
-  background: rgb(255 255 255 / 72%);
-}
-
-.chart-source-details.scenario-first {
-  border-left-color: #64748b;
-}
-
-.chart-source-details.scenario-second {
-  border-left-color: #94a3b8;
-}
-
-.chart-source-details h4 {
-  margin: 0;
-  color: #1e3a5f;
-  font-size: 0.95rem;
-}
-
-.chart-source-details dl {
-  margin-top: 0.4rem;
-}
-
-.chart-point-details dl div {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.chart-point-details dt {
-  color: #475569;
-}
-
-.chart-point-details dd {
-  margin: 0;
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-}
-
-.balance-chart figcaption {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.75rem 1rem;
+  margin-top: 0.85rem;
   color: #334155;
   font-size: 0.9rem;
+}
+
+.chart-legend section {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #dbeafe;
+  border-radius: 0.35rem;
+  background: #f8fafc;
+}
+
+.chart-legend h4 {
+  margin: 0 0 0.45rem;
+  color: #1e3a5f;
+  font-size: 0.9rem;
+}
+
+.chart-legend section > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+}
+
+.chart-legend p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #475569;
 }
 
 .legend::before {
@@ -635,43 +622,112 @@ h1 {
   vertical-align: middle;
 }
 
-.legend.payment::before {
+.legend.signal-payment::before {
   border-top-color: #7c3aed;
-  border-top-style: dashed;
 }
 
-.legend.interest::before {
+.legend.signal-interest::before {
   border-top-color: #f59e0b;
-  border-top-style: dotted;
 }
 
-.legend.principal::before {
+.legend.signal-principal::before {
   border-top-color: #14b8a6;
-  border-top-style: dashed;
 }
 
-.legend.extra::before {
+.legend.signal-extra::before {
   border-top-color: #15803d;
+}
+
+.legend.source-base::before,
+.legend.source-scenario-first::before,
+.legend.source-scenario-second::before {
+  border-top-color: #475569;
+}
+
+.legend.source-scenario-first::before {
   border-top-style: dashed;
+  opacity: 0.72;
 }
 
-.chart-source-label {
-  color: #475569;
+.legend.source-scenario-second::before {
+  border-top-style: dotted;
+  opacity: 0.56;
 }
 
-.chart-source-label::before {
+.chart-point-table-scroll {
+  margin-top: 0.65rem;
+}
+
+.chart-point-table {
+  min-width: 100%;
+  margin: 0;
+  background: #fff;
+}
+
+.chart-point-table caption {
+  padding: 0.45rem 0;
+  color: #334155;
+  font-weight: 600;
+  text-align: left;
+}
+
+.chart-point-table th,
+.chart-point-table td {
+  padding: 0.55rem 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-point-table td {
+  text-align: right;
+  font-weight: 700;
+}
+
+.chart-point-table th[scope='row']::before {
   display: inline-block;
-  width: 0.45rem;
-  height: 0.45rem;
-  margin-right: 0.3rem;
-  border-radius: 999px;
-  background: #64748b;
+  width: 0.65rem;
+  height: 0;
+  margin-right: 0.35rem;
+  border-top: 3px solid #1d4ed8;
   content: '';
   vertical-align: middle;
 }
 
-.chart-source-label.scenario-second::before {
-  opacity: 0.56;
+.chart-point-table th.signal-payment::before {
+  border-top-color: #7c3aed;
+}
+
+.chart-point-table th.signal-interest::before {
+  border-top-color: #f59e0b;
+}
+
+.chart-point-table th.signal-principal::before {
+  border-top-color: #14b8a6;
+}
+
+.chart-point-table th.signal-extra::before {
+  border-top-color: #15803d;
+}
+
+.chart-point-table th.source-base::after,
+.chart-point-table th.source-scenario-first::after,
+.chart-point-table th.source-scenario-second::after {
+  display: block;
+  margin-top: 0.15rem;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.chart-point-table th.source-base::after {
+  content: 'trazo continuo';
+}
+
+.chart-point-table th.source-scenario-first::after {
+  content: 'trazo discontinuo';
+}
+
+.chart-point-table th.source-scenario-second::after {
+  content: 'trazo punteado';
 }
 
 .scenario-comparison-selector {

@@ -22,8 +22,8 @@ const SERIES = [
   { id: 'balance', label: 'Saldo' },
   { id: 'payment', label: 'Cuota total' },
   { id: 'interest', label: 'Interés' },
-  { id: 'principal', label: 'Principal' },
-  { id: 'extra', label: 'Extraordinario' },
+  { id: 'principal', label: 'Aporte total a principal' },
+  { id: 'extra', label: 'Aporte extraordinario a principal' },
 ] as const;
 
 type SortDirection = 'ascending' | 'descending';
@@ -504,18 +504,31 @@ function BalanceChart({
             )),
         )}
       </svg>
-      <figcaption>
-        {activeSeries.map((series) => (
-          <span className={`legend ${series.id}`} key={series.id}>
-            {series.label}
-          </span>
-        ))}
-        {scenarioSources.map((scenario) => (
-          <span className={`chart-source-label ${scenario.sourceClass}`} key={scenario.id}>
-            {scenario.label}
-          </span>
-        ))}
-        <span>El color y el trazo identifican la señal; la intensidad distingue la fuente.</span>
+      <figcaption className="chart-legend">
+        <section aria-label="Colores de señales">
+          <h4>Color · señal</h4>
+          <div>
+            {activeSeries.map((series) => (
+              <span className={`legend signal-${series.id}`} key={series.id}>
+                {series.label}
+              </span>
+            ))}
+          </div>
+        </section>
+        <section aria-label="Trazos de fuentes">
+          <h4>Trazo · fuente</h4>
+          <div>
+            {sources.map((source) => (
+              <span className={`legend source-${source.sourceClass}`} key={source.id}>
+                {source.label}
+              </span>
+            ))}
+          </div>
+        </section>
+        <p>
+          La base usa la tonalidad más intensa y línea continua; los escenarios conservan el color
+          de cada señal y se distinguen por punteado.
+        </p>
       </figcaption>
       <p className="chart-lock-status" aria-live="polite">
         {lockedPeriod
@@ -561,28 +574,40 @@ function ChartPointDetails({
         Cuota {period.period} · {period.date}
         {isLocked ? ' · Punto fijado' : ''}
       </strong>
-      <div className="chart-source-details-list">
-        {sources.map((source) => {
-          const periodIndex = visiblePeriods.findIndex((item) => item.period === period.period);
-          return (
-            <section className={`chart-source-details ${source.sourceClass}`} key={source.id}>
-              <h4>{source.label}</h4>
-              <dl>
-                {activeSeries.map((series) => (
-                  <div key={series.id}>
-                    <dt>{series.label}</dt>
-                    <dd>
+      <div className="table-scroll chart-point-table-scroll">
+        <table className="chart-point-table">
+          <caption>Comparación de señales activas en la cuota {period.period}</caption>
+          <thead>
+            <tr>
+              <th scope="col">Señal</th>
+              {sources.map((source) => (
+                <th className={`source-${source.sourceClass}`} key={source.id} scope="col">
+                  {source.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {activeSeries.map((series) => {
+              const periodIndex = visiblePeriods.findIndex((item) => item.period === period.period);
+              return (
+                <tr key={series.id}>
+                  <th className={`signal-${series.id}`} scope="row">
+                    {series.label}
+                  </th>
+                  {sources.map((source) => (
+                    <td key={source.id}>
                       {formatMoney(
                         source.values[series.id][periodIndex] ?? zeroMoney(loan),
                         loan.roundingPolicy,
                       )}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-          );
-        })}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

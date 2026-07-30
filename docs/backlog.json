@@ -453,6 +453,21 @@
         "El detalle del punto agrupa los importes de las señales activas por configuración base y por escenario seleccionado.",
         "Un clic en el gráfico, o Enter/Espacio con foco, fija el periodo inspeccionado y una segunda acción libera el recorrido."
       ]
+    },
+    {
+      "id": "US-032",
+      "epic": "E4 · Escenarios y resultados",
+      "title": "Clarificar señales y lectura de comparación gráfica",
+      "story": "Como persona usuaria, quiero distinguir con facilidad qué mide cada señal y cada fuente para comparar aportes extraordinarios sin confundir color, trazo o valores.",
+      "requirements": ["RF-009", "RF-010", "RNF-008"],
+      "dependsOn": ["US-031"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "Las señales distinguen aporte total a principal de aporte extraordinario a principal; este último muestra el extra calculado para cada escenario mientras corresponda.",
+        "El color identifica una señal en todas las fuentes; la base conserva la tonalidad más intensa y línea continua, y los escenarios usan punteados propios.",
+        "La leyenda separa explícitamente colores de señales y trazos de fuentes.",
+        "El detalle del punto usa una tabla con señales como filas y configuración base/escenarios como columnas."
+      ]
     }
   ]
 }

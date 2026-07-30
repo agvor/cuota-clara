@@ -99,6 +99,7 @@ describe('ProjectionView', () => {
     fireEvent.change(screen.getByLabelText('Escenario A'), { target: { value: 'scenario-a' } });
     fireEvent.change(screen.getByLabelText('Escenario B'), { target: { value: 'scenario-b' } });
     fireEvent.click(screen.getByLabelText('Cuota total'));
+    fireEvent.click(screen.getByLabelText('Aporte extraordinario a principal'));
 
     expect(container.querySelector('.chart-signal-line.payment.source-base')).toBeVisible();
     expect(
@@ -107,12 +108,16 @@ describe('ProjectionView', () => {
     expect(
       container.querySelector('.chart-signal-line.payment.source-scenario-second'),
     ).toBeVisible();
+    expect(container.querySelector('.chart-signal-line.extra.source-scenario-first')).toBeVisible();
     const firstPoint = screen.getAllByLabelText(/^Cuota \d+, \d{4}-\d{2}-\d{2}$/)[0];
     if (!firstPoint) throw new Error('Se esperaba al menos un punto de proyección.');
     fireEvent.pointerEnter(firstPoint);
-    expect(screen.getByRole('heading', { name: 'Configuración base' })).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Extra mensual' })).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Principal objetivo' })).toBeVisible();
+    expect(screen.getByRole('columnheader', { name: 'Configuración base' })).toBeVisible();
+    expect(screen.getByRole('columnheader', { name: 'Extra mensual' })).toBeVisible();
+    expect(screen.getByRole('columnheader', { name: 'Principal objetivo' })).toBeVisible();
+    expect(
+      screen.getByRole('row', { name: /Aporte extraordinario a principal.*₡20,00/ }),
+    ).toBeVisible();
     fireEvent.click(screen.getByRole('img', { name: 'Evolución estimada del saldo' }));
     expect(screen.getByText(/Punto fijado en cuota/)).toBeVisible();
     fireEvent.click(screen.getByRole('img', { name: 'Evolución estimada del saldo' }));
