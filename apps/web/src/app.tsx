@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   createTbpMarginScenario,
@@ -19,7 +19,7 @@ import { EstimateSummary } from './estimate-summary.js';
 import { formatMoney } from './money-format.js';
 import { PaymentTools } from './payment-tools.js';
 import { decimalRateToPercent } from './percentage.js';
-import { ProjectionView } from './projection-view.js';
+import { ProjectionView, type ChartConfiguration } from './projection-view.js';
 import { ScenarioTools } from './scenario-tools.js';
 import './styles.css';
 
@@ -65,6 +65,22 @@ export function App({ repository }: AppProps) {
   const [activeLoanTab, setActiveLoanTab] = useState<LoanTab>('summary');
   const [formLoan, setFormLoan] = useState<Loan | null | undefined>(undefined);
   const [selectedAggregate, setSelectedAggregate] = useState<LoanAggregate>();
+  const [chartConfigurations, setChartConfigurations] = useState<
+    Readonly<Record<string, ChartConfiguration>>
+  >({});
+
+  const saveChartConfiguration = useCallback(
+    (loanId: string, configuration: ChartConfiguration) => {
+      setChartConfigurations((current) => ({ ...current, [loanId]: configuration }));
+    },
+    [],
+  );
+  const saveSelectedChartConfiguration = useCallback(
+    (configuration: ChartConfiguration) => {
+      if (selectedLoanId) saveChartConfiguration(selectedLoanId, configuration);
+    },
+    [saveChartConfiguration, selectedLoanId],
+  );
 
   async function reloadLoans() {
     const loans = await repository.listLoans();
@@ -315,6 +331,10 @@ export function App({ repository }: AppProps) {
             onDuplicate={duplicateLoan}
             onDelete={deleteLoan}
             aggregate={selectedAggregate}
+            {...(chartConfigurations[selectedLoanId]
+              ? { chartConfiguration: chartConfigurations[selectedLoanId] }
+              : {})}
+            onChartConfigurationChange={saveSelectedChartConfiguration}
             onSavePayment={savePayment}
             onImportPayments={importPayments}
             onSaveScenario={saveScenario}
@@ -454,6 +474,8 @@ function LoanWorkspace({
   onDuplicate,
   onDelete,
   aggregate,
+  chartConfiguration,
+  onChartConfigurationChange,
   onSavePayment,
   onImportPayments,
   onSaveScenario,
@@ -467,6 +489,8 @@ function LoanWorkspace({
   onDuplicate: (loan: Loan) => Promise<void>;
   onDelete: (loan: Loan) => Promise<void>;
   aggregate: LoanAggregate | undefined;
+  chartConfiguration?: ChartConfiguration;
+  onChartConfigurationChange: (configuration: ChartConfiguration) => void;
   onSavePayment: (payment: PaymentRecord) => Promise<void>;
   onImportPayments: (payments: readonly PaymentRecord[]) => Promise<void>;
   onSaveScenario: (scenario: ProjectionScenarioSnapshot) => Promise<void>;
@@ -559,6 +583,8 @@ function LoanWorkspace({
             loan={loan}
             payments={aggregate.payments}
             scenarios={aggregate.scenarios}
+            {...(chartConfiguration ? { chartConfiguration } : {})}
+            onChartConfigurationChange={onChartConfigurationChange}
           />
         ) : null}
         {activeTab === 'projection' && aggregate?.loan.id !== loan.id ? (

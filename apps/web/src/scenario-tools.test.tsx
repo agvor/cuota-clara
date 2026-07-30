@@ -99,8 +99,8 @@ describe('ScenarioTools', () => {
       'aria-expanded',
       'true',
     );
-    expect(screen.getByRole('heading', { name: 'Resumen de Extra A' })).toBeVisible();
-    expect(screen.getByRole('table', { name: 'Resultado estimado del escenario' })).toBeVisible();
+    expect(screen.getByRole('table', { name: 'Resumen estimado' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Cerrar resumen' })).not.toBeInTheDocument();
     expect(screen.getByText('Interés ahorrado')).toBeVisible();
     fireEvent.click(screen.getAllByRole('button', { name: 'Eliminar escenario' })[1]!);
 

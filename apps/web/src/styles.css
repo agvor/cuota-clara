@@ -346,7 +346,7 @@ h1 {
 }
 
 .financial-table-projection {
-  min-width: 65rem;
+  min-width: 56rem;
 }
 
 .financial-table-projection td {
@@ -771,8 +771,7 @@ h1 {
   font-weight: 600;
 }
 
-.scenario-form-panel,
-.scenario-summary {
+.scenario-form-panel {
   margin-top: 1rem;
   padding: 1rem;
   border: 1px solid #cbd5e1;
@@ -791,8 +790,7 @@ h1 {
   margin-top: 0;
 }
 
-.scenario-form-panel h3,
-.scenario-summary h3 {
+.scenario-form-panel h3 {
   margin-top: 0;
 }
 
@@ -846,11 +844,6 @@ h1 {
   border-color: #64748b;
   color: #334155;
   background: #fff;
-}
-
-.scenario-summary {
-  border-color: #c4b5fd;
-  background: #faf5ff;
 }
 
 button {

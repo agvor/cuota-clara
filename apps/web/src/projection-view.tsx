@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
   compareLoanWithOneTimeExtraPayment,
@@ -26,8 +26,16 @@ const SERIES = [
 ] as const;
 
 type SortDirection = 'ascending' | 'descending';
-type SeriesId = (typeof SERIES)[number]['id'];
-type SelectedSeries = Readonly<Record<SeriesId, boolean>>;
+export type ChartSeriesId = (typeof SERIES)[number]['id'];
+type SelectedSeries = Readonly<Record<ChartSeriesId, boolean>>;
+export type ChartConfiguration = Readonly<{
+  rangeStartDate?: string;
+  rangeEndDate?: string;
+  selectedSeries?: Readonly<Partial<Record<ChartSeriesId, boolean>>>;
+  firstScenarioId?: string;
+  secondScenarioId?: string;
+  lockedPeriodNumber?: number;
+}>;
 type ComparableScenario = ProjectionScenarioSnapshot;
 type DisplayProjectionPeriod = Readonly<{
   period: number;
@@ -46,7 +54,7 @@ type ChartPoint = Readonly<{
   x: number;
   y: number;
 }>;
-type ChartValues = Readonly<Record<SeriesId, readonly Loan['initialBalance'][]>>;
+type ChartValues = Readonly<Record<ChartSeriesId, readonly Loan['initialBalance'][]>>;
 type ChartSource = Readonly<{
   id: string;
   label: string;
@@ -63,10 +71,14 @@ export function ProjectionView({
   loan,
   payments,
   scenarios = [],
+  chartConfiguration,
+  onChartConfigurationChange,
 }: Readonly<{
   loan: Loan;
   payments: readonly PaymentRecord[];
   scenarios?: readonly ProjectionScenarioSnapshot[];
+  chartConfiguration?: ChartConfiguration;
+  onChartConfigurationChange?: (configuration: ChartConfiguration) => void;
 }>) {
   const [page, setPage] = useState(0);
   const [sortDirection, setSortDirection] = useState<SortDirection>('ascending');
@@ -172,6 +184,8 @@ export function ProjectionView({
         payments={payments}
         periods={result.periods}
         scenarios={scenarios}
+        {...(chartConfiguration ? { chartConfiguration } : {})}
+        {...(onChartConfigurationChange ? { onChartConfigurationChange } : {})}
       />
       <div className="table-projection-controls">
         <label>
@@ -214,10 +228,18 @@ export function ProjectionView({
               </th>
               <th scope="col">Pago</th>
               <th scope="col">Interés</th>
-              <th scope="col">Principal total</th>
-              <th scope="col">Principal ordinario</th>
-              <th scope="col">Principal extraordinario</th>
-              <th scope="col">Saldo final</th>
+              <th scope="col" aria-label="Principal total">
+                Ppal. total
+              </th>
+              <th scope="col" aria-label="Principal ordinario">
+                Ppal. ord.
+              </th>
+              <th scope="col" aria-label="Principal extraordinario">
+                Ppal. extra
+              </th>
+              <th scope="col" aria-label="Saldo final">
+                Saldo
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -299,33 +321,55 @@ function BalanceChart({
   payments,
   periods,
   scenarios,
+  chartConfiguration,
+  onChartConfigurationChange,
 }: Readonly<{
   loan: Loan;
   payments: readonly PaymentRecord[];
   periods: readonly DisplayProjectionPeriod[];
   scenarios: readonly ProjectionScenarioSnapshot[];
+  chartConfiguration?: ChartConfiguration;
+  onChartConfigurationChange?: (configuration: ChartConfiguration) => void;
 }>) {
   const totalStartDate = periods[0]?.date ?? '';
   const totalEndDate = periods.at(-1)?.date ?? '';
-  const [rangeStartDate, setRangeStartDate] = useState(totalStartDate);
-  const [rangeEndDate, setRangeEndDate] = useState(totalEndDate);
+  const savedRangeStartDate = chartConfiguration?.rangeStartDate;
+  const savedRangeEndDate = chartConfiguration?.rangeEndDate;
+  const [rangeStartDate, setRangeStartDate] = useState(() =>
+    savedRangeStartDate &&
+    savedRangeStartDate >= totalStartDate &&
+    savedRangeStartDate <= totalEndDate
+      ? savedRangeStartDate
+      : totalStartDate,
+  );
+  const [rangeEndDate, setRangeEndDate] = useState(() =>
+    savedRangeEndDate && savedRangeEndDate >= totalStartDate && savedRangeEndDate <= totalEndDate
+      ? savedRangeEndDate
+      : totalEndDate,
+  );
   const [hoveredPeriod, setHoveredPeriod] = useState<DisplayProjectionPeriod>();
-  const [lockedPeriod, setLockedPeriod] = useState<DisplayProjectionPeriod>();
-  const [selectedSeries, setSelectedSeries] = useState<SelectedSeries>({
+  const [lockedPeriod, setLockedPeriod] = useState<DisplayProjectionPeriod | undefined>(() =>
+    chartConfiguration?.lockedPeriodNumber
+      ? periods.find((period) => period.period === chartConfiguration.lockedPeriodNumber)
+      : undefined,
+  );
+  const [selectedSeries, setSelectedSeries] = useState<SelectedSeries>(() => ({
     balance: true,
     payment: false,
     interest: false,
     principal: false,
     extra: false,
-  });
-  const [firstScenarioId, setFirstScenarioId] = useState('');
-  const [secondScenarioId, setSecondScenarioId] = useState('');
+    ...chartConfiguration?.selectedSeries,
+  }));
+  const [firstScenarioId, setFirstScenarioId] = useState(chartConfiguration?.firstScenarioId ?? '');
+  const [secondScenarioId, setSecondScenarioId] = useState(
+    chartConfiguration?.secondScenarioId ?? '',
+  );
   const visiblePeriods = periods.filter(
     (period) => period.date >= rangeStartDate && period.date <= rangeEndDate,
   );
   const startPeriod = visiblePeriods[0];
   const endPeriod = visiblePeriods.at(-1);
-  if (!startPeriod || !endPeriod) return null;
 
   const extraPrincipalByPeriod = mapExtraPrincipalByPeriod(payments, periods, loan);
   const comparableScenarios = scenarios.filter(isComparableScenario);
@@ -379,6 +423,27 @@ function BalanceChart({
   const horizontalTicks = [0, 0.25, 0.5, 0.75, 1];
   const temporalTicks = [0, 0.25, 0.5, 0.75, 1];
 
+  useEffect(() => {
+    onChartConfigurationChange?.({
+      rangeStartDate,
+      rangeEndDate,
+      selectedSeries,
+      firstScenarioId,
+      secondScenarioId,
+      ...(lockedPeriod ? { lockedPeriodNumber: lockedPeriod.period } : {}),
+    });
+  }, [
+    firstScenarioId,
+    lockedPeriod,
+    onChartConfigurationChange,
+    rangeEndDate,
+    rangeStartDate,
+    secondScenarioId,
+    selectedSeries,
+  ]);
+
+  if (!startPeriod || !endPeriod) return null;
+
   function inspectClosestPoint(clientX: number, chartLeft: number, chartWidth: number) {
     if (lockedPeriod) return;
     const firstPoint = interactionPoints[0];
@@ -391,7 +456,7 @@ function BalanceChart({
     if (closestPoint.period.period !== hoveredPeriod?.period) setHoveredPeriod(closestPoint.period);
   }
 
-  function toggleSeries(id: SeriesId) {
+  function toggleSeries(id: ChartSeriesId) {
     setSelectedSeries((current) => {
       if (current[id] && activeSeries.length === 1) return current;
       return { ...current, [id]: !current[id] };

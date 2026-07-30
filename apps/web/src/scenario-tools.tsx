@@ -288,13 +288,7 @@ function SavedScenarios({
                 Eliminar escenario
               </button>
             </div>
-            {isSummaryOpen ? (
-              <ScenarioSummary
-                loan={loan}
-                scenario={scenario}
-                onClose={() => onToggleSummary(scenario.id)}
-              />
-            ) : null}
+            {isSummaryOpen ? <ScenarioSummary loan={loan} scenario={scenario} /> : null}
           </article>
         );
       })}
@@ -305,29 +299,16 @@ function SavedScenarios({
 function ScenarioSummary({
   loan,
   scenario,
-  onClose,
 }: Readonly<{
   loan: Loan;
   scenario: ComparableScenario;
-  onClose: () => void;
 }>) {
   const comparison = compareScenario(loan, scenario);
   return (
-    <section
-      id={`scenario-summary-${scenario.id}`}
-      className="scenario-summary"
-      aria-live="polite"
-      aria-labelledby={`scenario-summary-title-${scenario.id}`}
-    >
-      <div className="section-heading-action">
-        <h3 id={`scenario-summary-title-${scenario.id}`}>Resumen de {scenario.name}</h3>
-        <button type="button" className="secondary-action" onClick={onClose}>
-          Cerrar resumen
-        </button>
-      </div>
-      <div className="table-scroll table-scroll-summary">
+    <div id={`scenario-summary-${scenario.id}`} className="scenario-summary" aria-live="polite">
+      <div className="table-scroll">
         <table className="financial-table">
-          <caption>Resultado estimado del escenario</caption>
+          <caption>Resumen estimado</caption>
           <tbody>
             <tr>
               <th scope="row">Fecha final estimada</th>
@@ -354,7 +335,7 @@ function ScenarioSummary({
           </tbody>
         </table>
       </div>
-    </section>
+    </div>
   );
 }
 

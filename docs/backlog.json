@@ -567,6 +567,20 @@
         "Al entrar en Proyección, el gráfico y la tabla se cargan directamente sin una acción intermedia.",
         "El resumen de un escenario se expande dentro de su propia tarjeta y puede cerrarse desde la misma ubicación."
       ]
+    },
+    {
+      "id": "US-040",
+      "epic": "E3 · PWA y gestión de préstamos",
+      "title": "Conservar el contexto de análisis del préstamo",
+      "story": "Como persona usuaria, quiero volver al gráfico sin perder mi selección y consultar escenarios con tarjetas simples para continuar el análisis sin repetir pasos.",
+      "requirements": ["RF-008", "RF-009", "RF-010", "RNF-008", "RNF-009"],
+      "dependsOn": ["US-039"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "Cambiar entre pestañas conserva por préstamo el rango, señales, escenarios comparados y punto congelado del gráfico durante la sesión.",
+        "El resumen expandido de escenario no duplica encabezado ni acción de cierre: se controla desde el botón de su tarjeta.",
+        "La tabla de proyección usa encabezados visuales abreviados y nombres accesibles completos para reducir su ancho sin perder significado."
+      ]
     }
   ]
 }

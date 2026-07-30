@@ -7,7 +7,7 @@ import { afterEach, describe, expect, test } from 'vitest';
 
 import { createLoan, createRecurringExtraPaymentScenario, Money } from '@cuotaclara/domain';
 
-import { ProjectionView } from './projection-view.js';
+import { ProjectionView, type ChartConfiguration } from './projection-view.js';
 
 afterEach(cleanup);
 
@@ -46,6 +46,7 @@ describe('ProjectionView', () => {
     expect(screen.getByRole('columnheader', { name: 'Principal total' })).toBeVisible();
     expect(screen.getByRole('columnheader', { name: 'Principal ordinario' })).toBeVisible();
     expect(screen.getByRole('columnheader', { name: 'Principal extraordinario' })).toBeVisible();
+    expect(screen.getByText('Ppal. total')).toBeVisible();
     const firstPoint = screen.getAllByLabelText(/^Cuota \d+, \d{4}-\d{2}-\d{2}$/)[0];
     if (!firstPoint) throw new Error('Se esperaba al menos un punto de proyección.');
     fireEvent.pointerEnter(firstPoint);
@@ -153,5 +154,54 @@ describe('ProjectionView', () => {
     expect(
       screen.queryByRole('heading', { name: 'Resumen de escenarios comparados' }),
     ).not.toBeInTheDocument();
+  });
+
+  test('restaura las selecciones del gráfico después de volver a montarlo', () => {
+    const scenario = createRecurringExtraPaymentScenario({
+      id: 'scenario-persistent',
+      loanId: loan.id,
+      name: 'Extra persistente',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      recurringExtraPayment: { kind: 'constant_extra', amount: Money.from('20', 'CRC') },
+    });
+    let configuration: ChartConfiguration | undefined;
+    const onChartConfigurationChange = (next: ChartConfiguration) => {
+      configuration = next;
+    };
+    const firstRender = render(
+      <ProjectionView
+        loan={loan}
+        payments={[]}
+        scenarios={[scenario]}
+        onChartConfigurationChange={onChartConfigurationChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText('Cuota total'));
+    fireEvent.change(screen.getByLabelText('Escenario A'), {
+      target: { value: scenario.id },
+    });
+    const firstPoint = screen.getAllByLabelText(/^Cuota \d+, \d{4}-\d{2}-\d{2}$/)[0];
+    if (!firstPoint) throw new Error('Se esperaba al menos un punto de proyección.');
+    fireEvent.pointerEnter(firstPoint);
+    fireEvent.click(screen.getByRole('img', { name: 'Evolución estimada del saldo' }));
+    expect(configuration?.lockedPeriodNumber).toBe(1);
+    firstRender.unmount();
+
+    render(
+      <ProjectionView
+        loan={loan}
+        payments={[]}
+        scenarios={[scenario]}
+        {...(configuration ? { chartConfiguration: configuration } : {})}
+        onChartConfigurationChange={onChartConfigurationChange}
+      />,
+    );
+
+    expect(screen.getByLabelText('Cuota total')).toBeChecked();
+    expect(screen.getByLabelText('Escenario A')).toHaveValue(scenario.id);
+    expect(
+      screen.getByText('Punto fijado en cuota 1. Haz clic en el gráfico para liberarlo.'),
+    ).toBeVisible();
   });
 });
