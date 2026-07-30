@@ -19,11 +19,11 @@ const CHART_RANGES = [12, 60, 120] as const;
 const CHART = { left: 94, right: 770, top: 30, bottom: 276 } as const;
 
 const SERIES = [
-  { id: 'balance', label: 'Saldo proyectado', kind: 'projection' },
-  { id: 'payment', label: 'Cuota total proyectada', kind: 'projection' },
-  { id: 'interest', label: 'Interés proyectado', kind: 'projection' },
-  { id: 'principal', label: 'Principal proyectado', kind: 'projection' },
-  { id: 'extra', label: 'Cuota extraordinaria registrada', kind: 'historical' },
+  { id: 'balance', label: 'Saldo' },
+  { id: 'payment', label: 'Cuota total' },
+  { id: 'interest', label: 'Interés' },
+  { id: 'principal', label: 'Principal' },
+  { id: 'extra', label: 'Extraordinario' },
 ] as const;
 
 type SortDirection = 'ascending' | 'descending';
@@ -44,6 +44,18 @@ type ChartPoint = Readonly<{
   value: Loan['initialBalance'];
   x: number;
   y: number;
+}>;
+type ChartValues = Readonly<Record<SeriesId, readonly Loan['initialBalance'][]>>;
+type ChartSource = Readonly<{
+  id: string;
+  label: string;
+  sourceClass: 'base' | 'scenario-first' | 'scenario-second';
+  values: ChartValues;
+}>;
+type ChartLine = Readonly<{
+  source: ChartSource;
+  series: (typeof SERIES)[number];
+  points: readonly ChartPoint[];
 }>;
 
 export function ProjectionView({
@@ -208,6 +220,7 @@ function BalanceChart({
 }>) {
   const [range, setRange] = useState<number | 'all'>(60);
   const [hoveredPeriod, setHoveredPeriod] = useState<DisplayProjectionPeriod>();
+  const [lockedPeriod, setLockedPeriod] = useState<DisplayProjectionPeriod>();
   const [selectedSeries, setSelectedSeries] = useState<SelectedSeries>({
     balance: true,
     payment: false,
@@ -224,22 +237,19 @@ function BalanceChart({
 
   const extraPrincipalByPeriod = mapExtraPrincipalByPeriod(payments, periods, loan);
   const comparableScenarios = scenarios.filter(isComparableScenario);
-  const scenarioLines = [firstScenarioId, secondScenarioId]
+  const scenarioSources: readonly ChartSource[] = [firstScenarioId, secondScenarioId]
     .map((id) => comparableScenarios.find((scenario) => scenario.id === id))
     .filter((scenario): scenario is ComparableScenario => Boolean(scenario))
     .map((scenario, index) => {
       const comparison = compareScenario(loan, scenario);
       return {
-        scenario,
-        comparison,
-        className: index === 0 ? 'scenario-first' : 'scenario-second',
-        values: visiblePeriods.map(
-          (_, periodIndex) =>
-            comparison.alternative.periods[periodIndex]?.closingBalance ?? zeroMoney(loan),
-        ),
+        id: scenario.id,
+        label: scenario.name,
+        sourceClass: index === 0 ? 'scenario-first' : 'scenario-second',
+        values: valuesFromProjectionPeriods(comparison.alternative.periods, visiblePeriods, loan),
       };
     });
-  const valuesBySeries: Readonly<Record<SeriesId, readonly Loan['initialBalance'][]>> = {
+  const baseValues: ChartValues = {
     balance: visiblePeriods.map((period) => period.closingBalance),
     payment: visiblePeriods.map((period) => period.payment),
     interest: visiblePeriods.map((period) => period.interest),
@@ -248,32 +258,37 @@ function BalanceChart({
       (period) => extraPrincipalByPeriod.get(period.period) ?? zeroMoney(loan),
     ),
   };
+  const sources: readonly ChartSource[] = [
+    { id: 'base', label: 'Configuración base', sourceClass: 'base', values: baseValues },
+    ...scenarioSources,
+  ];
   const activeSeries = SERIES.filter((series) => selectedSeries[series.id]);
   const maximumValue = findMaximumValue(
-    [
-      ...activeSeries.flatMap((series) => valuesBySeries[series.id]),
-      ...scenarioLines.flatMap((scenario) => scenario.values),
-    ],
+    sources.flatMap((source) => activeSeries.flatMap((series) => source.values[series.id])),
     loan,
   );
   const maximumValueAsNumber = Math.max(Number(maximumValue.toDecimalString()), 1);
-  const pointsBySeries = new Map(
-    activeSeries.map((series) => [
-      series.id,
-      toChartPoints(visiblePeriods, valuesBySeries[series.id], maximumValueAsNumber),
-    ]),
+  const chartLines: readonly ChartLine[] = sources.flatMap((source) =>
+    activeSeries.map((series) => ({
+      source,
+      series,
+      points: toChartPoints(visiblePeriods, source.values[series.id], maximumValueAsNumber),
+    })),
   );
   const interactionPoints =
-    pointsBySeries.get('balance') ?? pointsBySeries.values().next().value ?? [];
-  const hoveredPoints = activeSeries.flatMap((series) =>
-    (pointsBySeries.get(series.id) ?? []).filter(
-      (point) => point.period.period === hoveredPeriod?.period,
-    ),
+    chartLines.find((line) => line.source.sourceClass === 'base' && line.series.id === 'balance')
+      ?.points ??
+    chartLines[0]?.points ??
+    [];
+  const inspectedPeriod = lockedPeriod ?? hoveredPeriod;
+  const inspectedLines = chartLines.filter((line) =>
+    line.points.some((point) => point.period.period === inspectedPeriod?.period),
   );
   const horizontalTicks = [0, 0.25, 0.5, 0.75, 1];
   const temporalTicks = [0, 0.25, 0.5, 0.75, 1];
 
   function inspectClosestPoint(clientX: number, chartLeft: number, chartWidth: number) {
+    if (lockedPeriod) return;
     const firstPoint = interactionPoints[0];
     if (!firstPoint || chartWidth === 0) return;
     const x = ((clientX - chartLeft) / chartWidth) * 800;
@@ -291,6 +306,12 @@ function BalanceChart({
     });
   }
 
+  function togglePointLock() {
+    setLockedPeriod((current) =>
+      current ? undefined : (hoveredPeriod ?? interactionPoints[0]?.period),
+    );
+  }
+
   return (
     <figure className="balance-chart">
       <div className="chart-controls">
@@ -301,6 +322,7 @@ function BalanceChart({
             onChange={(event) => {
               setRange(event.target.value === 'all' ? 'all' : Number(event.target.value));
               setHoveredPeriod(undefined);
+              setLockedPeriod(undefined);
             }}
           >
             {CHART_RANGES.map((periodCount) => (
@@ -311,10 +333,12 @@ function BalanceChart({
             <option value="all">Todo el plazo</option>
           </select>
         </label>
-        <p>Desplaza el cursor sobre la línea para inspeccionar una cuota.</p>
+        <p>
+          Desplaza el cursor para inspeccionar una cuota; haz clic para fijar o liberar el punto.
+        </p>
       </div>
       <fieldset className="chart-series" aria-label="Series del gráfico">
-        <legend>Series visibles</legend>
+        <legend>Señales visibles en base y escenarios</legend>
         {SERIES.map((series) => (
           <label key={series.id}>
             <input
@@ -331,7 +355,7 @@ function BalanceChart({
           className="chart-series scenario-comparison-selector"
           aria-label="Escenarios comparados"
         >
-          <legend>Comparar escenarios de saldo</legend>
+          <legend>Comparar escenarios</legend>
           <label>
             Escenario A
             <select
@@ -375,7 +399,16 @@ function BalanceChart({
         role="img"
         aria-labelledby="balance-chart-title"
         aria-describedby="balance-chart-description"
-        onPointerLeave={() => setHoveredPeriod(undefined)}
+        tabIndex={0}
+        onClick={togglePointLock}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          togglePointLock();
+        }}
+        onPointerLeave={() => {
+          if (!lockedPeriod) setHoveredPeriod(undefined);
+        }}
         onPointerMove={(event) => {
           const bounds = event.currentTarget.getBoundingClientRect();
           inspectClosestPoint(event.clientX, bounds.left, bounds.width);
@@ -383,8 +416,9 @@ function BalanceChart({
       >
         <title id="balance-chart-title">Evolución estimada del saldo</title>
         <desc id="balance-chart-description">
-          Series seleccionables desde {startPeriod.date} hasta {endPeriod.date}; el eje vertical usa
-          la moneda del préstamo y el horizontal representa las fechas de las cuotas.
+          Cada señal seleccionada se muestra para la configuración base y los escenarios elegidos,
+          desde {startPeriod.date} hasta {endPeriod.date}. El eje vertical usa la moneda del
+          préstamo y el horizontal representa las fechas de las cuotas.
         </desc>
         {horizontalTicks.map((fraction) => {
           const y = CHART.bottom - fraction * (CHART.bottom - CHART.top);
@@ -432,23 +466,11 @@ function BalanceChart({
           y1={CHART.top}
           y2={CHART.bottom}
         />
-        {activeSeries.map((series) => {
-          const points = pointsBySeries.get(series.id) ?? [];
-          return (
-            <polyline
-              className={`chart-series-line ${series.id} ${series.kind}`}
-              key={series.id}
-              points={points.map((point) => `${point.x},${point.y}`).join(' ')}
-            />
-          );
-        })}
-        {scenarioLines.map((scenario) => (
+        {chartLines.map((line) => (
           <polyline
-            className={`chart-scenario-line ${scenario.className}`}
-            key={scenario.scenario.id}
-            points={toChartPoints(visiblePeriods, scenario.values, maximumValueAsNumber)
-              .map((point) => `${point.x},${point.y}`)
-              .join(' ')}
+            className={`chart-signal-line ${line.series.id} source-${line.source.sourceClass}`}
+            key={`${line.source.id}-${line.series.id}`}
+            points={line.points.map((point) => `${point.x},${point.y}`).join(' ')}
           />
         ))}
         {interactionPoints.map((point) => (
@@ -460,39 +482,53 @@ function BalanceChart({
             key={point.period.period}
             r="8"
             tabIndex={0}
-            onFocus={() => setHoveredPeriod(point.period)}
-            onPointerEnter={() => setHoveredPeriod(point.period)}
+            onFocus={() => {
+              if (!lockedPeriod) setHoveredPeriod(point.period);
+            }}
+            onPointerEnter={() => {
+              if (!lockedPeriod) setHoveredPeriod(point.period);
+            }}
           />
         ))}
-        {hoveredPoints.map((point) => (
-          <circle
-            className="chart-point-highlight"
-            cx={point.x}
-            cy={point.y}
-            key={`highlight-${point.value.toDecimalString()}-${point.period.period}`}
-            r="5"
-          />
-        ))}
+        {inspectedLines.flatMap((line) =>
+          line.points
+            .filter((point) => point.period.period === inspectedPeriod?.period)
+            .map((point) => (
+              <circle
+                className={`chart-point-highlight ${line.series.id} source-${line.source.sourceClass}`}
+                cx={point.x}
+                cy={point.y}
+                key={`highlight-${line.source.id}-${line.series.id}-${point.period.period}`}
+                r="5"
+              />
+            )),
+        )}
       </svg>
       <figcaption>
         {activeSeries.map((series) => (
-          <span className={`legend ${series.id} ${series.kind}`} key={series.id}>
+          <span className={`legend ${series.id}`} key={series.id}>
             {series.label}
           </span>
         ))}
-        {scenarioLines.map((scenario) => (
-          <span className={`legend ${scenario.className}`} key={scenario.scenario.id}>
-            {scenario.scenario.name}
+        {scenarioSources.map((scenario) => (
+          <span className={`chart-source-label ${scenario.sourceClass}`} key={scenario.id}>
+            {scenario.label}
           </span>
         ))}
-        <span>Las series proyectadas adicionales usan un trazo discontinuo.</span>
+        <span>El color y el trazo identifican la señal; la intensidad distingue la fuente.</span>
       </figcaption>
+      <p className="chart-lock-status" aria-live="polite">
+        {lockedPeriod
+          ? `Punto fijado en cuota ${lockedPeriod.period}. Haz clic en el gráfico para liberarlo.`
+          : 'Punto móvil: haz clic en el gráfico para fijarlo.'}
+      </p>
       <ChartPointDetails
         loan={loan}
-        period={hoveredPeriod}
-        extraPrincipal={
-          hoveredPeriod ? extraPrincipalByPeriod.get(hoveredPeriod.period) : undefined
-        }
+        period={inspectedPeriod}
+        visiblePeriods={visiblePeriods}
+        sources={sources}
+        activeSeries={activeSeries}
+        isLocked={Boolean(lockedPeriod)}
       />
     </figure>
   );
@@ -501,11 +537,17 @@ function BalanceChart({
 function ChartPointDetails({
   loan,
   period,
-  extraPrincipal,
+  visiblePeriods,
+  sources,
+  activeSeries,
+  isLocked,
 }: Readonly<{
   loan: Loan;
   period: DisplayProjectionPeriod | undefined;
-  extraPrincipal: Loan['initialBalance'] | undefined;
+  visiblePeriods: readonly DisplayProjectionPeriod[];
+  sources: readonly ChartSource[];
+  activeSeries: readonly (typeof SERIES)[number][];
+  isLocked: boolean;
 }>) {
   if (!period)
     return (
@@ -517,33 +559,63 @@ function ChartPointDetails({
     <div className="chart-point-details" aria-live="polite">
       <strong>
         Cuota {period.period} · {period.date}
+        {isLocked ? ' · Punto fijado' : ''}
       </strong>
-      <dl>
-        <div>
-          <dt>Pago</dt>
-          <dd>{formatMoney(period.payment, loan.roundingPolicy)}</dd>
-        </div>
-        <div>
-          <dt>Interés</dt>
-          <dd>{formatMoney(period.interest, loan.roundingPolicy)}</dd>
-        </div>
-        <div>
-          <dt>Principal</dt>
-          <dd>{formatMoney(period.principal, loan.roundingPolicy)}</dd>
-        </div>
-        <div>
-          <dt>Saldo</dt>
-          <dd>{formatMoney(period.closingBalance, loan.roundingPolicy)}</dd>
-        </div>
-        {extraPrincipal?.isPositive() ? (
-          <div>
-            <dt>Principal extraordinario registrado</dt>
-            <dd>{formatMoney(extraPrincipal, loan.roundingPolicy)}</dd>
-          </div>
-        ) : null}
-      </dl>
+      <div className="chart-source-details-list">
+        {sources.map((source) => {
+          const periodIndex = visiblePeriods.findIndex((item) => item.period === period.period);
+          return (
+            <section className={`chart-source-details ${source.sourceClass}`} key={source.id}>
+              <h4>{source.label}</h4>
+              <dl>
+                {activeSeries.map((series) => (
+                  <div key={series.id}>
+                    <dt>{series.label}</dt>
+                    <dd>
+                      {formatMoney(
+                        source.values[series.id][periodIndex] ?? zeroMoney(loan),
+                        loan.roundingPolicy,
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
+}
+
+function valuesFromProjectionPeriods(
+  projectionPeriods: readonly Readonly<{
+    period: number;
+    closingBalance: Loan['initialBalance'];
+    payment: Loan['initialBalance'];
+    interest: Loan['initialBalance'];
+    principal: Loan['initialBalance'];
+    extraPayment: Loan['initialBalance'];
+  }>[],
+  visiblePeriods: readonly DisplayProjectionPeriod[],
+  loan: Loan,
+): ChartValues {
+  const valuesFor = (
+    select: (period: (typeof projectionPeriods)[number]) => Loan['initialBalance'],
+  ): readonly Loan['initialBalance'][] =>
+    visiblePeriods.map((visiblePeriod) => {
+      const projectionPeriod = projectionPeriods.find(
+        (period) => period.period === visiblePeriod.period,
+      );
+      return projectionPeriod ? select(projectionPeriod) : zeroMoney(loan);
+    });
+  return {
+    balance: valuesFor((period) => period.closingBalance),
+    payment: valuesFor((period) => period.payment),
+    interest: valuesFor((period) => period.interest),
+    principal: valuesFor((period) => period.principal),
+    extra: valuesFor((period) => period.extraPayment),
+  };
 }
 
 function toChartPoints(

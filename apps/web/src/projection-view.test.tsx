@@ -38,11 +38,11 @@ describe('ProjectionView', () => {
     if (!firstPoint) throw new Error('Se esperaba al menos un punto de proyección.');
     fireEvent.pointerEnter(firstPoint);
     expect(screen.getByText(/Cuota 1 · 2026-02-01/)).toBeVisible();
-    const paymentSeries = screen.getByLabelText('Cuota total proyectada');
+    const paymentSeries = screen.getByLabelText('Cuota total');
     expect(paymentSeries).not.toBeChecked();
     fireEvent.click(paymentSeries);
     expect(paymentSeries).toBeChecked();
-    expect(container.querySelector('.chart-series-line.payment')).toBeVisible();
+    expect(container.querySelector('.chart-signal-line.payment.source-base')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Siguiente' })).not.toBeInTheDocument();
   });
 
@@ -75,7 +75,7 @@ describe('ProjectionView', () => {
     expect(screen.getByRole('columnheader', { name: 'Saldo final' })).toBeVisible();
   });
 
-  test('superpone y resume hasta dos escenarios en el gráfico principal', () => {
+  test('aplica cada señal a base y escenarios, agrupa el detalle y permite fijar un punto', () => {
     const scenarios = [
       createRecurringExtraPaymentScenario({
         id: 'scenario-a',
@@ -98,9 +98,25 @@ describe('ProjectionView', () => {
 
     fireEvent.change(screen.getByLabelText('Escenario A'), { target: { value: 'scenario-a' } });
     fireEvent.change(screen.getByLabelText('Escenario B'), { target: { value: 'scenario-b' } });
+    fireEvent.click(screen.getByLabelText('Cuota total'));
 
-    expect(container.querySelector('.chart-scenario-line.scenario-first')).toBeVisible();
-    expect(container.querySelector('.chart-scenario-line.scenario-second')).toBeVisible();
+    expect(container.querySelector('.chart-signal-line.payment.source-base')).toBeVisible();
+    expect(
+      container.querySelector('.chart-signal-line.payment.source-scenario-first'),
+    ).toBeVisible();
+    expect(
+      container.querySelector('.chart-signal-line.payment.source-scenario-second'),
+    ).toBeVisible();
+    const firstPoint = screen.getAllByLabelText(/^Cuota \d+, \d{4}-\d{2}-\d{2}$/)[0];
+    if (!firstPoint) throw new Error('Se esperaba al menos un punto de proyección.');
+    fireEvent.pointerEnter(firstPoint);
+    expect(screen.getByRole('heading', { name: 'Configuración base' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Extra mensual' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Principal objetivo' })).toBeVisible();
+    fireEvent.click(screen.getByRole('img', { name: 'Evolución estimada del saldo' }));
+    expect(screen.getByText(/Punto fijado en cuota/)).toBeVisible();
+    fireEvent.click(screen.getByRole('img', { name: 'Evolución estimada del saldo' }));
+    expect(screen.getByText('Punto móvil: haz clic en el gráfico para fijarlo.')).toBeVisible();
     expect(
       screen.queryByRole('heading', { name: 'Resumen de escenarios comparados' }),
     ).not.toBeInTheDocument();

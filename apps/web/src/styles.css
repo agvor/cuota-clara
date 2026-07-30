@@ -473,41 +473,46 @@ h1 {
   font-size: 12px;
 }
 
-.chart-series-line {
+.chart-signal-line {
   fill: none;
   stroke-width: 2.5;
   vector-effect: non-scaling-stroke;
 }
 
-.chart-series-line.balance {
+.chart-signal-line.balance {
   stroke: #1d4ed8;
 }
 
-.chart-series-line.payment {
-  stroke: #60a5fa;
+.chart-signal-line.payment {
+  stroke: #7c3aed;
+  stroke-dasharray: 8 4;
 }
 
-.chart-series-line.interest {
+.chart-signal-line.interest {
   stroke: #f59e0b;
+  stroke-dasharray: 3 4;
 }
 
-.chart-series-line.principal {
+.chart-signal-line.principal {
   stroke: #14b8a6;
+  stroke-dasharray: 10 4 2 4;
 }
 
-.chart-series-line.extra {
+.chart-signal-line.extra {
   stroke: #15803d;
   stroke-width: 3;
+  stroke-dasharray: 5 3;
 }
 
-.chart-series-line.projection {
-  stroke-dasharray: 7 5;
+.chart-signal-line.source-scenario-first,
+.chart-point-highlight.source-scenario-first {
+  opacity: 0.78;
 }
 
-.chart-series-line.balance.projection {
-  stroke-dasharray: none;
+.chart-signal-line.source-scenario-second,
+.chart-point-highlight.source-scenario-second {
+  opacity: 0.56;
 }
-
 .chart-point-target {
   fill: transparent;
   cursor: crosshair;
@@ -519,9 +524,34 @@ h1 {
 
 .chart-point-highlight {
   fill: #fff;
-  stroke: #1d4ed8;
   stroke-width: 3;
   vector-effect: non-scaling-stroke;
+}
+
+.chart-point-highlight.balance {
+  stroke: #1d4ed8;
+}
+
+.chart-point-highlight.payment {
+  stroke: #7c3aed;
+}
+
+.chart-point-highlight.interest {
+  stroke: #f59e0b;
+}
+
+.chart-point-highlight.principal {
+  stroke: #14b8a6;
+}
+
+.chart-point-highlight.extra {
+  stroke: #15803d;
+}
+
+.chart-lock-status {
+  margin: 0.75rem 0 0;
+  color: #475569;
+  font-size: 0.9rem;
 }
 
 .chart-point-details {
@@ -538,6 +568,37 @@ h1 {
   grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
   gap: 0.45rem 0.75rem;
   margin: 0.5rem 0 0;
+}
+
+.chart-source-details-list {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.65rem;
+}
+
+.chart-source-details {
+  padding: 0.6rem 0.7rem;
+  border-left: 3px solid #1d4ed8;
+  border-radius: 0.25rem;
+  background: rgb(255 255 255 / 72%);
+}
+
+.chart-source-details.scenario-first {
+  border-left-color: #64748b;
+}
+
+.chart-source-details.scenario-second {
+  border-left-color: #94a3b8;
+}
+
+.chart-source-details h4 {
+  margin: 0;
+  color: #1e3a5f;
+  font-size: 0.95rem;
+}
+
+.chart-source-details dl {
+  margin-top: 0.4rem;
 }
 
 .chart-point-details dl div {
@@ -558,6 +619,7 @@ h1 {
 
 .balance-chart figcaption {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   color: #334155;
   font-size: 0.9rem;
@@ -565,36 +627,51 @@ h1 {
 
 .legend::before {
   display: inline-block;
-  width: 0.8rem;
-  height: 0.2rem;
+  width: 1rem;
+  height: 0;
   margin-right: 0.35rem;
-  background: #1d4ed8;
+  border-top: 3px solid #1d4ed8;
   content: '';
   vertical-align: middle;
 }
 
 .legend.payment::before {
-  background: #60a5fa;
+  border-top-color: #7c3aed;
+  border-top-style: dashed;
 }
 
 .legend.interest::before {
-  background: #f59e0b;
+  border-top-color: #f59e0b;
+  border-top-style: dotted;
 }
 
 .legend.principal::before {
-  background: #14b8a6;
+  border-top-color: #14b8a6;
+  border-top-style: dashed;
 }
 
 .legend.extra::before {
-  background: #15803d;
+  border-top-color: #15803d;
+  border-top-style: dashed;
 }
 
-.legend.scenario-first::before {
-  background: #7c3aed;
+.chart-source-label {
+  color: #475569;
 }
 
-.legend.scenario-second::before {
-  background: #db2777;
+.chart-source-label::before {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: 0.3rem;
+  border-radius: 999px;
+  background: #64748b;
+  content: '';
+  vertical-align: middle;
+}
+
+.chart-source-label.scenario-second::before {
+  opacity: 0.56;
 }
 
 .scenario-comparison-selector {
@@ -608,22 +685,6 @@ h1 {
   gap: 0.25rem;
   color: #334155;
   font-weight: 600;
-}
-
-.chart-scenario-line {
-  fill: none;
-  stroke-width: 2.5;
-  vector-effect: non-scaling-stroke;
-}
-
-.chart-scenario-line.scenario-first {
-  stroke: #7c3aed;
-  stroke-dasharray: 8 4;
-}
-
-.chart-scenario-line.scenario-second {
-  stroke: #db2777;
-  stroke-dasharray: 3 4;
 }
 
 .scenario-form-panel,

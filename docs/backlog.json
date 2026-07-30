@@ -438,6 +438,21 @@
         "El botón Ver resumen muestra en la sección de escenarios la fecha final, plazo e interés ahorrados y total pagado de la alternativa.",
         "El gráfico de amortización conserva únicamente sus selectores y líneas de comparación, sin una tabla de resumen duplicada."
       ]
+    },
+    {
+      "id": "US-031",
+      "epic": "E4 · Escenarios y resultados",
+      "title": "Comparar señales de amortización con un punto fijable",
+      "story": "Como persona usuaria, quiero comparar las mismas señales de la base y mis escenarios en un solo gráfico y fijar un periodo para entender sus diferencias sin perder el contexto.",
+      "requirements": ["RF-009", "RF-010", "RNF-008"],
+      "dependsOn": ["US-030"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "Al activar saldo, cuota total, interés, principal o extraordinario, la señal se dibuja para la configuración base y cada escenario seleccionado.",
+        "El color y el patrón de trazo identifican una señal de forma constante; la intensidad diferencia base y escenarios sin alterar ese código.",
+        "El detalle del punto agrupa los importes de las señales activas por configuración base y por escenario seleccionado.",
+        "Un clic en el gráfico, o Enter/Espacio con foco, fija el periodo inspeccionado y una segunda acción libera el recorrido."
+      ]
     }
   ]
 }
