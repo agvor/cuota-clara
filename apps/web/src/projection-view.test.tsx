@@ -6,6 +6,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
 
 import {
+  createBankReset,
   createLoan,
   createLoanV3,
   createPaymentRecord,
@@ -100,6 +101,76 @@ describe('ProjectionView', () => {
     expect(document.querySelector('.chart-history-divider')).toBeVisible();
     expect(screen.getByRole('cell', { name: 'Histórico' }).closest('tr')).toHaveTextContent(
       '₡0,00',
+    );
+  });
+
+  test('ordena los registros históricos y el ajuste de reconciliación por fecha', () => {
+    const contractLoan = createLoanV3({
+      id: 'loan-reconciliation-order',
+      name: 'Préstamo conciliado',
+      startDate: '2026-01-01',
+      originalPrincipal: Money.from('1000.00', 'CRC'),
+      monthlyTotalPayment: Money.from('105.00', 'CRC'),
+      monthlyInsurance: Money.from('5.00', 'CRC'),
+      term: { totalInstallments: 12 },
+      annualNominalRate: '0.12',
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+    });
+    const payments = [
+      createPaymentRecord({
+        id: 'history-march',
+        date: '2026-03-01',
+        totalAmount: Money.from('105.00', 'CRC'),
+        interestAmount: Money.from('10.00', 'CRC'),
+        principalAmount: Money.from('50.00', 'CRC'),
+        source: 'csv_import',
+      }),
+      createPaymentRecord({
+        id: 'history-february',
+        date: '2026-02-01',
+        totalAmount: Money.from('105.00', 'CRC'),
+        interestAmount: Money.from('10.00', 'CRC'),
+        principalAmount: Money.from('50.00', 'CRC'),
+        source: 'csv_import',
+      }),
+    ];
+    const bankReset = createBankReset({
+      id: 'reset-order',
+      cutoffDate: '2026-03-01',
+      reportedBalance: Money.from('890.00', 'CRC'),
+      bankFinalInstallmentDate: '2026-12-01',
+      adjustment: {
+        id: 'adjustment-order',
+        date: '2026-03-01',
+        principalAmount: Money.from('10.00', 'CRC'),
+        reason: 'Diferencia confirmada.',
+      },
+    });
+
+    render(<ProjectionView loan={contractLoan} payments={payments} bankReset={bankReset} />);
+
+    const table = screen.getByRole('table', {
+      name: /Historial y proyección de amortización — Configuración base/,
+    });
+    const tableDates = () =>
+      [...table.querySelectorAll('tbody tr')].map((row) => row.children[1]?.textContent ?? '');
+    const historicalDates = screen
+      .getAllByRole('cell', { name: 'Histórico' })
+      .map((cell) => cell.closest('tr')?.children[1]?.textContent);
+    expect(historicalDates).toEqual(['2026-02-01', '2026-03-01']);
+    expect(tableDates()).toEqual([...tableDates()].sort());
+    expect(
+      screen.getByRole('cell', { name: 'Ajuste de reconciliación' }).closest('tr'),
+    ).toHaveTextContent('2026-03-01');
+
+    fireEvent.click(screen.getByRole('button', { name: /Ordenar cuotas por fecha descendente/ }));
+
+    const reversedHistoricalDates = screen
+      .getAllByRole('cell', { name: 'Histórico' })
+      .map((cell) => cell.closest('tr')?.children[1]?.textContent);
+    expect(reversedHistoricalDates).toEqual(['2026-03-01', '2026-02-01']);
+    expect(tableDates()).toEqual(
+      [...tableDates()].sort((left, right) => right.localeCompare(left)),
     );
   });
 

@@ -49,6 +49,17 @@ type DisplayProjectionPeriod = Readonly<{
   payment: Loan['initialBalance'];
   closingBalance: Loan['initialBalance'];
 }>;
+type HistoricalTableRow =
+  | Readonly<{ kind: 'payment'; date: string; payment: PaymentRecord }>
+  | Readonly<{
+      kind: 'reconciliation';
+      date: string;
+      adjustment: NonNullable<BankReset['adjustment']>;
+      reportedBalance: Loan['initialBalance'];
+    }>;
+type AmortizationTableRow =
+  | HistoricalTableRow
+  | Readonly<{ kind: 'projection'; date: string; period: DisplayProjectionPeriod }>;
 type ChartPoint = Readonly<{
   period: DisplayProjectionPeriod;
   value: Loan['initialBalance'];
@@ -166,14 +177,34 @@ export function ProjectionView({
         cause instanceof Error ? cause.message : 'No se pudo generar la proyección del escenario.';
     }
   }
-  const orderedPeriods = [...tableProjectionPeriods].sort((left, right) =>
+  const historicalRows: readonly HistoricalTableRow[] = [
+    ...payments.map((payment) => ({ kind: 'payment' as const, date: payment.date, payment })),
+    ...(bankReset?.adjustment
+      ? [
+          {
+            kind: 'reconciliation' as const,
+            date: bankReset.adjustment.date,
+            adjustment: bankReset.adjustment,
+            reportedBalance: bankReset.reportedBalance,
+          },
+        ]
+      : []),
+  ];
+  const orderedTableRows: readonly AmortizationTableRow[] = [
+    ...historicalRows,
+    ...tableProjectionPeriods.map((period) => ({
+      kind: 'projection' as const,
+      date: period.date,
+      period,
+    })),
+  ].sort((left, right) =>
     sortDirection === 'ascending'
       ? left.date.localeCompare(right.date)
       : right.date.localeCompare(left.date),
   );
   const start = page * PAGE_SIZE;
-  const visiblePeriods = orderedPeriods.slice(start, start + PAGE_SIZE);
-  const pages = Math.ceil(orderedPeriods.length / PAGE_SIZE);
+  const visibleTableRows = orderedTableRows.slice(start, start + PAGE_SIZE);
+  const pages = Math.ceil(orderedTableRows.length / PAGE_SIZE);
   const nextSortDirection = sortDirection === 'ascending' ? 'descending' : 'ascending';
 
   function toggleDateSort() {
@@ -272,79 +303,81 @@ export function ProjectionView({
             </tr>
           </thead>
           <tbody>
-            {payments.map((payment) => (
-              <tr className="historical-row" key={`historical-${payment.id}`}>
-                <td aria-label="Histórico" title="Histórico">
-                  H
-                </td>
-                <td>{payment.date}</td>
-                <td>{formatMoney(payment.totalAmount, loan.roundingPolicy)}</td>
-                <td>
-                  {payment.interestAmount
-                    ? formatMoney(payment.interestAmount, loan.roundingPolicy)
-                    : '—'}
-                </td>
-                <td>
-                  {payment.principalAmount
-                    ? formatMoney(
-                        payment.principalAmount.add(
-                          payment.extraPrincipalAmount ?? zeroMoney(loan),
-                        ),
-                        loan.roundingPolicy,
-                      )
-                    : 'Pendiente'}
-                </td>
-                <td>
-                  {payment.principalAmount
-                    ? formatMoney(payment.principalAmount, loan.roundingPolicy)
-                    : 'Pendiente'}
-                </td>
-                <td>
-                  {payment.extraPrincipalAmount
-                    ? formatMoney(payment.extraPrincipalAmount, loan.roundingPolicy)
-                    : formatMoney(zeroMoney(loan), loan.roundingPolicy)}
-                </td>
-                <td>
-                  {historicalBalances.get(payment.id)
-                    ? formatMoney(historicalBalances.get(payment.id)!, loan.roundingPolicy)
-                    : '—'}
-                </td>
-              </tr>
-            ))}
-            {bankReset?.adjustment ? (
-              <tr
-                className="historical-row reconciliation-row"
-                key={`reset-${bankReset.adjustment.id}`}
-              >
-                <td aria-label="Ajuste de reconciliación" title="Ajuste de reconciliación">
-                  R
-                </td>
-                <td>{bankReset.adjustment.date}</td>
-                <td>{formatMoney(bankReset.adjustment.principalAmount, loan.roundingPolicy)}</td>
-                <td>—</td>
-                <td>{formatMoney(bankReset.adjustment.principalAmount, loan.roundingPolicy)}</td>
-                <td>—</td>
-                <td>{formatMoney(bankReset.adjustment.principalAmount, loan.roundingPolicy)}</td>
-                <td>{formatMoney(bankReset.reportedBalance, loan.roundingPolicy)}</td>
-              </tr>
-            ) : null}
-            {visiblePeriods.map((period) => (
-              <tr className="projection-row" key={`projection-${period.period}`}>
-                <td
-                  aria-label={isScenarioProjection ? 'Proyección de escenario' : 'Proyección base'}
-                  title={isScenarioProjection ? 'Proyección de escenario' : 'Proyección base'}
+            {visibleTableRows.map((row) =>
+              row.kind === 'payment' ? (
+                <tr className="historical-row" key={`historical-${row.payment.id}`}>
+                  <td aria-label="Histórico" title="Histórico">
+                    H
+                  </td>
+                  <td>{row.payment.date}</td>
+                  <td>{formatMoney(row.payment.totalAmount, loan.roundingPolicy)}</td>
+                  <td>
+                    {row.payment.interestAmount
+                      ? formatMoney(row.payment.interestAmount, loan.roundingPolicy)
+                      : '—'}
+                  </td>
+                  <td>
+                    {row.payment.principalAmount
+                      ? formatMoney(
+                          row.payment.principalAmount.add(
+                            row.payment.extraPrincipalAmount ?? zeroMoney(loan),
+                          ),
+                          loan.roundingPolicy,
+                        )
+                      : 'Pendiente'}
+                  </td>
+                  <td>
+                    {row.payment.principalAmount
+                      ? formatMoney(row.payment.principalAmount, loan.roundingPolicy)
+                      : 'Pendiente'}
+                  </td>
+                  <td>
+                    {row.payment.extraPrincipalAmount
+                      ? formatMoney(row.payment.extraPrincipalAmount, loan.roundingPolicy)
+                      : formatMoney(zeroMoney(loan), loan.roundingPolicy)}
+                  </td>
+                  <td>
+                    {historicalBalances.get(row.payment.id)
+                      ? formatMoney(historicalBalances.get(row.payment.id)!, loan.roundingPolicy)
+                      : '—'}
+                  </td>
+                </tr>
+              ) : row.kind === 'reconciliation' ? (
+                <tr
+                  className="historical-row reconciliation-row"
+                  key={`reset-${row.adjustment.id}`}
                 >
-                  P
-                </td>
-                <td>{period.date}</td>
-                <td>{formatMoney(period.payment, loan.roundingPolicy)}</td>
-                <td>{formatMoney(period.interest, loan.roundingPolicy)}</td>
-                <td>{formatMoney(period.principal, loan.roundingPolicy)}</td>
-                <td>{formatMoney(period.ordinaryPrincipal, loan.roundingPolicy)}</td>
-                <td>{formatMoney(period.extraordinaryPrincipal, loan.roundingPolicy)}</td>
-                <td>{formatMoney(period.closingBalance, loan.roundingPolicy)}</td>
-              </tr>
-            ))}
+                  <td aria-label="Ajuste de reconciliación" title="Ajuste de reconciliación">
+                    R
+                  </td>
+                  <td>{row.adjustment.date}</td>
+                  <td>{formatMoney(row.adjustment.principalAmount, loan.roundingPolicy)}</td>
+                  <td>—</td>
+                  <td>{formatMoney(row.adjustment.principalAmount, loan.roundingPolicy)}</td>
+                  <td>—</td>
+                  <td>{formatMoney(row.adjustment.principalAmount, loan.roundingPolicy)}</td>
+                  <td>{formatMoney(row.reportedBalance, loan.roundingPolicy)}</td>
+                </tr>
+              ) : (
+                <tr className="projection-row" key={`projection-${row.period.period}`}>
+                  <td
+                    aria-label={
+                      isScenarioProjection ? 'Proyección de escenario' : 'Proyección base'
+                    }
+                    title={isScenarioProjection ? 'Proyección de escenario' : 'Proyección base'}
+                  >
+                    P
+                  </td>
+                  <td>{row.period.date}</td>
+                  <td>{formatMoney(row.period.payment, loan.roundingPolicy)}</td>
+                  <td>{formatMoney(row.period.interest, loan.roundingPolicy)}</td>
+                  <td>{formatMoney(row.period.principal, loan.roundingPolicy)}</td>
+                  <td>{formatMoney(row.period.ordinaryPrincipal, loan.roundingPolicy)}</td>
+                  <td>{formatMoney(row.period.extraordinaryPrincipal, loan.roundingPolicy)}</td>
+                  <td>{formatMoney(row.period.closingBalance, loan.roundingPolicy)}</td>
+                </tr>
+              ),
+            )}
           </tbody>
         </table>
       </div>
