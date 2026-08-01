@@ -97,6 +97,9 @@ describe('ProjectionView', () => {
     expect(
       screen.getAllByRole('cell', { name: 'Proyección base' })[0]?.closest('tr'),
     ).toHaveTextContent('2026-03-01');
+    expect(screen.getByRole('cell', { name: 'Histórico' }).closest('tr')).toHaveTextContent(
+      '₡0,00',
+    );
   });
 
   test('pagina un calendario extenso sin perder cabeceras de tabla', () => {

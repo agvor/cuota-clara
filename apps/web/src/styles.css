@@ -393,8 +393,12 @@ h1 {
   white-space: nowrap;
 }
 
-.projection-view .historical-row {
-  background: #f0fdf4;
+.financial-table-projection tbody tr.historical-row {
+  background: #f8fafc;
+}
+
+.financial-table-projection tbody tr.reconciliation-row {
+  background: #eff6ff;
 }
 
 .pagination {

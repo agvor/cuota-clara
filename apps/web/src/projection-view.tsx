@@ -301,7 +301,7 @@ export function ProjectionView({
                 <td>
                   {payment.extraPrincipalAmount
                     ? formatMoney(payment.extraPrincipalAmount, loan.roundingPolicy)
-                    : '—'}
+                    : formatMoney(zeroMoney(loan), loan.roundingPolicy)}
                 </td>
                 <td>
                   {historicalBalances.get(payment.id)
@@ -311,7 +311,10 @@ export function ProjectionView({
               </tr>
             ))}
             {bankReset?.adjustment ? (
-              <tr className="historical-row" key={`reset-${bankReset.adjustment.id}`}>
+              <tr
+                className="historical-row reconciliation-row"
+                key={`reset-${bankReset.adjustment.id}`}
+              >
                 <td aria-label="Ajuste de reconciliación" title="Ajuste de reconciliación">
                   R
                 </td>
@@ -319,9 +322,9 @@ export function ProjectionView({
                 <td>{formatMoney(bankReset.adjustment.principalAmount, loan.roundingPolicy)}</td>
                 <td>—</td>
                 <td>{formatMoney(bankReset.adjustment.principalAmount, loan.roundingPolicy)}</td>
-                <td>{formatMoney(bankReset.reportedBalance, loan.roundingPolicy)}</td>
-                <td>{formatMoney(bankReset.adjustment.principalAmount, loan.roundingPolicy)}</td>
                 <td>—</td>
+                <td>{formatMoney(bankReset.adjustment.principalAmount, loan.roundingPolicy)}</td>
+                <td>{formatMoney(bankReset.reportedBalance, loan.roundingPolicy)}</td>
               </tr>
             ) : null}
             {visiblePeriods.map((period) => (
