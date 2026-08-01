@@ -6,6 +6,7 @@ import { describe, expect, test } from 'vitest';
 import {
   createLoanV2,
   createLoanV3,
+  createBankReset,
   createPaymentRecord,
   createLoan,
   createTbpMarginScenario,
@@ -111,6 +112,35 @@ describe('DexieLoanRepository', () => {
       scenarios: [{ id: 'loan-002-scenario-base' }],
     });
 
+    await repository.close();
+  });
+
+  test('persiste el reset bancario y su ajuste especial junto al agregado', async () => {
+    const repository = createRepository();
+    const aggregate = createAggregate();
+    await repository.saveAggregate({
+      ...aggregate,
+      bankReset: createBankReset({
+        id: 'reset-001',
+        cutoffDate: '2026-02-01',
+        reportedBalance: Money.from('99950.00', 'CRC'),
+        bankFinalInstallmentDate: '2036-01-01',
+        adjustment: {
+          id: 'reset-adjustment-001',
+          date: '2026-02-01',
+          principalAmount: Money.from('20.00', 'CRC'),
+          reason: 'Diferencia confirmada.',
+        },
+      }),
+    });
+
+    await expect(repository.loadAggregate('loan-001')).resolves.toMatchObject({
+      bankReset: {
+        cutoffDate: '2026-02-01',
+        bankFinalInstallmentDate: '2036-01-01',
+        adjustment: { principalAmount: expect.objectContaining({ currency: 'CRC' }) },
+      },
+    });
     await repository.close();
   });
 

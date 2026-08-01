@@ -1,6 +1,7 @@
 import { calculateFixedNominalInterest } from '../interest/fixed-rate.js';
 import { resolveAnnualRateForPeriod } from '../interest/manual-variable-rate.js';
 import { Money } from '../money.js';
+import { type BankReset } from '../history/historical-state.js';
 import { Decimal } from 'decimal.js';
 
 import { type Loan } from './loan.js';
@@ -53,7 +54,10 @@ export class ContractEstimateError extends Error {
  * La estimación usa tasa nominal anual dividida entre doce y no sustituye el
  * estado histórico ni una liquidación bancaria.
  */
-export function estimateLoanContract(loan: Loan): LoanContractEstimate {
+export function estimateLoanContract(
+  loan: Loan,
+  options: Readonly<{ bankReset?: BankReset }> = {},
+): LoanContractEstimate {
   const contract = loan.contract;
   if (!contract) {
     throw new ContractEstimateError('La estimación requiere un contrato con plazo y seguro.');
@@ -64,10 +68,24 @@ export function estimateLoanContract(loan: Loan): LoanContractEstimate {
     );
   }
 
-  const dates = generateMonthlyDates(loan.startDate, contract.term);
+  const fullDates = options.bankReset
+    ? generateMonthlyDates(loan.startDate, { endDate: options.bankReset.bankFinalInstallmentDate })
+    : generateMonthlyDates(loan.startDate, contract.term);
+  const dates = options.bankReset
+    ? fullDates.filter((date) => date > options.bankReset!.cutoffDate)
+    : fullDates;
+  if (!dates.length) {
+    throw new ContractEstimateError('El reset bancario no deja cuotas futuras para proyectar.');
+  }
   const zero = Money.from('0', loan.initialBalance.currency);
-  let openingBalance = loan.initialBalance;
-  let periodStartDate = loan.startDate;
+  if (
+    options.bankReset &&
+    options.bankReset.reportedBalance.currency !== loan.initialBalance.currency
+  ) {
+    throw new ContractEstimateError('El saldo del reset debe usar la moneda del préstamo.');
+  }
+  let openingBalance = options.bankReset?.reportedBalance ?? loan.initialBalance;
+  let periodStartDate = options.bankReset?.cutoffDate ?? loan.startDate;
   let estimatedInterest = zero;
   let estimatedPrincipal = zero;
   let estimatedInsurance = zero;
@@ -76,11 +94,12 @@ export function estimateLoanContract(loan: Loan): LoanContractEstimate {
   let projectedInitialTotalPayment: Money | undefined;
 
   for (const [index, date] of dates.entries()) {
+    const originalPeriodNumber = fullDates.indexOf(date) + 1;
     const rate = resolveAnnualRateForPeriod({
       fixedAnnualNominalRate: loan.annualNominalRate,
       ...(loan.variableRatePlan ? { variableRatePlan: loan.variableRatePlan } : {}),
       ...(loan.tbpMarginRatePlan ? { tbpMarginRatePlan: loan.tbpMarginRatePlan } : {}),
-      periodNumber: index + 1,
+      periodNumber: originalPeriodNumber,
       periodEndDate: date,
     });
     const interest = calculateFixedNominalInterest({
@@ -92,7 +111,7 @@ export function estimateLoanContract(loan: Loan): LoanContractEstimate {
       roundingPolicy: loan.roundingPolicy,
     }).interest;
     const amountDueBeforeInsurance = openingBalance.add(interest);
-    const isTermPreservingContract = contract.version === 3;
+    const isTermPreservingContract = contract.version === 3 || Boolean(options.bankReset);
     const installment = isTermPreservingContract
       ? index + 1 === dates.length
         ? amountDueBeforeInsurance

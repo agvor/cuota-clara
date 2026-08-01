@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import {
   createPaymentRecord,
+  createBankReset,
   createReconciliationAdjustment,
   HistoricalStateError,
   reconstructHistoricalState,
@@ -85,5 +86,51 @@ describe('reconstructHistoricalState', () => {
         cutoffDate: '2026-02-01',
       }),
     ).toThrow(HistoricalStateError);
+  });
+
+  test('acumula interés histórico y sugiere solo el ajuste que reduce el saldo reportado', () => {
+    const payments = twoHistoricalPayments();
+    const bankReset = createBankReset({
+      id: 'reset-1',
+      cutoffDate: '2026-03-01',
+      reportedBalance: Money.from('300.00', 'CRC'),
+      bankFinalInstallmentDate: '2026-06-01',
+    });
+    const result = reconstructHistoricalState({
+      initialBalance: Money.from('1000.00', 'CRC'),
+      payments,
+      cutoffDate: bankReset.cutoffDate,
+      bankReset,
+    });
+
+    expect(result.appliedPrincipal.toFixed(roundingPolicy)).toBe('663.30');
+    expect(result.historicalInterest.toFixed(roundingPolicy)).toBe('16.70');
+    expect(result.balanceBeforeReconciliation.toFixed(roundingPolicy)).toBe('336.70');
+    expect(result.suggestedPrincipalAdjustment?.toFixed(roundingPolicy)).toBe('36.70');
+    expect(result.currentBalance.toFixed(roundingPolicy)).toBe('300.00');
+  });
+
+  test('rechaza un ajuste que no coincida exactamente con la discrepancia bancaria', () => {
+    const bankReset = createBankReset({
+      id: 'reset-2',
+      cutoffDate: '2026-03-01',
+      reportedBalance: Money.from('300.00', 'CRC'),
+      bankFinalInstallmentDate: '2026-06-01',
+      adjustment: {
+        id: 'adjustment-1',
+        date: '2026-03-01',
+        principalAmount: Money.from('30.00', 'CRC'),
+        reason: 'Diferencia confirmada.',
+      },
+    });
+
+    expect(() =>
+      reconstructHistoricalState({
+        initialBalance: Money.from('1000.00', 'CRC'),
+        payments: twoHistoricalPayments(),
+        cutoffDate: bankReset.cutoffDate,
+        bankReset,
+      }),
+    ).toThrow('debe coincidir con la discrepancia');
   });
 });

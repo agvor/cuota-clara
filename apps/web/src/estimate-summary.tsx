@@ -1,15 +1,49 @@
 import { useId } from 'react';
 
-import { type Loan, type LoanContractEstimate } from '@cuotaclara/domain';
+import {
+  reconstructHistoricalState,
+  type Loan,
+  type LoanAggregate,
+  type LoanContractEstimate,
+} from '@cuotaclara/domain';
 
 import { formatMoney } from './money-format.js';
 
 export function EstimateSummary({
   loan,
   estimate,
+  aggregate,
   heading = 'Resumen financiero estimado',
-}: Readonly<{ loan: Loan; estimate: LoanContractEstimate; heading?: string }>) {
+}: Readonly<{
+  loan: Loan;
+  estimate: LoanContractEstimate;
+  aggregate?: LoanAggregate;
+  heading?: string;
+}>) {
   const titleId = useId();
+  const historical = aggregate?.bankReset
+    ? reconstructHistoricalState({
+        initialBalance: loan.initialBalance,
+        payments: aggregate.payments,
+        cutoffDate: aggregate.bankReset.cutoffDate,
+        bankReset: aggregate.bankReset,
+      })
+    : undefined;
+  const zero = loan.initialBalance.subtract(loan.initialBalance);
+  const historicalTotal = aggregate?.payments.reduce(
+    (total, payment) => total.add(payment.totalAmount),
+    zero,
+  );
+  const reconciliationPrincipal = historical?.bankReset?.adjustment?.principalAmount ?? zero;
+  const totalPrincipal = historical
+    ? historical.appliedPrincipal.add(reconciliationPrincipal).add(estimate.estimatedPrincipal)
+    : estimate.estimatedPrincipal;
+  const totalInterest = historical
+    ? historical.historicalInterest.add(estimate.estimatedInterest)
+    : estimate.estimatedInterest;
+  const totalPaid = historical
+    ? (historicalTotal ?? zero).add(reconciliationPrincipal).add(estimate.estimatedTotal)
+    : estimate.estimatedTotal;
   return (
     <section className="estimate-summary" aria-labelledby={titleId}>
       <h3 id={titleId}>{heading}</h3>
@@ -53,20 +87,40 @@ export function EstimateSummary({
               </tr>
             ) : null}
             <tr>
-              <th scope="row">Principal estimado</th>
-              <td>{formatMoney(estimate.estimatedPrincipal, loan.roundingPolicy)}</td>
+              <th scope="row">{historical ? 'Principal total' : 'Principal estimado'}</th>
+              <td>{formatMoney(totalPrincipal, loan.roundingPolicy)}</td>
             </tr>
             <tr>
-              <th scope="row">Interés estimado</th>
-              <td>{formatMoney(estimate.estimatedInterest, loan.roundingPolicy)}</td>
+              <th scope="row">{historical ? 'Interés total' : 'Interés estimado'}</th>
+              <td>{formatMoney(totalInterest, loan.roundingPolicy)}</td>
             </tr>
+            {historical ? (
+              <>
+                <tr>
+                  <th scope="row">Principal histórico</th>
+                  <td>{formatMoney(historical.appliedPrincipal, loan.roundingPolicy)}</td>
+                </tr>
+                <tr>
+                  <th scope="row">Interés histórico CSV</th>
+                  <td>{formatMoney(historical.historicalInterest, loan.roundingPolicy)}</td>
+                </tr>
+                {reconciliationPrincipal.isPositive() ? (
+                  <tr>
+                    <th scope="row">Ajuste de reconciliación</th>
+                    <td>{formatMoney(reconciliationPrincipal, loan.roundingPolicy)}</td>
+                  </tr>
+                ) : null}
+              </>
+            ) : null}
             <tr>
               <th scope="row">Seguro estimado</th>
               <td>{formatMoney(estimate.estimatedInsurance, loan.roundingPolicy)}</td>
             </tr>
             <tr>
-              <th scope="row">Total proyectado</th>
-              <td>{formatMoney(estimate.estimatedTotal, loan.roundingPolicy)}</td>
+              <th scope="row">
+                {historical ? 'Total acumulado y proyectado' : 'Total proyectado'}
+              </th>
+              <td>{formatMoney(totalPaid, loan.roundingPolicy)}</td>
             </tr>
             {estimate.status === 'remaining_balance' ? (
               <tr>

@@ -1,4 +1,4 @@
-import type { PaymentRecord } from '../history/historical-state.js';
+import type { BankReset, PaymentRecord } from '../history/historical-state.js';
 import type { Loan } from '../loan/loan.js';
 
 export type ProjectionScenarioSnapshot = Readonly<{
@@ -12,6 +12,7 @@ export type ProjectionScenarioSnapshot = Readonly<{
 export type LoanAggregate = Readonly<{
   loan: Loan;
   payments: readonly PaymentRecord[];
+  bankReset?: BankReset;
   scenarios: readonly ProjectionScenarioSnapshot[];
 }>;
 

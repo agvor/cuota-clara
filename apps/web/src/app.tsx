@@ -10,6 +10,7 @@ import type {
   LoanAggregate,
   LoanRepository,
   PaymentRecord,
+  BankReset,
   ProjectionScenarioSnapshot,
 } from '@cuotaclara/domain';
 
@@ -173,6 +174,7 @@ export function App({ repository }: AppProps) {
     const aggregate: LoanAggregate = {
       loan,
       payments: existing?.payments ?? [],
+      ...(existing?.bankReset ? { bankReset: existing.bankReset } : {}),
       scenarios,
     };
     await repository.saveAggregate(aggregate);
@@ -240,6 +242,20 @@ export function App({ repository }: AppProps) {
       ...selectedAggregate,
       payments: [...selectedAggregate.payments, ...payments],
     };
+    await repository.saveAggregate(aggregate);
+    setSelectedAggregate(aggregate);
+  }
+
+  async function saveBankReset(bankReset: BankReset | undefined) {
+    if (!selectedAggregate) return;
+    const aggregateWithoutReset = {
+      loan: selectedAggregate.loan,
+      payments: selectedAggregate.payments,
+      scenarios: selectedAggregate.scenarios,
+    };
+    const aggregate: LoanAggregate = bankReset
+      ? { ...aggregateWithoutReset, bankReset }
+      : aggregateWithoutReset;
     await repository.saveAggregate(aggregate);
     setSelectedAggregate(aggregate);
   }
@@ -337,6 +353,7 @@ export function App({ repository }: AppProps) {
             onChartConfigurationChange={saveSelectedChartConfiguration}
             onSavePayment={savePayment}
             onImportPayments={importPayments}
+            onSaveBankReset={saveBankReset}
             onSaveScenario={saveScenario}
             onDeleteScenario={deleteScenario}
           />
@@ -482,6 +499,7 @@ function LoanWorkspace({
   onChartConfigurationChange,
   onSavePayment,
   onImportPayments,
+  onSaveBankReset,
   onSaveScenario,
   onDeleteScenario,
 }: Readonly<{
@@ -497,6 +515,7 @@ function LoanWorkspace({
   onChartConfigurationChange: (configuration: ChartConfiguration) => void;
   onSavePayment: (payment: PaymentRecord) => Promise<void>;
   onImportPayments: (payments: readonly PaymentRecord[]) => Promise<void>;
+  onSaveBankReset: (bankReset: BankReset | undefined) => Promise<void>;
   onSaveScenario: (scenario: ProjectionScenarioSnapshot) => Promise<void>;
   onDeleteScenario: (scenarioId: string) => Promise<void>;
 }>) {
@@ -555,14 +574,16 @@ function LoanWorkspace({
         role="tabpanel"
         aria-labelledby={`loan-tab-${activeTab}`}
       >
-        {activeTab === 'summary' ? <LoanSummary loan={loan} /> : null}
+        {activeTab === 'summary' ? <LoanSummary loan={loan} aggregate={aggregate} /> : null}
         {activeTab === 'payments' ? (
           aggregate?.loan.id === loan.id ? (
             <PaymentTools
               loan={loan}
               payments={aggregate.payments}
+              {...(aggregate.bankReset ? { bankReset: aggregate.bankReset } : {})}
               onSavePayment={onSavePayment}
               onImportPayments={onImportPayments}
+              onSaveBankReset={onSaveBankReset}
             />
           ) : (
             <p aria-live="polite">Cargando pagos…</p>
@@ -586,6 +607,7 @@ function LoanWorkspace({
           <ProjectionView
             loan={loan}
             payments={aggregate.payments}
+            {...(aggregate.bankReset ? { bankReset: aggregate.bankReset } : {})}
             scenarios={aggregate.scenarios}
             {...(chartConfiguration ? { chartConfiguration } : {})}
             onChartConfigurationChange={onChartConfigurationChange}
@@ -602,7 +624,10 @@ function LoanWorkspace({
   );
 }
 
-function LoanSummary({ loan }: Readonly<{ loan: Loan }>) {
+function LoanSummary({
+  loan,
+  aggregate,
+}: Readonly<{ loan: Loan; aggregate: LoanAggregate | undefined }>) {
   return (
     <section className="loan-summary-view" aria-labelledby="loan-summary-title">
       <h2 id="loan-summary-title">Resumen</h2>
@@ -643,7 +668,7 @@ function LoanSummary({ loan }: Readonly<{ loan: Loan }>) {
           </div>
         </dl>
       ) : null}
-      {loan.contract ? <ContractEstimateSummary loan={loan} /> : null}
+      {loan.contract ? <ContractEstimateSummary loan={loan} aggregate={aggregate} /> : null}
     </section>
   );
 }
@@ -684,17 +709,27 @@ function LoanSettings({
   );
 }
 
-function ContractEstimateSummary({ loan }: Readonly<{ loan: Loan }>) {
+function ContractEstimateSummary({
+  loan,
+  aggregate,
+}: Readonly<{ loan: Loan; aggregate: LoanAggregate | undefined }>) {
   const result = useMemo(() => {
     try {
-      return { estimate: estimateLoanContract(loan) };
+      return {
+        estimate: estimateLoanContract(
+          loan,
+          aggregate?.bankReset ? { bankReset: aggregate.bankReset } : {},
+        ),
+      };
     } catch (cause) {
       return { error: cause instanceof Error ? cause.message : 'No se pudo estimar el préstamo.' };
     }
-  }, [loan]);
+  }, [aggregate?.bankReset, loan]);
 
   if ('error' in result) return <p role="alert">{result.error}</p>;
-  return <EstimateSummary loan={loan} estimate={result.estimate} />;
+  return (
+    <EstimateSummary loan={loan} estimate={result.estimate} {...(aggregate ? { aggregate } : {})} />
+  );
 }
 
 function saveTbpScenario(

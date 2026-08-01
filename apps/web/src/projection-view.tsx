@@ -8,6 +8,7 @@ import {
   isRecurringExtraPaymentScenario,
   projectLoanAmortization,
   type Loan,
+  type BankReset,
   type PaymentRecord,
   type ProjectionScenarioSnapshot,
 } from '@cuotaclara/domain';
@@ -70,12 +71,14 @@ type ChartLine = Readonly<{
 export function ProjectionView({
   loan,
   payments,
+  bankReset,
   scenarios = [],
   chartConfiguration,
   onChartConfigurationChange,
 }: Readonly<{
   loan: Loan;
   payments: readonly PaymentRecord[];
+  bankReset?: BankReset;
   scenarios?: readonly ProjectionScenarioSnapshot[];
   chartConfiguration?: ChartConfiguration;
   onChartConfigurationChange?: (configuration: ChartConfiguration) => void;
@@ -86,7 +89,7 @@ export function ProjectionView({
   const result = useMemo(() => {
     try {
       const periods: readonly DisplayProjectionPeriod[] = loan.contract
-        ? estimateLoanContract(loan).periods.map((period) => ({
+        ? estimateLoanContract(loan, bankReset ? { bankReset } : {}).periods.map((period) => ({
             period: period.period,
             date: period.date,
             openingBalance: period.openingBalance,
@@ -123,7 +126,7 @@ export function ProjectionView({
       </section>
     );
 
-  const comparableScenarios = scenarios.filter(isComparableScenario);
+  const comparableScenarios = bankReset ? [] : scenarios.filter(isComparableScenario);
   const selectedScenario = comparableScenarios.find(
     (scenario) => scenario.id === selectedTableSourceId,
   );
@@ -179,6 +182,13 @@ export function ProjectionView({
         Los pagos históricos aparecen como registros reales; la proyección contractual se muestra
         por separado.
       </p>
+      {bankReset ? (
+        <p className="reconciliation-note" role="status">
+          La proyección inicia con el saldo bancario del {bankReset.cutoffDate} y recalcula la cuota
+          hasta {bankReset.bankFinalInstallmentDate}. Los escenarios se desactivan mientras este
+          reset esté vigente.
+        </p>
+      ) : null}
       <BalanceChart
         loan={loan}
         payments={payments}
@@ -281,6 +291,20 @@ export function ProjectionView({
                 <td>—</td>
               </tr>
             ))}
+            {bankReset?.adjustment ? (
+              <tr className="historical-row" key={`reset-${bankReset.adjustment.id}`}>
+                <td aria-label="Ajuste de reconciliación" title="Ajuste de reconciliación">
+                  R
+                </td>
+                <td>{bankReset.adjustment.date}</td>
+                <td>{formatMoney(bankReset.adjustment.principalAmount, loan.roundingPolicy)}</td>
+                <td>—</td>
+                <td>{formatMoney(bankReset.adjustment.principalAmount, loan.roundingPolicy)}</td>
+                <td>—</td>
+                <td>{formatMoney(bankReset.adjustment.principalAmount, loan.roundingPolicy)}</td>
+                <td>—</td>
+              </tr>
+            ) : null}
             {visiblePeriods.map((period) => (
               <tr className="projection-row" key={`projection-${period.period}`}>
                 <td

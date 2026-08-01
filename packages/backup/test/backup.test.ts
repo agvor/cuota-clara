@@ -4,6 +4,7 @@ import {
   createLoan,
   createLoanV2,
   createLoanV3,
+  createBankReset,
   createPaymentRecord,
   Money,
 } from '@cuotaclara/domain';
@@ -40,6 +41,31 @@ describe('backup', () => {
 
     expect(restored.aggregates[0]?.loan.initialBalance.toDecimalString()).toBe('1000');
     expect(restored.aggregates[0]?.payments[0]?.principalAmount?.currency).toBe('CRC');
+  });
+
+  test('conserva un reset bancario y el ajuste de principal confirmado', () => {
+    const backup = createBackup([
+      {
+        ...aggregate,
+        bankReset: createBankReset({
+          id: 'reset-001',
+          cutoffDate: '2026-02-01',
+          reportedBalance: Money.from('910.00', 'CRC'),
+          bankFinalInstallmentDate: '2026-12-01',
+          adjustment: {
+            id: 'adjustment-001',
+            date: '2026-02-01',
+            principalAmount: Money.from('10.00', 'CRC'),
+            reason: 'Diferencia confirmada.',
+          },
+        }),
+      },
+    ]);
+
+    expect(parseBackup(JSON.stringify(backup)).aggregates[0]?.bankReset).toMatchObject({
+      reportedBalance: expect.objectContaining({ currency: 'CRC' }),
+      adjustment: { principalAmount: expect.objectContaining({ currency: 'CRC' }) },
+    });
   });
 
   test('rechaza una copia de versión o estructura desconocida', () => {
@@ -79,7 +105,7 @@ describe('backup', () => {
       roundingPolicy: { scale: 2, mode: 'half_up' },
     });
     const v3 = createBackup([{ ...aggregate, loan: v3Loan }], '2026-07-29T00:00:00.000Z');
-    expect(v3.schemaVersion).toBe(3);
+    expect(v3.schemaVersion).toBe(4);
     expect(parseBackup(JSON.stringify(v3)).aggregates[0]?.loan.contract).toMatchObject({
       version: 3,
       paymentMode: 'automatic',

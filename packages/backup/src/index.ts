@@ -1,7 +1,9 @@
 import {
   createLoan,
+  createBankReset,
   createPaymentRecord,
   Money,
+  type BankReset,
   type LoanContract,
   type LoanContractV2,
   type LoanContractV3,
@@ -9,7 +11,7 @@ import {
   type ProjectionScenarioSnapshot,
 } from '@cuotaclara/domain';
 
-const CURRENT_SCHEMA_VERSION = 3;
+const CURRENT_SCHEMA_VERSION = 4;
 
 type StoredMoney = Readonly<{ amount: string; currency: string }>;
 export type BackupDocument = Readonly<{
@@ -43,6 +45,7 @@ export function createBackup(
             ...(contract ? { contract: storeContract(contract) } : {}),
           },
           payments: Object.freeze(aggregate.payments.map((payment) => storePayment(payment))),
+          ...(aggregate.bankReset ? { bankReset: storeBankReset(aggregate.bankReset) } : {}),
           scenarios: Object.freeze(structuredClone(aggregate.scenarios)),
         });
       }),
@@ -63,6 +66,7 @@ export function parseBackup(
   if (
     backup.schemaVersion !== 1 &&
     backup.schemaVersion !== 2 &&
+    backup.schemaVersion !== 3 &&
     backup.schemaVersion !== CURRENT_SCHEMA_VERSION
   )
     throw new BackupValidationError('la versión de esquema no es compatible.');
@@ -108,6 +112,9 @@ function parseAggregate(value: unknown): LoanAggregate {
     return Object.freeze({
       loan,
       payments: Object.freeze(payments),
+      ...(recordValue.bankReset
+        ? { bankReset: parseBankReset(recordValue.bankReset, loan.initialBalance.currency) }
+        : {}),
       scenarios: Object.freeze(scenarios),
     });
   } catch (cause) {
@@ -201,6 +208,58 @@ function storePayment(payment: LoanAggregate['payments'][number]) {
     ...(payment.insuranceAmount ? { insuranceAmount: storeMoney(payment.insuranceAmount) } : {}),
     ...(payment.feeAmount ? { feeAmount: storeMoney(payment.feeAmount) } : {}),
   });
+}
+
+function storeBankReset(bankReset: BankReset) {
+  return Object.freeze({
+    id: bankReset.id,
+    cutoffDate: bankReset.cutoffDate,
+    reportedBalance: storeMoney(bankReset.reportedBalance),
+    bankFinalInstallmentDate: bankReset.bankFinalInstallmentDate,
+    ...(bankReset.adjustment
+      ? {
+          adjustment: Object.freeze({
+            id: bankReset.adjustment.id,
+            date: bankReset.adjustment.date,
+            principalAmount: storeMoney(bankReset.adjustment.principalAmount),
+            reason: bankReset.adjustment.reason,
+          }),
+        }
+      : {}),
+  });
+}
+
+function parseBankReset(value: unknown, currency: string): BankReset {
+  const reset = record(value, 'reset bancario');
+  const adjustment = reset.adjustment
+    ? record(reset.adjustment, 'reset bancario.ajuste')
+    : undefined;
+  const bankReset = createBankReset({
+    id: string(reset.id, 'reset bancario.id'),
+    cutoffDate: string(reset.cutoffDate, 'reset bancario.fechaCorte'),
+    reportedBalance: parseMoney(reset.reportedBalance, 'reset bancario.saldoReportado'),
+    bankFinalInstallmentDate: string(reset.bankFinalInstallmentDate, 'reset bancario.fechaFinal'),
+    ...(adjustment
+      ? {
+          adjustment: {
+            id: string(adjustment.id, 'reset bancario.ajuste.id'),
+            date: string(adjustment.date, 'reset bancario.ajuste.fecha'),
+            principalAmount: parseMoney(
+              adjustment.principalAmount,
+              'reset bancario.ajuste.principal',
+            ),
+            reason: string(adjustment.reason, 'reset bancario.ajuste.motivo'),
+          },
+        }
+      : {}),
+  });
+  if (
+    bankReset.reportedBalance.currency !== currency ||
+    bankReset.adjustment?.principalAmount.currency !== currency
+  ) {
+    throw new BackupValidationError('el reset bancario debe usar la moneda del préstamo.');
+  }
+  return bankReset;
 }
 function parsePayment(value: unknown) {
   const payment = record(value, 'pago');

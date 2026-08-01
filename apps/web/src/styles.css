@@ -1181,6 +1181,7 @@ body {
 
 .payment-history,
 .payment-import,
+.payment-reconciliation,
 .payment-form {
   margin-top: 1.25rem;
   padding: 1rem;
@@ -1191,6 +1192,7 @@ body {
 
 .payment-history h3,
 .payment-import h3,
+.payment-reconciliation h3,
 .payment-form h3 {
   margin-top: 0;
 }
@@ -1228,6 +1230,49 @@ body {
 .payment-list time {
   color: #64748b;
   font-size: 0.875rem;
+}
+
+.reconciliation-history-item {
+  border-color: #bfdbfe !important;
+  background: #eff6ff !important;
+}
+
+.reconciliation-history-item span {
+  color: #1d4ed8;
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.bank-reset-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.bank-reset-form .payment-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  align-items: end;
+  margin-top: 0;
+}
+
+.bank-reset-form .form-actions,
+.reconciliation-result > button {
+  grid-column: 1 / -1;
+}
+
+.reconciliation-result {
+  padding: 1rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.75rem;
+  background: #f8fbff;
+}
+
+.reconciliation-choice {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  margin: 1rem 0;
+  color: #1e3a5f;
 }
 
 .payment-list strong {

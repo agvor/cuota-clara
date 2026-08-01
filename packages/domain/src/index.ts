@@ -47,10 +47,13 @@ export {
 } from './amortization/fixed-rate.js';
 export {
   createPaymentRecord,
+  createBankReset,
   createReconciliationAdjustment,
   HistoricalStateError,
   reconstructHistoricalState,
   type CreatePaymentRecordInput,
+  type BankReset,
+  type BankResetAdjustment,
   type HistoricalState,
   type PaymentRecord,
   type PaymentSource,

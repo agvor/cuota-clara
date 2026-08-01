@@ -2,7 +2,9 @@ import { Dexie as DexieConstructor, type Table } from 'dexie/dist/dexie.js';
 
 import {
   createLoan,
+  createBankReset,
   createPaymentRecord,
+  type BankReset,
   type Loan,
   type LoanContract,
   type LoanContractV2,
@@ -36,6 +38,20 @@ type StoredLoan = Readonly<{
   periodsPerYear: number;
   roundingPolicy: RoundingPolicy;
   contract?: StoredLoanContract;
+  bankReset?: StoredBankReset;
+}>;
+
+type StoredBankReset = Readonly<{
+  id: string;
+  cutoffDate: string;
+  reportedBalance: StoredMoney;
+  bankFinalInstallmentDate: string;
+  adjustment?: Readonly<{
+    id: string;
+    date: string;
+    principalAmount: StoredMoney;
+    reason: string;
+  }>;
 }>;
 
 type StoredLoanContractV2 = Readonly<{
@@ -122,6 +138,13 @@ export class DexieLoanRepository implements LoanRepository {
       payments: 'id, loanId, [loanId+date]',
       scenarios: 'id, loanId',
     });
+    // v4 conserva un reset bancario opcional junto al préstamo, sin cambiar
+    // índices ni reinterpretar los registros existentes.
+    this.database.version(4).stores({
+      loans: 'id',
+      payments: 'id, loanId, [loanId+date]',
+      scenarios: 'id, loanId',
+    });
   }
 
   async listLoans(): Promise<readonly Loan[]> {
@@ -137,15 +160,21 @@ export class DexieLoanRepository implements LoanRepository {
       this.payments().where('loanId').equals(loanId).toArray(),
       this.scenarios().where('loanId').equals(loanId).toArray(),
     ]);
+    const loan = deserializeLoan(storedLoan);
     return Object.freeze({
-      loan: deserializeLoan(storedLoan),
+      loan,
       payments: Object.freeze(payments.map((payment) => deserializePayment(payment, loanId))),
+      ...(storedLoan.bankReset
+        ? {
+            bankReset: deserializeBankReset(storedLoan.bankReset, loan.initialBalance.currency),
+          }
+        : {}),
       scenarios: Object.freeze(scenarios.map((scenario) => deserializeScenario(scenario, loanId))),
     });
   }
 
   async saveAggregate(aggregate: LoanAggregate): Promise<void> {
-    const storedLoan = serializeLoan(aggregate.loan);
+    const storedLoan = serializeLoan(aggregate.loan, aggregate.bankReset);
     const storedPayments = aggregate.payments.map((payment) =>
       serializePayment(payment, aggregate.loan.id, aggregate.loan.initialBalance.currency),
     );
@@ -208,7 +237,7 @@ function deserializeMoney(value: unknown, field: string): Money {
   return Money.from(readString(record, 'amount', field), readString(record, 'currency', field));
 }
 
-function serializeLoan(loan: Loan): StoredLoan {
+function serializeLoan(loan: Loan, bankReset?: BankReset): StoredLoan {
   try {
     const validLoan = createLoan(loan);
     const { contract, ...legacyLoan } = validLoan;
@@ -217,10 +246,79 @@ function serializeLoan(loan: Loan): StoredLoan {
       initialBalance: serializeMoney(legacyLoan.initialBalance),
       ordinaryPayment: serializeMoney(legacyLoan.ordinaryPayment),
       ...(contract ? { contract: serializeContract(contract) } : {}),
+      ...(bankReset
+        ? { bankReset: serializeBankReset(bankReset, loan.initialBalance.currency) }
+        : {}),
     });
   } catch (error) {
     throw corruption('loan', error);
   }
+}
+
+function serializeBankReset(bankReset: BankReset, currency: string): StoredBankReset {
+  try {
+    const validReset = createBankReset(bankReset);
+    if (validReset.reportedBalance.currency !== currency) {
+      throw new Error(`el reset debe usar la moneda ${currency}`);
+    }
+    if (validReset.adjustment?.principalAmount.currency !== currency) {
+      throw new Error(`el ajuste de reset debe usar la moneda ${currency}`);
+    }
+    return Object.freeze({
+      id: validReset.id,
+      cutoffDate: validReset.cutoffDate,
+      reportedBalance: serializeMoney(validReset.reportedBalance),
+      bankFinalInstallmentDate: validReset.bankFinalInstallmentDate,
+      ...(validReset.adjustment
+        ? {
+            adjustment: Object.freeze({
+              id: validReset.adjustment.id,
+              date: validReset.adjustment.date,
+              principalAmount: serializeMoney(validReset.adjustment.principalAmount),
+              reason: validReset.adjustment.reason,
+            }),
+          }
+        : {}),
+    });
+  } catch (error) {
+    throw corruption('aggregate', error);
+  }
+}
+
+function deserializeBankReset(value: unknown, currency: string): BankReset {
+  const record = readRecord(value, 'aggregate.bankReset');
+  const adjustment = record.adjustment
+    ? readRecord(record.adjustment, 'aggregate.bankReset.adjustment')
+    : undefined;
+  const bankReset = createBankReset({
+    id: readString(record, 'id', 'aggregate.bankReset'),
+    cutoffDate: readString(record, 'cutoffDate', 'aggregate.bankReset'),
+    reportedBalance: deserializeMoney(
+      record.reportedBalance,
+      'aggregate.bankReset.reportedBalance',
+    ),
+    bankFinalInstallmentDate: readString(record, 'bankFinalInstallmentDate', 'aggregate.bankReset'),
+    ...(adjustment
+      ? {
+          adjustment: {
+            id: readString(adjustment, 'id', 'aggregate.bankReset.adjustment'),
+            date: readString(adjustment, 'date', 'aggregate.bankReset.adjustment'),
+            principalAmount: deserializeMoney(
+              adjustment.principalAmount,
+              'aggregate.bankReset.adjustment.principalAmount',
+            ),
+            reason: readString(adjustment, 'reason', 'aggregate.bankReset.adjustment'),
+          },
+        }
+      : {}),
+  });
+  if (
+    bankReset.reportedBalance.currency !== currency ||
+    bankReset.adjustment?.principalAmount.currency !== currency
+  ) {
+    throw new Error(`el reset debe usar la moneda ${currency}`);
+  }
+  return bankReset;
 }
 
 function deserializeLoan(value: unknown): Loan {

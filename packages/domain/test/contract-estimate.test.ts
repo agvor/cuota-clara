@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest';
 
 import {
   ContractEstimateError,
+  createBankReset,
   createLoanV2,
   createLoanV3,
   estimateLoanContract,
@@ -215,5 +216,33 @@ describe('estimateLoanContract', () => {
     expect(estimate.projectedInitialTotalPayment).toBeUndefined();
     expect(estimate.configuredTotalPayment).toBeUndefined();
     expect(estimate.hasConfiguredPaymentDifference).toBe(false);
+  });
+
+  test('recalcula la cuota desde un reset hasta la fecha final bancaria', () => {
+    const loan = createLoanV3({
+      id: 'loan-reset',
+      name: 'Reset bancario',
+      startDate: '2026-01-01',
+      originalPrincipal: Money.from('1000.00', 'CRC'),
+      monthlyTotalPayment: Money.from('340.00', 'CRC'),
+      monthlyInsurance: Money.from('5.00', 'CRC'),
+      term: { totalInstallments: 12 },
+      annualNominalRate: '0.12',
+      roundingPolicy,
+    });
+    const bankReset = createBankReset({
+      id: 'reset-contract',
+      cutoffDate: '2026-03-01',
+      reportedBalance: Money.from('600.00', 'CRC'),
+      bankFinalInstallmentDate: '2026-05-01',
+    });
+
+    const estimate = estimateLoanContract(loan, { bankReset });
+
+    expect(estimate.estimatedInstallments).toBe(2);
+    expect(estimate.finalInstallmentDate).toBe('2026-05-01');
+    expect(estimate.estimatedPrincipal.toFixed(roundingPolicy)).toBe('600.00');
+    expect(estimate.remainingPrincipal.toFixed(roundingPolicy)).toBe('0.00');
+    expect(estimate.projectedInitialTotalPayment?.toFixed(roundingPolicy)).toBe('309.51');
   });
 });

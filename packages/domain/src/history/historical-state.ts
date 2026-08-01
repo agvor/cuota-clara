@@ -27,13 +27,31 @@ export type ReconciliationAdjustment = Readonly<{
   reason: string;
 }>;
 
+export type BankResetAdjustment = Readonly<{
+  id: string;
+  date: string;
+  principalAmount: Money;
+  reason: string;
+}>;
+
+export type BankReset = Readonly<{
+  id: string;
+  cutoffDate: string;
+  reportedBalance: Money;
+  bankFinalInstallmentDate: string;
+  adjustment?: BankResetAdjustment;
+}>;
+
 export type HistoricalState = Readonly<{
   cutoffDate: string;
   historicalPayments: readonly PaymentRecord[];
   appliedPrincipal: Money;
+  historicalInterest: Money;
   balanceBeforeReconciliation: Money;
   reconciliation?: ReconciliationAdjustment;
   reconciliationAdjustment?: Money;
+  bankReset?: BankReset;
+  suggestedPrincipalAdjustment?: Money;
   currentBalance: Money;
 }>;
 
@@ -98,11 +116,43 @@ export function createReconciliationAdjustment(
   return Object.freeze({ ...adjustment });
 }
 
+export function createBankReset(input: BankReset): BankReset {
+  if (!input.id.trim()) {
+    throw new HistoricalStateError('El reset bancario requiere un identificador.');
+  }
+  validateDate(input.cutoffDate, 'La fecha de corte bancaria');
+  validateDate(input.bankFinalInstallmentDate, 'La fecha final bancaria');
+  if (input.bankFinalInstallmentDate <= input.cutoffDate) {
+    throw new HistoricalStateError('La fecha final bancaria debe ser posterior al corte.');
+  }
+  validateNonNegativeAmount(input.reportedBalance, 'El saldo principal reportado');
+  if (input.adjustment) {
+    if (!input.adjustment.id.trim()) {
+      throw new HistoricalStateError('El ajuste de reset requiere un identificador.');
+    }
+    validateDate(input.adjustment.date, 'La fecha del ajuste de reset');
+    if (input.adjustment.date !== input.cutoffDate) {
+      throw new HistoricalStateError('El ajuste de reset debe coincidir con la fecha de corte.');
+    }
+    if (!input.adjustment.reason.trim()) {
+      throw new HistoricalStateError('El ajuste de reset requiere una justificación.');
+    }
+    if (!input.adjustment.principalAmount.isPositive()) {
+      throw new HistoricalStateError('El ajuste de reset debe aplicar principal positivo.');
+    }
+  }
+  return Object.freeze({
+    ...input,
+    ...(input.adjustment ? { adjustment: Object.freeze({ ...input.adjustment }) } : {}),
+  });
+}
+
 export function reconstructHistoricalState(input: {
   initialBalance: Money;
   payments: readonly PaymentRecord[];
   cutoffDate: string;
   reconciliation?: ReconciliationAdjustment;
+  bankReset?: BankReset;
 }): HistoricalState {
   validateDate(input.cutoffDate, 'La fecha de corte');
   if (!input.initialBalance.isPositive()) {
@@ -114,6 +164,7 @@ export function reconstructHistoricalState(input: {
   const paymentIds = new Set<string>();
   let currentBalance = input.initialBalance;
   let appliedPrincipal = Money.from('0', currency);
+  let historicalInterest = Money.from('0', currency);
 
   for (const payment of payments) {
     if (paymentIds.has(payment.id)) {
@@ -147,14 +198,56 @@ export function reconstructHistoricalState(input: {
     }
     currentBalance = currentBalance.subtract(principal);
     appliedPrincipal = appliedPrincipal.add(principal);
+    historicalInterest = historicalInterest.add(
+      payment.interestAmount ?? Money.from('0', currency),
+    );
   }
 
   const balanceBeforeReconciliation = currentBalance;
+  if (input.reconciliation && input.bankReset) {
+    throw new HistoricalStateError('No se puede combinar la reconciliación heredada con un reset.');
+  }
+  if (input.bankReset) {
+    const bankReset = createBankReset(input.bankReset);
+    if (bankReset.cutoffDate !== input.cutoffDate) {
+      throw new HistoricalStateError('El reset bancario debe coincidir con la fecha de corte.');
+    }
+    validateCurrency(bankReset.reportedBalance, currency, 'El saldo principal reportado');
+    const suggestedPrincipalAdjustment = balanceBeforeReconciliation.subtract(
+      bankReset.reportedBalance,
+    );
+    const hasSuggestedAdjustment = suggestedPrincipalAdjustment.isPositive();
+    if (bankReset.adjustment) {
+      validateCurrency(bankReset.adjustment.principalAmount, currency, 'El ajuste de reset');
+      if (!hasSuggestedAdjustment) {
+        throw new HistoricalStateError(
+          'Solo se puede ajustar principal cuando el saldo reportado es menor.',
+        );
+      }
+      if (
+        bankReset.adjustment.principalAmount.toDecimalString() !==
+        suggestedPrincipalAdjustment.toDecimalString()
+      ) {
+        throw new HistoricalStateError('El ajuste de reset debe coincidir con la discrepancia.');
+      }
+    }
+    return Object.freeze({
+      cutoffDate: input.cutoffDate,
+      historicalPayments: Object.freeze(payments),
+      appliedPrincipal,
+      historicalInterest,
+      balanceBeforeReconciliation,
+      bankReset,
+      ...(hasSuggestedAdjustment ? { suggestedPrincipalAdjustment } : {}),
+      currentBalance: bankReset.reportedBalance,
+    });
+  }
   if (!input.reconciliation) {
     return Object.freeze({
       cutoffDate: input.cutoffDate,
       historicalPayments: Object.freeze(payments),
       appliedPrincipal,
+      historicalInterest,
       balanceBeforeReconciliation,
       currentBalance,
     });
@@ -172,6 +265,7 @@ export function reconstructHistoricalState(input: {
     cutoffDate: input.cutoffDate,
     historicalPayments: Object.freeze(payments),
     appliedPrincipal,
+    historicalInterest,
     balanceBeforeReconciliation,
     reconciliation,
     reconciliationAdjustment: reconciliation.reportedBalance.subtract(balanceBeforeReconciliation),

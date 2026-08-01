@@ -626,7 +626,7 @@
         "RNF-006"
       ],
       "dependsOn": ["US-042"],
-      "status": "in_progress",
+      "status": "completed",
       "acceptanceCriteria": [
         "La aplicación acumula principal ordinario, principal extraordinario e interés de los pagos históricos, y compara el saldo reconstruido con saldo principal y fecha de corte ingresados por la persona usuaria.",
         "Un saldo reportado menor ofrece, tras confirmación, un ajuste de reconciliación visible en historial, aplicado solo a principal; una diferencia mayor no se clasifica automáticamente como aporte.",
