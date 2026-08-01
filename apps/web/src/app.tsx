@@ -631,10 +631,7 @@ function LoanSummary({
   return (
     <section className="loan-summary-view" aria-labelledby="loan-summary-title">
       <h2 id="loan-summary-title">Resumen</h2>
-      <p>
-        Revisa las condiciones acordadas y el costo estimado antes de registrar actividad o crear
-        alternativas.
-      </p>
+      <p>Consulta las condiciones acordadas, la actividad registrada y la proyección pendiente.</p>
       {!loan.contract ? (
         <p className="inherited-notice" role="status">
           Este préstamo es heredado. Puedes consultarlo, pero completa plazo y seguro al editarlo
@@ -642,31 +639,38 @@ function LoanSummary({
         </p>
       ) : null}
       {loan.contract ? (
-        <dl className="contract-summary">
-          <div>
-            <dt>Plazo</dt>
-            <dd>
-              {'endDate' in loan.contract.term
-                ? loan.contract.term.endDate
-                : `${loan.contract.term.totalInstallments} cuotas`}
-            </dd>
-          </div>
-          <div>
-            <dt>Seguro mensual</dt>
-            <dd>{formatMoney(loan.contract.monthlyInsurance, loan.roundingPolicy)}</dd>
-          </div>
-          <div>
-            <dt>Cuota mensual total</dt>
-            <dd>
-              {formatMoney(
-                loan.contract.version === 3
-                  ? loan.contract.monthlyTotalPayment
-                  : loan.contract.monthlyInstallment.add(loan.contract.monthlyInsurance),
-                loan.roundingPolicy,
-              )}
-            </dd>
-          </div>
-        </dl>
+        <section className="contract-terms" aria-labelledby="contract-terms-title">
+          <h3 id="contract-terms-title">Condiciones acordadas</h3>
+          <dl className="contract-summary">
+            <div>
+              <dt>Monto original</dt>
+              <dd>{formatMoney(loan.contract.originalPrincipal, loan.roundingPolicy)}</dd>
+            </div>
+            <div>
+              <dt>Plazo contractual</dt>
+              <dd>
+                {'endDate' in loan.contract.term
+                  ? loan.contract.term.endDate
+                  : `${loan.contract.term.totalInstallments} cuotas`}
+              </dd>
+            </div>
+            <div>
+              <dt>Seguro mensual acordado</dt>
+              <dd>{formatMoney(loan.contract.monthlyInsurance, loan.roundingPolicy)}</dd>
+            </div>
+            <div>
+              <dt>Cuota mensual acordada</dt>
+              <dd>
+                {formatMoney(
+                  loan.contract.version === 3
+                    ? loan.contract.monthlyTotalPayment
+                    : loan.contract.monthlyInstallment.add(loan.contract.monthlyInsurance),
+                  loan.roundingPolicy,
+                )}
+              </dd>
+            </div>
+          </dl>
+        </section>
       ) : null}
       {loan.contract ? <ContractEstimateSummary loan={loan} aggregate={aggregate} /> : null}
     </section>

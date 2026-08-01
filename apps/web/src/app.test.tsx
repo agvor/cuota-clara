@@ -120,11 +120,12 @@ describe('App', () => {
     expect(
       await screen.findByRole('heading', { name: 'Resumen financiero estimado' }),
     ).toBeVisible();
-    expect(screen.getByRole('rowheader', { name: 'Última cuota estimada' })).toBeVisible();
+    expect(screen.getByRole('rowheader', { name: 'Última cuota proyectada' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Principal estimado' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Interés estimado' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Total proyectado' })).toBeVisible();
-    expect(screen.getByText('Cuota mensual total')).toBeVisible();
+    expect(screen.getByText('Cuota mensual acordada')).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Condiciones acordadas' })).toBeVisible();
     expect(screen.getByText('2056-01-15')).toBeVisible();
     expect(
       screen.queryByRole('img', { name: 'Evolución estimada del saldo' }),
@@ -214,9 +215,13 @@ describe('App', () => {
 
     expect(await screen.findByText('2056-01-15')).toBeVisible();
     expect(screen.getByText('360')).toBeVisible();
-    expect(screen.getByRole('rowheader', { name: 'Cuota total configurada' })).toBeVisible();
-    expect(screen.getByRole('rowheader', { name: 'Cuota total proyectada inicial' })).toBeVisible();
-    expect(screen.getByRole('rowheader', { name: 'Diferencia inicial de cuota' })).toBeVisible();
+    expect(screen.getByRole('rowheader', { name: 'Cuota mensual acordada' })).toBeVisible();
+    expect(
+      screen.getByRole('rowheader', { name: 'Cuota mensual inicial proyectada' }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('rowheader', { name: 'Diferencia frente a la cuota acordada' }),
+    ).toBeVisible();
     expect(
       screen.getByText(/la cuota proyectada se recalcula para conservar el plazo/i),
     ).toBeVisible();
