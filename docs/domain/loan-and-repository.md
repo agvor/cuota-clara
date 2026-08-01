@@ -12,7 +12,7 @@ Este contrato representa la configuración del préstamo; los pagos históricos 
 
 ## Agregado y persistencia
 
-`LoanAggregate` reúne un préstamo, sus `PaymentRecord` y sus snapshots de escenarios. `LoanRepository` solo expresa las operaciones asíncronas de listar, cargar, guardar y eliminar agregados.
+`LoanAggregate` reúne un préstamo, sus `PaymentRecord`, un reset bancario opcional y sus snapshots de escenarios. El reset conserva saldo principal reportado, fecha de corte, fecha final bancaria, diferencia calculada y, si fue confirmado, su ajuste histórico especial. `LoanRepository` solo expresa las operaciones asíncronas de listar, cargar, guardar y eliminar agregados.
 
 El puerto no conoce Dexie, IndexedDB, React ni red. El siguiente adaptador local implementará este contrato con IndexedDB; una sincronización futura podrá implementar el mismo puerto con consentimiento de la persona usuaria.
 

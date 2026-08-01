@@ -37,6 +37,8 @@ Un contrato v3 también puede declarar `paymentMode: automatic`. La PWA obtiene 
 
 Para v3, la fecha final o cantidad total de cuotas es autoritativa. En cada período, la PWA calcula la cuota base que liquida el saldo en las cuotas restantes usando la tasa prevista; el seguro se agrega después. La cuota total configurada permanece como dato contractual declarado y se compara con la cuota total proyectada inicial. Esto no intenta reproducir automáticamente un estado de cuenta bancario: cargos, convenciones de días y reglas de recálculo pueden diferir. La decisión completa está en [ADR-0007](../adr/0007-contract-term-is-authoritative.md).
 
+Con un reset bancario confirmado, la fecha final bancaria sustituye el límite de cuotas solo para el cálculo posterior a la fecha de corte. El saldo principal reportado sustituye el saldo de arranque de esos periodos y la cuota se recalcula para liquidarlo en esa fecha. El resumen conserva los pagos históricos: su interés se suma al interés futuro para informar el costo total acumulado, y el ajuste especial de reconciliación se expone como principal histórico separado.
+
 ## Presentación acordada
 
 1. Un único formateador monetario se usa en toda la PWA, con separadores de miles y decimales coherentes con el locale seleccionado (`es-CR` inicialmente), sin convertir el decimal financiero a `number`. Los campos editables conservan el literal canónico.

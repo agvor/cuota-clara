@@ -2,32 +2,34 @@
 
 ## Términos
 
-| Término                          | Definición                                                                                         |
-| -------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Préstamo (`Loan`)                | Contrato y estado real que contiene configuración y pagos históricos.                              |
-| Plazo contractual                | Fecha final o cantidad total de cuotas que limita la proyección; no se infiere silenciosamente.    |
-| Cuota mensual total              | Importe exigible que la persona configura; incluye la cuota base y el seguro mensual.              |
-| Cuota base                       | Parte de la cuota total restante tras restar el seguro; amortiza principal e interés.              |
-| Seguro mensual                   | Cargo periódico incluido en la cuota total, separado de principal e interés.                       |
-| Estimación contractual           | Proyección no bancaria de cuotas, costo y saldo según contrato v2/v3 y supuestos declarados.       |
-| Agregado de préstamo             | Préstamo con sus pagos históricos y snapshots de escenarios, unidad de persistencia.               |
-| Pago histórico (`PaymentRecord`) | Hecho real registrado manualmente o importado; nunca es resultado de una simulación.               |
-| Escenario (`ProjectionScenario`) | Hipótesis futura asociada a un préstamo. No modifica el préstamo ni su historial.                  |
-| Periodo de proyección            | Intervalo de pago calculado que contiene saldo inicial/final, interés, principal y cargos.         |
-| Plan de tasas (`InterestPlan`)   | Secuencia de reglas que resuelve la tasa aplicable a cada periodo.                                 |
-| Fase fija                        | Intervalo explícito en el que la tasa anual se conoce y no cambia.                                 |
-| Fase variable                    | Intervalo posterior cuya tasa se determina por una regla versionada y una frecuencia de revisión.  |
-| Serie manual de tasas            | Regla `manual_series_v1`: lista de tasas efectivas desde fechas concretas.                         |
-| TBP (tasa básica pasiva)         | Tasa de referencia anual usada como supuesto local configurable; no se consulta desde red en MVP.  |
-| Margen                           | Tasa anual contractual que se suma a la TBP para resolver la tasa variable.                        |
-| Evolución de TBP                 | Hipótesis estable, alza progresiva o baja progresiva aplicada por revisión a la TBP del escenario. |
-| Frecuencia de revisión           | Cadencia declarada en que una regla variable puede actualizar su tasa.                             |
-| Reconciliación                   | Ajuste explícito que explica la diferencia entre saldo calculado y saldo informado por la entidad. |
-| Pago extraordinario              | Importe adicional aplicado al principal bajo una regla contractual declarada.                      |
-| Dinero (`Money`)                 | Importe inmutable en una moneda, representado con aritmética decimal y no con `number`.            |
-| Política de redondeo             | Escala y modo declarados que determinan cuándo y cómo se redondea un importe.                      |
-| Interés nominal por periodo      | Interés calculado como saldo inicial × tasa nominal anual ÷ períodos por año.                      |
-| Amortización de tasa fija        | Secuencia de periodos con fechas explícitas, interés, principal, pago y saldo resultante.          |
+| Término                          | Definición                                                                                                                                                |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Préstamo (`Loan`)                | Contrato y estado real que contiene configuración y pagos históricos.                                                                                     |
+| Plazo contractual                | Fecha final o cantidad total de cuotas que limita la proyección; no se infiere silenciosamente.                                                           |
+| Cuota mensual total              | Importe exigible que la persona configura; incluye la cuota base y el seguro mensual.                                                                     |
+| Cuota base                       | Parte de la cuota total restante tras restar el seguro; amortiza principal e interés.                                                                     |
+| Seguro mensual                   | Cargo periódico incluido en la cuota total, separado de principal e interés.                                                                              |
+| Estimación contractual           | Proyección no bancaria de cuotas, costo y saldo según contrato v2/v3 y supuestos declarados.                                                              |
+| Agregado de préstamo             | Préstamo con sus pagos históricos y snapshots de escenarios, unidad de persistencia.                                                                      |
+| Pago histórico (`PaymentRecord`) | Hecho real registrado manualmente o importado; nunca es resultado de una simulación.                                                                      |
+| Escenario (`ProjectionScenario`) | Hipótesis futura asociada a un préstamo. No modifica el préstamo ni su historial.                                                                         |
+| Periodo de proyección            | Intervalo de pago calculado que contiene saldo inicial/final, interés, principal y cargos.                                                                |
+| Plan de tasas (`InterestPlan`)   | Secuencia de reglas que resuelve la tasa aplicable a cada periodo.                                                                                        |
+| Fase fija                        | Intervalo explícito en el que la tasa anual se conoce y no cambia.                                                                                        |
+| Fase variable                    | Intervalo posterior cuya tasa se determina por una regla versionada y una frecuencia de revisión.                                                         |
+| Serie manual de tasas            | Regla `manual_series_v1`: lista de tasas efectivas desde fechas concretas.                                                                                |
+| TBP (tasa básica pasiva)         | Tasa de referencia anual usada como supuesto local configurable; no se consulta desde red en MVP.                                                         |
+| Margen                           | Tasa anual contractual que se suma a la TBP para resolver la tasa variable.                                                                               |
+| Evolución de TBP                 | Hipótesis estable, alza progresiva o baja progresiva aplicada por revisión a la TBP del escenario.                                                        |
+| Frecuencia de revisión           | Cadencia declarada en que una regla variable puede actualizar su tasa.                                                                                    |
+| Reconciliación                   | Ajuste explícito que explica la diferencia entre saldo calculado y saldo informado por la entidad.                                                        |
+| Reset bancario                   | Punto de corte confirmado por saldo principal reportado, fecha de corte y última cuota bancaria; inicia la proyección futura sin reescribir el historial. |
+| Ajuste de reconciliación         | Registro histórico especial, confirmado por la persona usuaria, que aplica una diferencia atribuida a principal y se distingue de pagos reales.           |
+| Pago extraordinario              | Importe adicional aplicado al principal bajo una regla contractual declarada.                                                                             |
+| Dinero (`Money`)                 | Importe inmutable en una moneda, representado con aritmética decimal y no con `number`.                                                                   |
+| Política de redondeo             | Escala y modo declarados que determinan cuándo y cómo se redondea un importe.                                                                             |
+| Interés nominal por periodo      | Interés calculado como saldo inicial × tasa nominal anual ÷ períodos por año.                                                                             |
+| Amortización de tasa fija        | Secuencia de periodos con fechas explícitas, interés, principal, pago y saldo resultante.                                                                 |
 
 ## Invariantes iniciales
 
@@ -41,6 +43,9 @@
 - El pago extraordinario único se aplica después de la cuota ordinaria y se limita al saldo restante.
 - Un periodo histórico se identifica como tal y no se recalcula silenciosamente a partir de una proyección.
 - Una reconciliación conserva tanto el saldo calculado como el saldo reportado; no reescribe pagos históricos.
+- Un reset bancario exige saldo principal, fecha de corte y fecha final bancaria posterior al corte. Su saldo sustituye únicamente el saldo inicial de la proyección posterior.
+- El interés histórico acumulado se toma de pagos importados o manuales con desglose; nunca se deriva de un ajuste de reconciliación.
+- Un ajuste de reconciliación por menor saldo reportado se aplica solo a principal, tiene fecha de corte y es visible en el historial. Una diferencia que aumente el saldo no se convierte automáticamente en ajuste.
 - Toda tasa usada contiene su fuente o supuesto, fecha de vigencia y versión de la regla.
 - Un periodo variable sin tasa manual vigente es inválido; el motor no infiere ni reutiliza tasas silenciosamente.
 - Un pago importado conserva archivo/origen, fila de procedencia y resultado de validación para trazabilidad.

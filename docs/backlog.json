@@ -609,6 +609,30 @@
         "Por defecto solo se escriben cuotas con fecha igual o anterior al día de ejecución y se permite reproducir el corte con una fecha explícita.",
         "La guía explica la asignación de campos y que la previsualización de la aplicación sigue siendo obligatoria porque un plan no confirma pagos reales."
       ]
+    },
+    {
+      "id": "US-043",
+      "epic": "E2 · Importación y datos locales",
+      "title": "Reconciliar pagos importados con un reset bancario",
+      "story": "Como persona usuaria, quiero comparar el capital e interés acumulados de mis pagos importados contra el saldo y fecha final informados por el banco para proyectar desde un punto de reset explicable.",
+      "requirements": [
+        "RF-004",
+        "RF-006",
+        "RF-007",
+        "RF-013",
+        "RNF-001",
+        "RNF-002",
+        "RNF-004",
+        "RNF-006"
+      ],
+      "dependsOn": ["US-042"],
+      "status": "in_progress",
+      "acceptanceCriteria": [
+        "La aplicación acumula principal ordinario, principal extraordinario e interés de los pagos históricos, y compara el saldo reconstruido con saldo principal y fecha de corte ingresados por la persona usuaria.",
+        "Un saldo reportado menor ofrece, tras confirmación, un ajuste de reconciliación visible en historial, aplicado solo a principal; una diferencia mayor no se clasifica automáticamente como aporte.",
+        "El reset exige fecha final bancaria posterior al corte y recalcula la cuota futura desde el saldo reportado hasta esa fecha, conservando tasas y cargos contractuales.",
+        "El resumen suma interés histórico y futuro, y distingue el principal histórico, el ajuste y la proyección posterior."
+      ]
     }
   ]
 }

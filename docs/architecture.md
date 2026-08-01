@@ -39,21 +39,23 @@ El código de aplicación dependerá de puertos como `LoanRepository`, `BackupSe
 
 ```text
 CSV → parseo regional → filas normalizadas → validación y detección de duplicados
-    → previsualización y resolución de errores → confirmación → repositorio local
+    → previsualización y resolución de errores → confirmación
+    → comparación opcional con saldo bancario → ajuste confirmado y reset → repositorio local
 ```
 
 La previsualización es obligatoria. Las filas rechazadas no se persisten y la importación confirmada conserva su procedencia.
 
 Como apoyo externo a este flujo, `tooling/convert_payment_plan_pdf.py` transforma localmente un formato de plan PDF conocido en el CSV regional. No forma parte del dominio ni del adaptador de importación: su salida sigue pasando por la misma validación, previsualización y confirmación, pues un plan programado no prueba un pago histórico.
 
-El adaptador reutilizable `packages/import-csv` convierte texto CSV en una previsualización de `PaymentRecord`; no depende de IndexedDB ni puede confirmar la importación.
+El adaptador reutilizable `packages/import-csv` convierte texto CSV en una previsualización de `PaymentRecord`; no depende de IndexedDB ni puede confirmar la importación. El dominio calcula los acumulados, la discrepancia y la cuota posterior al reset; la PWA solo solicita la confirmación explícita y el adaptador local persiste el agregado resultante.
 
 ## Flujo de proyección
 
 ```text
-Préstamo + pagos históricos + fecha de corte + escenario
+Préstamo + pagos históricos + fecha de corte + reset bancario opcional + escenario
   → reconstrucción/reconciliación
-  → resolver tasa por periodo
+  → acumular histórico y resolver saldo inicial/final del reset
+  → resolver tasa por periodo y cuota hasta la fecha final aplicable
   → aplicar interés, cuota, cargos y pago extraordinario
   → periodos y resumen trazables
 ```
