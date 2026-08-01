@@ -35,11 +35,11 @@ describe('ProjectionView', () => {
     expect(screen.getByRole('img', { name: 'Evolución estimada del saldo' })).toBeVisible();
     expect(screen.getByLabelText('Desde')).toHaveValue('2026-02-01');
     expect(screen.getByLabelText('Hasta')).toHaveValue('2026-12-01');
-    expect(screen.getByText('Mostrando 11 cuotas: 2026-02-01 a 2026-12-01.')).toBeVisible();
+    expect(screen.getByText('Mostrando 11 periodos: 2026-02-01 a 2026-12-01.')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Restablecer todo el plazo' })).toBeDisabled();
     fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-04-01' } });
     fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '2026-09-01' } });
-    expect(screen.getByText('Mostrando 6 cuotas: 2026-04-01 a 2026-09-01.')).toBeVisible();
+    expect(screen.getByText('Mostrando 6 periodos: 2026-04-01 a 2026-09-01.')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Restablecer todo el plazo' }));
     expect(screen.getByLabelText('Desde')).toHaveValue('2026-02-01');
     expect(screen.getByLabelText('Hasta')).toHaveValue('2026-12-01');
@@ -92,11 +92,12 @@ describe('ProjectionView', () => {
     expect(
       screen.getByText(/La proyección inicia después del último pago histórico/),
     ).toBeVisible();
-    expect(screen.getByText('₡950,00')).toBeVisible();
-    expect(screen.getByLabelText('Desde')).toHaveValue('2026-03-01');
+    expect(screen.getAllByText('₡950,00')).toHaveLength(2);
+    expect(screen.getByLabelText('Desde')).toHaveValue('2026-02-01');
     expect(
       screen.getAllByRole('cell', { name: 'Proyección base' })[0]?.closest('tr'),
     ).toHaveTextContent('2026-03-01');
+    expect(document.querySelector('.chart-history-divider')).toBeVisible();
     expect(screen.getByRole('cell', { name: 'Histórico' }).closest('tr')).toHaveTextContent(
       '₡0,00',
     );

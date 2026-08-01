@@ -205,6 +205,7 @@ export function ProjectionView({
       <BalanceChart
         loan={loan}
         payments={payments}
+        {...(bankReset ? { bankReset } : {})}
         periods={result.periods}
         scenarios={comparableScenarios}
         {...(chartConfiguration ? { chartConfiguration } : {})}
@@ -375,6 +376,7 @@ export function ProjectionView({
 function BalanceChart({
   loan,
   payments,
+  bankReset,
   periods,
   scenarios,
   chartConfiguration,
@@ -382,13 +384,19 @@ function BalanceChart({
 }: Readonly<{
   loan: Loan;
   payments: readonly PaymentRecord[];
+  bankReset?: BankReset;
   periods: readonly DisplayProjectionPeriod[];
   scenarios: readonly ProjectionScenarioSnapshot[];
   chartConfiguration?: ChartConfiguration;
   onChartConfigurationChange?: (configuration: ChartConfiguration) => void;
 }>) {
-  const totalStartDate = periods[0]?.date ?? '';
-  const totalEndDate = periods.at(-1)?.date ?? '';
+  const historicalPeriods = historicalChartPeriods(payments, bankReset, loan);
+  const allPeriods = [...historicalPeriods, ...periods].map((period, index) => ({
+    ...period,
+    period: index + 1,
+  }));
+  const totalStartDate = allPeriods[0]?.date ?? '';
+  const totalEndDate = allPeriods.at(-1)?.date ?? '';
   const savedRangeStartDate = chartConfiguration?.rangeStartDate;
   const savedRangeEndDate = chartConfiguration?.rangeEndDate;
   const [rangeStartDate, setRangeStartDate] = useState(() =>
@@ -406,7 +414,7 @@ function BalanceChart({
   const [hoveredPeriod, setHoveredPeriod] = useState<DisplayProjectionPeriod>();
   const [lockedPeriod, setLockedPeriod] = useState<DisplayProjectionPeriod | undefined>(() =>
     chartConfiguration?.lockedPeriodNumber
-      ? periods.find((period) => period.period === chartConfiguration.lockedPeriodNumber)
+      ? allPeriods.find((period) => period.period === chartConfiguration.lockedPeriodNumber)
       : undefined,
   );
   const [selectedSeries, setSelectedSeries] = useState<SelectedSeries>(() => ({
@@ -421,13 +429,12 @@ function BalanceChart({
   const [secondScenarioId, setSecondScenarioId] = useState(
     chartConfiguration?.secondScenarioId ?? '',
   );
-  const visiblePeriods = periods.filter(
+  const visiblePeriods = allPeriods.filter(
     (period) => period.date >= rangeStartDate && period.date <= rangeEndDate,
   );
   const startPeriod = visiblePeriods[0];
   const endPeriod = visiblePeriods.at(-1);
 
-  const extraPrincipalByPeriod = mapExtraPrincipalByPeriod(payments, periods, loan);
   const comparableScenarios = scenarios.filter(isComparableScenario);
   const scenarioSources: readonly ChartSource[] = [firstScenarioId, secondScenarioId]
     .map((id) => comparableScenarios.find((scenario) => scenario.id === id))
@@ -446,9 +453,7 @@ function BalanceChart({
     payment: visiblePeriods.map((period) => period.payment),
     interest: visiblePeriods.map((period) => period.interest),
     principal: visiblePeriods.map((period) => period.principal),
-    extra: visiblePeriods.map(
-      (period) => extraPrincipalByPeriod.get(period.period) ?? zeroMoney(loan),
-    ),
+    extra: visiblePeriods.map((period) => period.extraordinaryPrincipal),
   };
   const sources: readonly ChartSource[] = [
     { id: 'base', label: 'Configuración base', sourceClass: 'base', values: baseValues },
@@ -478,6 +483,10 @@ function BalanceChart({
   );
   const horizontalTicks = [0, 0.25, 0.5, 0.75, 1];
   const temporalTicks = [0, 0.25, 0.5, 0.75, 1];
+  const firstProjectedPeriod = allPeriods[historicalPeriods.length];
+  const visibleProjectedIndex = firstProjectedPeriod
+    ? visiblePeriods.findIndex((period) => period.period === firstProjectedPeriod.period)
+    : -1;
 
   useEffect(() => {
     onChartConfigurationChange?.({
@@ -583,7 +592,7 @@ function BalanceChart({
         </p>
       </div>
       <p className="chart-range-status" aria-live="polite">
-        Mostrando {visiblePeriods.length} {visiblePeriods.length === 1 ? 'cuota' : 'cuotas'}:{' '}
+        Mostrando {visiblePeriods.length} {visiblePeriods.length === 1 ? 'periodo' : 'periodos'}:{' '}
         {startPeriod.date} a {endPeriod.date}.
       </p>
       <fieldset className="chart-series" aria-label="Series del gráfico">
@@ -665,9 +674,9 @@ function BalanceChart({
       >
         <title id="balance-chart-title">Evolución estimada del saldo</title>
         <desc id="balance-chart-description">
-          Cada señal seleccionada se muestra para la configuración base y los escenarios elegidos,
-          desde {startPeriod.date} hasta {endPeriod.date}. El eje vertical usa la moneda del
-          préstamo y el horizontal representa las fechas de las cuotas.
+          Cada señal seleccionada se muestra desde {startPeriod.date} hasta {endPeriod.date}. El eje
+          vertical usa la moneda del préstamo y el horizontal representa las fechas de los pagos y
+          cuotas.
         </desc>
         {horizontalTicks.map((fraction) => {
           const y = CHART.bottom - fraction * (CHART.bottom - CHART.top);
@@ -708,6 +717,23 @@ function BalanceChart({
           y1={CHART.bottom}
           y2={CHART.bottom}
         />
+        {visibleProjectedIndex > 0 ? (
+          <line
+            className="chart-history-divider"
+            x1={
+              CHART.left +
+              (visibleProjectedIndex / Math.max(visiblePeriods.length - 1, 1)) *
+                (CHART.right - CHART.left)
+            }
+            x2={
+              CHART.left +
+              (visibleProjectedIndex / Math.max(visiblePeriods.length - 1, 1)) *
+                (CHART.right - CHART.left)
+            }
+            y1={CHART.top}
+            y2={CHART.bottom}
+          />
+        ) : null}
         <line
           className="chart-axis"
           x1={CHART.left}
@@ -927,23 +953,49 @@ function findMaximumValue(
   );
 }
 
-function mapExtraPrincipalByPeriod(
+function historicalChartPeriods(
   payments: readonly PaymentRecord[],
-  periods: readonly DisplayProjectionPeriod[],
+  bankReset: BankReset | undefined,
   loan: Loan,
-): ReadonlyMap<number, Loan['initialBalance']> {
-  const values = new Map<number, Loan['initialBalance']>();
-  for (const payment of payments) {
-    if (!payment.extraPrincipalAmount?.isPositive()) continue;
-    if (periods[0] && payment.date < periods[0].date) continue;
-    const period = periods.find((item) => item.date >= payment.date) ?? periods.at(-1);
-    if (!period) continue;
-    values.set(
-      period.period,
-      (values.get(period.period) ?? zeroMoney(loan)).add(payment.extraPrincipalAmount),
-    );
-  }
-  return values;
+): readonly DisplayProjectionPeriod[] {
+  const zero = zeroMoney(loan);
+  let balance = loan.initialBalance;
+  const historical = [...payments]
+    .sort((left, right) => left.date.localeCompare(right.date))
+    .map((payment, index) => {
+      const ordinaryPrincipal = payment.principalAmount ?? zero;
+      const extraordinaryPrincipal = payment.extraPrincipalAmount ?? zero;
+      const principal = ordinaryPrincipal.add(extraordinaryPrincipal);
+      const closingBalance = balance.isLessThan(principal) ? balance : balance.subtract(principal);
+      const period = {
+        period: index + 1,
+        date: payment.date,
+        openingBalance: balance,
+        interest: payment.interestAmount ?? zero,
+        principal,
+        ordinaryPrincipal,
+        extraordinaryPrincipal,
+        payment: payment.totalAmount,
+        closingBalance,
+      } satisfies DisplayProjectionPeriod;
+      balance = closingBalance;
+      return period;
+    });
+  if (!bankReset?.adjustment) return historical;
+  return [
+    ...historical,
+    {
+      period: historical.length + 1,
+      date: bankReset.adjustment.date,
+      openingBalance: balance,
+      interest: zero,
+      principal: bankReset.adjustment.principalAmount,
+      ordinaryPrincipal: zero,
+      extraordinaryPrincipal: bankReset.adjustment.principalAmount,
+      payment: bankReset.adjustment.principalAmount,
+      closingBalance: bankReset.reportedBalance,
+    },
+  ];
 }
 
 function historicalClosingBalances(

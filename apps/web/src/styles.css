@@ -534,6 +534,13 @@ h1 {
   vector-effect: non-scaling-stroke;
 }
 
+.chart-history-divider {
+  stroke: #64748b;
+  stroke-dasharray: 2 3;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
 .chart-label {
   fill: #334155;
   font-size: 12px;
