@@ -174,6 +174,70 @@ describe('ProjectionView', () => {
     );
   });
 
+  test('compara escenarios desde el saldo reconciliado', () => {
+    const contractLoan = createLoanV3({
+      id: 'loan-reset-scenario',
+      name: 'Préstamo con reset',
+      startDate: '2026-01-01',
+      originalPrincipal: Money.from('1000.00', 'CRC'),
+      monthlyTotalPayment: Money.from('105.00', 'CRC'),
+      monthlyInsurance: Money.from('5.00', 'CRC'),
+      term: { totalInstallments: 12 },
+      annualNominalRate: '0.12',
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+    });
+    const payment = createPaymentRecord({
+      id: 'reset-history',
+      date: '2026-02-01',
+      totalAmount: Money.from('105.00', 'CRC'),
+      interestAmount: Money.from('10.00', 'CRC'),
+      principalAmount: Money.from('50.00', 'CRC'),
+      source: 'csv_import',
+    });
+    const bankReset = createBankReset({
+      id: 'reset-scenario',
+      cutoffDate: '2026-02-01',
+      reportedBalance: Money.from('940.00', 'CRC'),
+      bankFinalInstallmentDate: '2026-12-01',
+      adjustment: {
+        id: 'reset-scenario-adjustment',
+        date: '2026-02-01',
+        principalAmount: Money.from('10.00', 'CRC'),
+        reason: 'Diferencia confirmada.',
+      },
+    });
+    const scenario = createRecurringExtraPaymentScenario({
+      id: 'reset-extra',
+      loanId: contractLoan.id,
+      name: 'Extra desde reset',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      recurringExtraPayment: { kind: 'constant_extra', amount: Money.from('20.00', 'CRC') },
+    });
+    const { container } = render(
+      <ProjectionView
+        loan={contractLoan}
+        payments={[payment]}
+        bankReset={bankReset}
+        scenarios={[scenario]}
+      />,
+    );
+
+    expect(screen.getByLabelText('Escenario A')).toBeVisible();
+    fireEvent.change(screen.getByLabelText('Escenario A'), { target: { value: scenario.id } });
+    expect(
+      container.querySelector('.chart-signal-line.balance.source-scenario-first'),
+    ).toBeVisible();
+
+    fireEvent.change(screen.getByLabelText('Mostrar en la tabla'), {
+      target: { value: scenario.id },
+    });
+    const firstScenarioRow = screen
+      .getAllByRole('cell', { name: 'Proyección de escenario' })[0]
+      ?.closest('tr');
+    expect(firstScenarioRow).toHaveTextContent('2026-03-01');
+    expect(firstScenarioRow).toHaveTextContent('₡20,00');
+  });
+
   test('pagina un calendario extenso sin perder cabeceras de tabla', () => {
     const longLoan = createLoan({
       id: 'loan-long',

@@ -96,6 +96,7 @@ export {
   ScenarioValidationError,
   type OneTimeExtraPaymentComparison,
   type OneTimeExtraPaymentScenario,
+  type ScenarioProjectionContext,
 } from './scenario/one-time-extra-payment.js';
 export {
   compareLoanWithRecurringExtraPayment,

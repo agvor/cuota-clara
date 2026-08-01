@@ -27,6 +27,15 @@ export type OneTimeExtraPaymentComparison = Readonly<{
   comparison: FixedRateAmortizationComparison;
 }>;
 
+/** Punto de partida de un escenario después de pagos históricos o un reset bancario. */
+export type ScenarioProjectionContext = Readonly<{
+  openingBalance: Money;
+  startDate: string;
+  periodEndDates: readonly string[];
+  ordinaryPayments: readonly Money[];
+  periodNumberOffset: number;
+}>;
+
 export class ScenarioValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -72,6 +81,7 @@ export function createOneTimeExtraPaymentScenario(input: {
 export function compareLoanWithOneTimeExtraPayment(input: {
   loan: Loan;
   scenario: OneTimeExtraPaymentScenario;
+  projectionContext?: ScenarioProjectionContext;
 }): OneTimeExtraPaymentComparison {
   if (input.scenario.loanId !== input.loan.id) {
     throw new ScenarioValidationError('El escenario pertenece a otro préstamo.');
@@ -80,19 +90,10 @@ export function compareLoanWithOneTimeExtraPayment(input: {
   if (extraPayment.amount.currency !== input.loan.initialBalance.currency) {
     throw new ScenarioValidationError('El pago extraordinario debe usar la moneda del préstamo.');
   }
-  const periodEndDates = generatePeriodEndDates(input.loan.startDate, input.loan.periodsPerYear);
-  const base = projectLoanAmortization(input.loan);
+  const base = projectLoanAmortization(input.loan, input.projectionContext);
   const alternative = generateFixedRateAmortization({
-    openingBalance: input.loan.initialBalance,
-    annualNominalRate: input.loan.annualNominalRate,
-    periodsPerYear: input.loan.periodsPerYear,
-    ordinaryPayment: input.loan.ordinaryPayment,
-    startDate: input.loan.startDate,
-    periodEndDates,
-    roundingPolicy: input.loan.roundingPolicy,
+    ...scenarioAmortizationInput(input.loan, input.projectionContext),
     extraPayments: [extraPayment],
-    ...(input.loan.variableRatePlan ? { variableRatePlan: input.loan.variableRatePlan } : {}),
-    ...(input.loan.tbpMarginRatePlan ? { tbpMarginRatePlan: input.loan.tbpMarginRatePlan } : {}),
   });
   return Object.freeze({
     base,
@@ -101,8 +102,42 @@ export function compareLoanWithOneTimeExtraPayment(input: {
   });
 }
 
-export function projectLoanAmortization(loan: Loan): FixedRateAmortizationResult {
-  return generateFixedRateAmortization({
+export function projectLoanAmortization(
+  loan: Loan,
+  projectionContext?: ScenarioProjectionContext,
+): FixedRateAmortizationResult {
+  return generateFixedRateAmortization(scenarioAmortizationInput(loan, projectionContext));
+}
+
+export function scenarioAmortizationInput(
+  loan: Loan,
+  projectionContext?: ScenarioProjectionContext,
+) {
+  if (projectionContext) {
+    const firstOrdinaryPayment = projectionContext.ordinaryPayments[0];
+    if (
+      !firstOrdinaryPayment ||
+      projectionContext.ordinaryPayments.length !== projectionContext.periodEndDates.length
+    ) {
+      throw new ScenarioValidationError(
+        'La proyección de escenario requiere una cuota para cada fecha pendiente.',
+      );
+    }
+    return {
+      openingBalance: projectionContext.openingBalance,
+      annualNominalRate: loan.annualNominalRate,
+      periodsPerYear: loan.periodsPerYear,
+      ordinaryPayment: firstOrdinaryPayment,
+      scheduledOrdinaryPayments: projectionContext.ordinaryPayments,
+      periodNumberOffset: projectionContext.periodNumberOffset,
+      startDate: projectionContext.startDate,
+      periodEndDates: projectionContext.periodEndDates,
+      roundingPolicy: loan.roundingPolicy,
+      ...(loan.variableRatePlan ? { variableRatePlan: loan.variableRatePlan } : {}),
+      ...(loan.tbpMarginRatePlan ? { tbpMarginRatePlan: loan.tbpMarginRatePlan } : {}),
+    };
+  }
+  return {
     openingBalance: loan.initialBalance,
     annualNominalRate: loan.annualNominalRate,
     periodsPerYear: loan.periodsPerYear,
@@ -112,7 +147,7 @@ export function projectLoanAmortization(loan: Loan): FixedRateAmortizationResult
     roundingPolicy: loan.roundingPolicy,
     ...(loan.variableRatePlan ? { variableRatePlan: loan.variableRatePlan } : {}),
     ...(loan.tbpMarginRatePlan ? { tbpMarginRatePlan: loan.tbpMarginRatePlan } : {}),
-  });
+  };
 }
 
 export function isOneTimeExtraPaymentScenario(

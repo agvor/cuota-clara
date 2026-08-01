@@ -25,6 +25,10 @@ export type FixedRateAmortizationInput = Readonly<{
   annualNominalRate: string;
   periodsPerYear: number;
   ordinaryPayment: Money;
+  /** Cuotas ordinarias por fecha; permite continuar una proyección ya recalculada. */
+  scheduledOrdinaryPayments?: readonly Money[];
+  /** Número de cuotas ya transcurridas antes de la primera fecha del cálculo. */
+  periodNumberOffset?: number;
   startDate: string;
   periodEndDates: readonly string[];
   roundingPolicy: RoundingPolicy;
@@ -93,6 +97,26 @@ function validateInput(input: FixedRateAmortizationInput): void {
     throw new AmortizationValidationError(
       'El saldo y la cuota ordinaria deben usar la misma moneda.',
     );
+  }
+  if (
+    input.periodNumberOffset !== undefined &&
+    (!Number.isInteger(input.periodNumberOffset) || input.periodNumberOffset < 0)
+  ) {
+    throw new AmortizationValidationError('El desfase de períodos debe ser un entero no negativo.');
+  }
+  if (input.scheduledOrdinaryPayments) {
+    if (input.scheduledOrdinaryPayments.length !== input.periodEndDates.length) {
+      throw new AmortizationValidationError(
+        'Las cuotas programadas deben corresponder a cada fecha de pago.',
+      );
+    }
+    for (const payment of input.scheduledOrdinaryPayments) {
+      if (payment.currency !== input.openingBalance.currency || !payment.isPositive()) {
+        throw new AmortizationValidationError(
+          'Las cuotas programadas deben ser positivas y usar la moneda del préstamo.',
+        );
+      }
+    }
   }
   if (input.recurringExtraPayment) {
     if (
@@ -169,7 +193,7 @@ export function generateFixedRateAmortization(
       fixedAnnualNominalRate: input.annualNominalRate,
       ...(input.variableRatePlan ? { variableRatePlan: input.variableRatePlan } : {}),
       ...(input.tbpMarginRatePlan ? { tbpMarginRatePlan: input.tbpMarginRatePlan } : {}),
-      periodNumber: index + 1,
+      periodNumber: index + 1 + (input.periodNumberOffset ?? 0),
       periodEndDate,
     });
     const interestResult = calculateFixedNominalInterest({
@@ -181,9 +205,11 @@ export function generateFixedRateAmortization(
       roundingPolicy: input.roundingPolicy,
     });
     const amountDue = openingBalance.add(interestResult.interest);
-    const ordinaryPayment = amountDue.isLessThan(input.ordinaryPayment)
+    const scheduledOrdinaryPayment =
+      input.scheduledOrdinaryPayments?.[index] ?? input.ordinaryPayment;
+    const ordinaryPayment = amountDue.isLessThan(scheduledOrdinaryPayment)
       ? amountDue
-      : input.ordinaryPayment;
+      : scheduledOrdinaryPayment;
     const ordinaryPrincipal = ordinaryPayment.subtract(interestResult.interest);
 
     if (ordinaryPrincipal.isLessThanOrEqualTo(Money.from('0', ordinaryPrincipal.currency))) {

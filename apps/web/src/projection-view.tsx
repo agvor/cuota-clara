@@ -11,9 +11,11 @@ import {
   type BankReset,
   type PaymentRecord,
   type ProjectionScenarioSnapshot,
+  type ScenarioProjectionContext,
 } from '@cuotaclara/domain';
 
 import { formatCompactMoney, formatMoney } from './money-format.js';
+import { createScenarioProjectionContext } from './scenario-projection-context.js';
 
 const PAGE_SIZE = 24;
 const CHART = { left: 94, right: 770, top: 30, bottom: 276 } as const;
@@ -141,8 +143,18 @@ export function ProjectionView({
     );
 
   const hasHistoricalContinuation = payments.length > 0 && !bankReset;
-  const comparableScenarios =
-    bankReset || hasHistoricalContinuation ? [] : scenarios.filter(isComparableScenario);
+  const scenarioProjectionContext = useMemo(() => {
+    try {
+      return createScenarioProjectionContext({
+        loan,
+        payments,
+        ...(bankReset ? { bankReset } : {}),
+      });
+    } catch {
+      return undefined;
+    }
+  }, [bankReset, loan, payments]);
+  const comparableScenarios = scenarios.filter(isComparableScenario);
   const historicalBalances = historicalClosingBalances(payments, loan);
   const selectedScenario = comparableScenarios.find(
     (scenario) => scenario.id === selectedTableSourceId,
@@ -156,18 +168,9 @@ export function ProjectionView({
   if (selectedScenario) {
     tableProjectionLabel = selectedScenario.name;
     try {
-      tableProjectionPeriods = compareScenario(loan, selectedScenario).alternative.periods.map(
-        (period) => ({
-          period: period.period,
-          date: period.date,
-          openingBalance: period.openingBalance,
-          interest: period.interest,
-          principal: period.principal,
-          ordinaryPrincipal: period.principal.subtract(period.extraPayment),
-          extraordinaryPrincipal: period.extraPayment,
-          payment: period.payment,
-          closingBalance: period.closingBalance,
-        }),
+      tableProjectionPeriods = displayScenarioPeriods(
+        compareScenario(loan, selectedScenario, scenarioProjectionContext).alternative.periods,
+        loan,
       );
     } catch (cause) {
       tableProjectionLabel = 'Configuración base';
@@ -222,15 +225,14 @@ export function ProjectionView({
       {bankReset ? (
         <p className="reconciliation-note" role="status">
           La proyección inicia con el saldo bancario del {bankReset.cutoffDate} y recalcula la cuota
-          hasta {bankReset.bankFinalInstallmentDate}. Los escenarios se desactivan mientras este
-          reset esté vigente.
+          hasta {bankReset.bankFinalInstallmentDate}. Los escenarios también parten de ese saldo.
         </p>
       ) : null}
       {hasHistoricalContinuation ? (
         <p className="reconciliation-note" role="status">
           La proyección inicia después del último pago histórico y usa el saldo reconstruido con sus
-          aportes a principal. Configura un reset bancario si el saldo informado por la entidad es
-          distinto.
+          aportes a principal; los escenarios usan el mismo punto de partida. Configura un reset
+          bancario si el saldo informado por la entidad es distinto.
         </p>
       ) : null}
       <BalanceChart
@@ -239,6 +241,7 @@ export function ProjectionView({
         {...(bankReset ? { bankReset } : {})}
         periods={result.periods}
         scenarios={comparableScenarios}
+        {...(scenarioProjectionContext ? { scenarioProjectionContext } : {})}
         {...(chartConfiguration ? { chartConfiguration } : {})}
         {...(onChartConfigurationChange ? { onChartConfigurationChange } : {})}
       />
@@ -412,6 +415,7 @@ function BalanceChart({
   bankReset,
   periods,
   scenarios,
+  scenarioProjectionContext,
   chartConfiguration,
   onChartConfigurationChange,
 }: Readonly<{
@@ -420,6 +424,7 @@ function BalanceChart({
   bankReset?: BankReset;
   periods: readonly DisplayProjectionPeriod[];
   scenarios: readonly ProjectionScenarioSnapshot[];
+  scenarioProjectionContext?: ScenarioProjectionContext;
   chartConfiguration?: ChartConfiguration;
   onChartConfigurationChange?: (configuration: ChartConfiguration) => void;
 }>) {
@@ -472,14 +477,24 @@ function BalanceChart({
   const scenarioSources: readonly ChartSource[] = [firstScenarioId, secondScenarioId]
     .map((id) => comparableScenarios.find((scenario) => scenario.id === id))
     .filter((scenario): scenario is ComparableScenario => Boolean(scenario))
-    .map((scenario, index) => {
-      const comparison = compareScenario(loan, scenario);
-      return {
-        id: scenario.id,
-        label: scenario.name,
-        sourceClass: index === 0 ? 'scenario-first' : 'scenario-second',
-        values: valuesFromProjectionPeriods(comparison.alternative.periods, visiblePeriods, loan),
-      };
+    .flatMap((scenario, index) => {
+      try {
+        const comparison = compareScenario(loan, scenario, scenarioProjectionContext);
+        return [
+          {
+            id: scenario.id,
+            label: scenario.name,
+            sourceClass: index === 0 ? 'scenario-first' : 'scenario-second',
+            values: valuesFromProjectionPeriods(
+              displayScenarioPeriods(comparison.alternative.periods, loan),
+              visiblePeriods,
+              loan,
+            ),
+          } satisfies ChartSource,
+        ];
+      } catch {
+        return [];
+      }
     });
   const baseValues: ChartValues = {
     balance: visiblePeriods.map((period) => period.closingBalance),
@@ -922,33 +937,73 @@ function ChartPointDetails({
 }
 
 function valuesFromProjectionPeriods(
-  projectionPeriods: readonly Readonly<{
-    period: number;
-    closingBalance: Loan['initialBalance'];
-    payment: Loan['initialBalance'];
-    interest: Loan['initialBalance'];
-    principal: Loan['initialBalance'];
-    extraPayment: Loan['initialBalance'];
-  }>[],
+  projectionPeriods: readonly DisplayProjectionPeriod[],
   visiblePeriods: readonly DisplayProjectionPeriod[],
   loan: Loan,
 ): ChartValues {
+  const projectionStartDate = projectionPeriods[0]?.date;
   const valuesFor = (
     select: (period: (typeof projectionPeriods)[number]) => Loan['initialBalance'],
+    selectHistorical: (period: DisplayProjectionPeriod) => Loan['initialBalance'],
   ): readonly Loan['initialBalance'][] =>
     visiblePeriods.map((visiblePeriod) => {
       const projectionPeriod = projectionPeriods.find(
-        (period) => period.period === visiblePeriod.period,
+        (period) => period.date === visiblePeriod.date,
       );
-      return projectionPeriod ? select(projectionPeriod) : zeroMoney(loan);
+      if (projectionPeriod) return select(projectionPeriod);
+      return projectionStartDate && visiblePeriod.date < projectionStartDate
+        ? selectHistorical(visiblePeriod)
+        : zeroMoney(loan);
     });
   return {
-    balance: valuesFor((period) => period.closingBalance),
-    payment: valuesFor((period) => period.payment),
-    interest: valuesFor((period) => period.interest),
-    principal: valuesFor((period) => period.principal),
-    extra: valuesFor((period) => period.extraPayment),
+    balance: valuesFor(
+      (period) => period.closingBalance,
+      (period) => period.closingBalance,
+    ),
+    payment: valuesFor(
+      (period) => period.payment,
+      (period) => period.payment,
+    ),
+    interest: valuesFor(
+      (period) => period.interest,
+      (period) => period.interest,
+    ),
+    principal: valuesFor(
+      (period) => period.principal,
+      (period) => period.principal,
+    ),
+    extra: valuesFor(
+      (period) => period.extraordinaryPrincipal,
+      (period) => period.extraordinaryPrincipal,
+    ),
   };
+}
+
+function displayScenarioPeriods(
+  periods: readonly Readonly<{
+    period: number;
+    date: string;
+    openingBalance: Loan['initialBalance'];
+    interest: Loan['initialBalance'];
+    principal: Loan['initialBalance'];
+    extraPayment: Loan['initialBalance'];
+    payment: Loan['initialBalance'];
+    closingBalance: Loan['initialBalance'];
+  }>[],
+  loan: Loan,
+): readonly DisplayProjectionPeriod[] {
+  const insurance = loan.contract?.monthlyInsurance ?? zeroMoney(loan);
+  return periods.map((period) => ({
+    period: period.period,
+    date: period.date,
+    openingBalance: period.openingBalance,
+    interest: period.interest,
+    principal: period.principal,
+    ordinaryPrincipal: period.principal.subtract(period.extraPayment),
+    extraordinaryPrincipal: period.extraPayment,
+    payment: period.payment.add(insurance),
+    closingBalance: period.closingBalance,
+  }));
 }
 
 function toChartPoints(
@@ -1055,12 +1110,24 @@ function isComparableScenario(
   return isOneTimeExtraPaymentScenario(scenario) || isRecurringExtraPaymentScenario(scenario);
 }
 
-function compareScenario(loan: Loan, scenario: ComparableScenario) {
+function compareScenario(
+  loan: Loan,
+  scenario: ComparableScenario,
+  scenarioProjectionContext?: ScenarioProjectionContext,
+) {
   if (isOneTimeExtraPaymentScenario(scenario)) {
-    return compareLoanWithOneTimeExtraPayment({ loan, scenario });
+    return compareLoanWithOneTimeExtraPayment({
+      loan,
+      scenario,
+      ...(scenarioProjectionContext ? { projectionContext: scenarioProjectionContext } : {}),
+    });
   }
   if (isRecurringExtraPaymentScenario(scenario)) {
-    return compareLoanWithRecurringExtraPayment({ loan, scenario });
+    return compareLoanWithRecurringExtraPayment({
+      loan,
+      scenario,
+      ...(scenarioProjectionContext ? { projectionContext: scenarioProjectionContext } : {}),
+    });
   }
   throw new Error('El escenario no se puede comparar.');
 }

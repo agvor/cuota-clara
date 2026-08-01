@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 
 import {
   compareLoanWithOneTimeExtraPayment,
@@ -10,11 +10,15 @@ import {
   Money,
   type Loan,
   type OneTimeExtraPaymentComparison,
+  type BankReset,
+  type PaymentRecord,
   type ProjectionScenarioSnapshot,
   type RecurringExtraPaymentComparison,
+  type ScenarioProjectionContext,
 } from '@cuotaclara/domain';
 
-import { formatDecimalMoney, formatMoney } from './money-format.js';
+import { formatMoney } from './money-format.js';
+import { createScenarioProjectionContext } from './scenario-projection-context.js';
 
 type ScenarioType = 'one_time' | 'constant_extra' | 'constant_principal';
 type ComparableScenario = ProjectionScenarioSnapshot;
@@ -23,11 +27,15 @@ type ScenarioComparison = OneTimeExtraPaymentComparison | RecurringExtraPaymentC
 export function ScenarioTools({
   loan,
   scenarios,
+  payments = [],
+  bankReset,
   onSaveScenario,
   onDeleteScenario = async () => undefined,
 }: Readonly<{
   loan: Loan;
   scenarios: readonly ProjectionScenarioSnapshot[];
+  payments?: readonly PaymentRecord[];
+  bankReset?: BankReset;
   onSaveScenario: (scenario: ProjectionScenarioSnapshot) => Promise<void>;
   onDeleteScenario?: (scenarioId: string) => Promise<void>;
 }>) {
@@ -36,6 +44,17 @@ export function ScenarioTools({
   const [scenarioType, setScenarioType] = useState<ScenarioType>('one_time');
   const [summaryScenarioId, setSummaryScenarioId] = useState<string>();
   const [error, setError] = useState<string>();
+  const scenarioProjectionContext = useMemo(() => {
+    try {
+      return createScenarioProjectionContext({
+        loan,
+        payments,
+        ...(bankReset ? { bankReset } : {}),
+      });
+    } catch {
+      return undefined;
+    }
+  }, [bankReset, loan, payments]);
   const comparable = scenarios.filter(isComparableScenario);
   const formKey = `${editingScenario?.id ?? 'new'}-${scenarioType}`;
 
@@ -165,6 +184,7 @@ export function ScenarioTools({
       <SavedScenarios
         loan={loan}
         scenarios={comparable}
+        {...(scenarioProjectionContext ? { scenarioProjectionContext } : {})}
         onEdit={edit}
         onDelete={remove}
         {...(summaryScenarioId ? { summaryScenarioId } : {})}
@@ -245,6 +265,7 @@ function defaultScenarioName(type: ScenarioType): string {
 function SavedScenarios({
   loan,
   scenarios,
+  scenarioProjectionContext,
   onEdit,
   onDelete,
   summaryScenarioId,
@@ -252,6 +273,7 @@ function SavedScenarios({
 }: Readonly<{
   loan: Loan;
   scenarios: readonly ComparableScenario[];
+  scenarioProjectionContext?: ScenarioProjectionContext;
   onEdit: (scenario: ComparableScenario) => void;
   onDelete: (scenario: ComparableScenario) => void;
   summaryScenarioId?: string;
@@ -288,7 +310,13 @@ function SavedScenarios({
                 Eliminar escenario
               </button>
             </div>
-            {isSummaryOpen ? <ScenarioSummary loan={loan} scenario={scenario} /> : null}
+            {isSummaryOpen ? (
+              <ScenarioSummary
+                loan={loan}
+                scenario={scenario}
+                {...(scenarioProjectionContext ? { scenarioProjectionContext } : {})}
+              />
+            ) : null}
           </article>
         );
       })}
@@ -299,11 +327,29 @@ function SavedScenarios({
 function ScenarioSummary({
   loan,
   scenario,
+  scenarioProjectionContext,
 }: Readonly<{
   loan: Loan;
   scenario: ComparableScenario;
+  scenarioProjectionContext?: ScenarioProjectionContext;
 }>) {
-  const comparison = compareScenario(loan, scenario);
+  let comparison: ScenarioComparison;
+  try {
+    comparison = compareScenario(loan, scenario, scenarioProjectionContext);
+  } catch (cause) {
+    return (
+      <p id={`scenario-summary-${scenario.id}`} role="alert">
+        {cause instanceof Error ? cause.message : 'No se pudo calcular el escenario.'}
+      </p>
+    );
+  }
+  const estimatedInsurance = loan.contract
+    ? loan.contract.monthlyInsurance.multiplyBy(String(comparison.alternative.periods.length))
+    : Money.from('0', loan.initialBalance.currency);
+  const estimatedTotal = Money.from(
+    comparison.alternative.summary.totalPaid,
+    loan.initialBalance.currency,
+  ).add(estimatedInsurance);
   return (
     <div id={`scenario-summary-${scenario.id}`} className="scenario-summary" aria-live="polite">
       <div className="table-scroll">
@@ -323,14 +369,12 @@ function ScenarioSummary({
               <td>{formatMoney(comparison.comparison.interestSaved, loan.roundingPolicy)}</td>
             </tr>
             <tr>
+              <th scope="row">Seguro proyectado</th>
+              <td>{formatMoney(estimatedInsurance, loan.roundingPolicy)}</td>
+            </tr>
+            <tr>
               <th scope="row">Total pagado estimado</th>
-              <td>
-                {formatDecimalMoney(
-                  comparison.alternative.summary.totalPaid,
-                  loan.initialBalance.currency,
-                  loan.roundingPolicy,
-                )}
-              </td>
+              <td>{formatMoney(estimatedTotal, loan.roundingPolicy)}</td>
             </tr>
           </tbody>
         </table>
@@ -339,12 +383,24 @@ function ScenarioSummary({
   );
 }
 
-function compareScenario(loan: Loan, scenario: ComparableScenario): ScenarioComparison {
+function compareScenario(
+  loan: Loan,
+  scenario: ComparableScenario,
+  scenarioProjectionContext?: ScenarioProjectionContext,
+): ScenarioComparison {
   if (isOneTimeExtraPaymentScenario(scenario)) {
-    return compareLoanWithOneTimeExtraPayment({ loan, scenario });
+    return compareLoanWithOneTimeExtraPayment({
+      loan,
+      scenario,
+      ...(scenarioProjectionContext ? { projectionContext: scenarioProjectionContext } : {}),
+    });
   }
   if (isRecurringExtraPaymentScenario(scenario)) {
-    return compareLoanWithRecurringExtraPayment({ loan, scenario });
+    return compareLoanWithRecurringExtraPayment({
+      loan,
+      scenario,
+      ...(scenarioProjectionContext ? { projectionContext: scenarioProjectionContext } : {}),
+    });
   }
   throw new Error('El escenario no es compatible con el resumen.');
 }

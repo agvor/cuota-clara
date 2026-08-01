@@ -10,9 +10,10 @@ import { Money } from '../money.js';
 import { type ProjectionScenarioSnapshot } from '../ports/loan-repository.js';
 
 import {
-  generatePeriodEndDates,
   projectLoanAmortization,
+  scenarioAmortizationInput,
   ScenarioValidationError,
+  type ScenarioProjectionContext,
 } from './one-time-extra-payment.js';
 
 const SCENARIO_KIND = 'recurring_extra_payment_v1';
@@ -71,6 +72,7 @@ export function createRecurringExtraPaymentScenario(input: {
 export function compareLoanWithRecurringExtraPayment(input: {
   loan: Loan;
   scenario: RecurringExtraPaymentScenario;
+  projectionContext?: ScenarioProjectionContext;
 }): RecurringExtraPaymentComparison {
   if (input.scenario.loanId !== input.loan.id) {
     throw new ScenarioValidationError('El escenario pertenece a otro préstamo.');
@@ -79,18 +81,10 @@ export function compareLoanWithRecurringExtraPayment(input: {
   if (recurringExtraPayment.amount.currency !== input.loan.initialBalance.currency) {
     throw new ScenarioValidationError('El aporte recurrente debe usar la moneda del préstamo.');
   }
-  const base = projectLoanAmortization(input.loan);
+  const base = projectLoanAmortization(input.loan, input.projectionContext);
   const alternative = generateFixedRateAmortization({
-    openingBalance: input.loan.initialBalance,
-    annualNominalRate: input.loan.annualNominalRate,
-    periodsPerYear: input.loan.periodsPerYear,
-    ordinaryPayment: input.loan.ordinaryPayment,
-    startDate: input.loan.startDate,
-    periodEndDates: generatePeriodEndDates(input.loan.startDate, input.loan.periodsPerYear),
-    roundingPolicy: input.loan.roundingPolicy,
+    ...scenarioAmortizationInput(input.loan, input.projectionContext),
     recurringExtraPayment,
-    ...(input.loan.variableRatePlan ? { variableRatePlan: input.loan.variableRatePlan } : {}),
-    ...(input.loan.tbpMarginRatePlan ? { tbpMarginRatePlan: input.loan.tbpMarginRatePlan } : {}),
   });
   return Object.freeze({
     base,

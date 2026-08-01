@@ -594,6 +594,8 @@ function LoanWorkspace({
             <ScenarioTools
               loan={loan}
               scenarios={aggregate.scenarios}
+              payments={aggregate.payments}
+              {...(aggregate.bankReset ? { bankReset: aggregate.bankReset } : {})}
               onSaveScenario={onSaveScenario}
               onDeleteScenario={onDeleteScenario}
             />
