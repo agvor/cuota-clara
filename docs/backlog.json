@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-29",
+  "updatedAt": "2026-07-31",
   "items": [
     {
       "id": "US-001",
@@ -594,6 +594,20 @@
         "El selector de tipo de escenario comparte ancho, borde, tipografía y espaciado con los demás campos editables.",
         "El aviso sobre estimaciones se muestra una vez en el pie global y no ocupa el resumen financiero del préstamo.",
         "La columna de origen usa H y P con una leyenda visible y nombres accesibles completos."
+      ]
+    },
+    {
+      "id": "US-042",
+      "epic": "E2 · Importación y datos locales",
+      "title": "Convertir un plan PDF compatible en CSV de pagos",
+      "story": "Como persona usuaria, quiero preparar localmente un CSV desde el plan de pagos PDF de mi entidad para revisarlo y cargar sus pagos históricos sin transcribir cada desglose.",
+      "requirements": ["RF-006", "RNF-005", "RNF-006"],
+      "dependsOn": ["US-008"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "Un script de Python sin dependencias externas extrae fecha, cuota total, principal, interés, pólizas y otros del formato PDF compatible y genera los encabezados CSV documentados.",
+        "Por defecto solo se escriben cuotas con fecha igual o anterior al día de ejecución y se permite reproducir el corte con una fecha explícita.",
+        "La guía explica la asignación de campos y que la previsualización de la aplicación sigue siendo obligatoria porque un plan no confirma pagos reales."
       ]
     }
   ]

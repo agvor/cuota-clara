@@ -1,13 +1,13 @@
 # Estado de implementación
 
-> Generado desde `docs/backlog.json` el 2026-07-29. No editar manualmente.
+> Generado desde `docs/backlog.json` el 2026-07-31. No editar manualmente.
 
 **Siguiente ítem habilitado:** ninguno; revisar dependencias o bloqueos.
 
 | Épica | Planeado | Listo | En curso | Bloqueado | Completado |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | E1 · Motor financiero verificable | 0 | 0 | 0 | 0 | 7 |
-| E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 3 |
+| E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 4 |
 | E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 10 |
 | E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 9 |
 | E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 1 |
@@ -60,3 +60,4 @@
 | US-039 | E3 · PWA y gestión de préstamos | Afinar el detalle de proyección y escenarios | Completado | US-038 |
 | US-040 | E3 · PWA y gestión de préstamos | Conservar el contexto de análisis del préstamo | Completado | US-039 |
 | US-041 | E3 · PWA y gestión de préstamos | Pulir controles y referencias globales | Completado | US-040 |
+| US-042 | E2 · Importación y datos locales | Convertir un plan PDF compatible en CSV de pagos | Completado | US-008 |

@@ -24,6 +24,8 @@ La persona usuaria debe indicar delimitador, separador decimal y formato de fech
 
 La moneda se toma de la configuración del préstamo, no de cada fila. Los importes se convierten a `Money` decimal antes de la previsualización.
 
+Para un plan de pagos PDF de la entidad compatible, el conversor local descrito en [Conversión de un plan de pagos PDF](payment-plan-pdf-converter.md) genera esta misma plantilla. El PDF es una programación y no demuestra que el cobro haya ocurrido: conserva siempre la previsualización y confirmación de la aplicación.
+
 ## Validaciones
 
 - Encabezados obligatorios y errores estructurales de CSV.

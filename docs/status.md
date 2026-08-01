@@ -1,6 +1,6 @@
 # Estado de requisitos
 
-> Generado desde `docs/traceability.json` el 2026-07-29. No editar manualmente.
+> Generado desde `docs/traceability.json` el 2026-07-31. No editar manualmente.
 
 | Hito | Planeado | En curso | Completado |
 | --- | ---: | ---: | ---: |

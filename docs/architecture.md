@@ -44,6 +44,8 @@ CSV → parseo regional → filas normalizadas → validación y detección de d
 
 La previsualización es obligatoria. Las filas rechazadas no se persisten y la importación confirmada conserva su procedencia.
 
+Como apoyo externo a este flujo, `tooling/convert_payment_plan_pdf.py` transforma localmente un formato de plan PDF conocido en el CSV regional. No forma parte del dominio ni del adaptador de importación: su salida sigue pasando por la misma validación, previsualización y confirmación, pues un plan programado no prueba un pago histórico.
+
 El adaptador reutilizable `packages/import-csv` convierte texto CSV en una previsualización de `PaymentRecord`; no depende de IndexedDB ni puede confirmar la importación.
 
 ## Flujo de proyección
