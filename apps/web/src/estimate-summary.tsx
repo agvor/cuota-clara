@@ -37,11 +37,25 @@ export function EstimateSummary({
     (total, payment) => total.add(payment.totalAmount),
     zero,
   );
+  const historicalInsurance =
+    aggregate?.payments.reduce(
+      (total, payment) => total.add(payment.insuranceAmount ?? zero),
+      zero,
+    ) ?? zero;
+  const historicalFees =
+    aggregate?.payments.reduce((total, payment) => total.add(payment.feeAmount ?? zero), zero) ??
+    zero;
   const bankResetAdjustment = historical?.bankReset?.adjustment;
   const reconciliationPrincipal = bankResetAdjustment?.principalAmount ?? zero;
   const hasHistoricalPayments = Boolean(aggregate?.payments.length);
   const hasReconciliation = Boolean(bankResetAdjustment && reconciliationPrincipal.isPositive());
   const hasRecordedActivity = hasHistoricalPayments || hasReconciliation;
+  const historicalPrincipal = historical?.appliedPrincipal ?? zero;
+  const historicalInterest = historical?.historicalInterest ?? zero;
+  const historicalUnclassified = (historicalTotal ?? zero).subtract(
+    historicalPrincipal.add(historicalInterest).add(historicalInsurance).add(historicalFees),
+  );
+  const totalOtherPaid = historicalFees.add(historicalUnclassified);
   const projectedPayment = estimate.automaticTotalPayment ?? estimate.projectedInitialTotalPayment;
   const projectedPaymentLabel = historical
     ? 'Cuota mensual recalculada al corte'
@@ -53,11 +67,12 @@ export function EstimateSummary({
     projectedPayment && (!aggregate || historical || estimate.hasConfiguredPaymentDifference),
   );
   const totalPrincipal = historical
-    ? historical.appliedPrincipal.add(reconciliationPrincipal).add(estimate.estimatedPrincipal)
+    ? historicalPrincipal.add(reconciliationPrincipal).add(estimate.estimatedPrincipal)
     : estimate.estimatedPrincipal;
   const totalInterest = historical
-    ? historical.historicalInterest.add(estimate.estimatedInterest)
+    ? historicalInterest.add(estimate.estimatedInterest)
     : estimate.estimatedInterest;
+  const totalInsurance = historicalInsurance.add(estimate.estimatedInsurance);
   const totalPaid = historical
     ? (historicalTotal ?? zero).add(reconciliationPrincipal).add(estimate.estimatedTotal)
     : estimate.estimatedTotal;
@@ -142,12 +157,30 @@ export function EstimateSummary({
               </tr>
               <tr>
                 <th scope="row">Principal registrado</th>
-                <td>{formatMoney(historical?.appliedPrincipal ?? zero, loan.roundingPolicy)}</td>
+                <td>{formatMoney(historicalPrincipal, loan.roundingPolicy)}</td>
               </tr>
               <tr>
                 <th scope="row">Interés registrado</th>
-                <td>{formatMoney(historical?.historicalInterest ?? zero, loan.roundingPolicy)}</td>
+                <td>{formatMoney(historicalInterest, loan.roundingPolicy)}</td>
               </tr>
+              {historicalInsurance.isPositive() ? (
+                <tr>
+                  <th scope="row">Seguro registrado</th>
+                  <td>{formatMoney(historicalInsurance, loan.roundingPolicy)}</td>
+                </tr>
+              ) : null}
+              {historicalFees.isPositive() ? (
+                <tr>
+                  <th scope="row">Comisiones y cargos registrados</th>
+                  <td>{formatMoney(historicalFees, loan.roundingPolicy)}</td>
+                </tr>
+              ) : null}
+              {!historicalUnclassified.isZero() ? (
+                <tr>
+                  <th scope="row">Otros importes registrados</th>
+                  <td>{formatMoney(historicalUnclassified, loan.roundingPolicy)}</td>
+                </tr>
+              ) : null}
             </tbody>
           ) : null}
           {hasReconciliation ? (
@@ -178,6 +211,16 @@ export function EstimateSummary({
                 <th scope="row">Interés pagado y proyectado</th>
                 <td>{formatMoney(totalInterest, loan.roundingPolicy)}</td>
               </tr>
+              <tr>
+                <th scope="row">Seguro pagado y proyectado</th>
+                <td>{formatMoney(totalInsurance, loan.roundingPolicy)}</td>
+              </tr>
+              {!totalOtherPaid.isZero() ? (
+                <tr>
+                  <th scope="row">Otros importes pagados</th>
+                  <td>{formatMoney(totalOtherPaid, loan.roundingPolicy)}</td>
+                </tr>
+              ) : null}
               <tr className="summary-total-row">
                 <th scope="row">Total pagado y proyectado</th>
                 <td>{formatMoney(totalPaid, loan.roundingPolicy)}</td>

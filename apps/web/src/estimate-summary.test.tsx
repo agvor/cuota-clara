@@ -36,6 +36,7 @@ describe('EstimateSummary', () => {
       totalAmount: Money.from('105.00', 'CRC'),
       interestAmount: Money.from('10.00', 'CRC'),
       principalAmount: Money.from('50.00', 'CRC'),
+      insuranceAmount: Money.from('45.00', 'CRC'),
       source: 'csv_import',
     });
     const bankReset = createBankReset({
@@ -73,8 +74,10 @@ describe('EstimateSummary', () => {
     ).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Principal registrado' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Interés registrado' })).toBeVisible();
+    expect(screen.getByRole('rowheader', { name: 'Seguro registrado' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Aporte extraordinario asumido' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Total pagado y proyectado' })).toBeVisible();
+    expect(screen.getByRole('rowheader', { name: 'Seguro pagado y proyectado' })).toBeVisible();
     expect(screen.queryByRole('rowheader', { name: 'Principal total' })).not.toBeInTheDocument();
     expect(
       screen.queryByRole('rowheader', { name: 'Interés histórico CSV' }),
