@@ -17,6 +17,10 @@ Para reconstruir el saldo, el principal ordinario debe conocerse. Si el banco no
 
 Los pagos posteriores a la fecha de corte o que exceden el saldo se rechazan.
 
+## Continuidad sin saldo bancario
+
+Si no existe un reset bancario y hay pagos con principal conocido, el último pago histórico define el corte automático de la proyección. El motor usa el saldo reconstruido como saldo de apertura y genera únicamente las cuotas contractuales posteriores a esa fecha. La visualización conserva cada pago histórico con su saldo de cierre para que la transición sea verificable.
+
 ## Reconciliación
 
 Un `ReconciliationAdjustment` guarda identificador, fecha de corte, saldo reportado y motivo. El motor muestra la diferencia entre el saldo calculado y el reportado, y usa el reportado como saldo actual. No modifica ninguno de los pagos originales ni oculta la diferencia.

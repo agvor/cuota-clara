@@ -5,7 +5,13 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
 
-import { createLoan, createRecurringExtraPaymentScenario, Money } from '@cuotaclara/domain';
+import {
+  createLoan,
+  createLoanV3,
+  createPaymentRecord,
+  createRecurringExtraPaymentScenario,
+  Money,
+} from '@cuotaclara/domain';
 
 import { ProjectionView, type ChartConfiguration } from './projection-view.js';
 
@@ -43,7 +49,7 @@ describe('ProjectionView', () => {
         name: /Historial y proyección de amortización — Configuración base/,
       }),
     ).toBeVisible();
-    expect(screen.getByText('H: histórico · P: proyección')).toBeVisible();
+    expect(screen.getByText(/H: histórico · P: proyección/)).toBeVisible();
     expect(screen.getByRole('columnheader', { name: 'Principal total' })).toBeVisible();
     expect(screen.getByRole('columnheader', { name: 'Principal ordinario' })).toBeVisible();
     expect(screen.getByRole('columnheader', { name: 'Principal extraordinario' })).toBeVisible();
@@ -58,6 +64,39 @@ describe('ProjectionView', () => {
     expect(paymentSeries).toBeChecked();
     expect(container.querySelector('.chart-signal-line.payment.source-base')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Siguiente' })).not.toBeInTheDocument();
+  });
+
+  test('continúa la proyección contractual después del último pago histórico', () => {
+    const contractLoan = createLoanV3({
+      id: 'loan-history',
+      name: 'Préstamo con historial',
+      startDate: '2026-01-01',
+      originalPrincipal: Money.from('1000.00', 'CRC'),
+      monthlyTotalPayment: Money.from('105.00', 'CRC'),
+      monthlyInsurance: Money.from('5.00', 'CRC'),
+      term: { totalInstallments: 12 },
+      annualNominalRate: '0.12',
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+    });
+    const payment = createPaymentRecord({
+      id: 'history-001',
+      date: '2026-02-01',
+      totalAmount: Money.from('105.00', 'CRC'),
+      interestAmount: Money.from('10.00', 'CRC'),
+      principalAmount: Money.from('50.00', 'CRC'),
+      source: 'csv_import',
+    });
+
+    render(<ProjectionView loan={contractLoan} payments={[payment]} />);
+
+    expect(
+      screen.getByText(/La proyección inicia después del último pago histórico/),
+    ).toBeVisible();
+    expect(screen.getByText('₡950,00')).toBeVisible();
+    expect(screen.getByLabelText('Desde')).toHaveValue('2026-03-01');
+    expect(
+      screen.getAllByRole('cell', { name: 'Proyección base' })[0]?.closest('tr'),
+    ).toHaveTextContent('2026-03-01');
   });
 
   test('pagina un calendario extenso sin perder cabeceras de tabla', () => {

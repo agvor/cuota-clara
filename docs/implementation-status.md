@@ -7,7 +7,7 @@
 | Épica | Planeado | Listo | En curso | Bloqueado | Completado |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | E1 · Motor financiero verificable | 0 | 0 | 0 | 0 | 7 |
-| E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 5 |
+| E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 6 |
 | E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 10 |
 | E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 9 |
 | E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 1 |
@@ -62,3 +62,4 @@
 | US-041 | E3 · PWA y gestión de préstamos | Pulir controles y referencias globales | Completado | US-040 |
 | US-042 | E2 · Importación y datos locales | Convertir un plan PDF compatible en CSV de pagos | Completado | US-008 |
 | US-043 | E2 · Importación y datos locales | Reconciliar pagos importados con un reset bancario | Completado | US-042 |
+| US-044 | E2 · Importación y datos locales | Continuar la proyección desde pagos históricos | Completado | US-043 |

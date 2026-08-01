@@ -1,7 +1,11 @@
 import { calculateFixedNominalInterest } from '../interest/fixed-rate.js';
 import { resolveAnnualRateForPeriod } from '../interest/manual-variable-rate.js';
 import { Money } from '../money.js';
-import { type BankReset } from '../history/historical-state.js';
+import {
+  reconstructHistoricalState,
+  type BankReset,
+  type PaymentRecord,
+} from '../history/historical-state.js';
 import { Decimal } from 'decimal.js';
 
 import { type Loan } from './loan.js';
@@ -39,7 +43,13 @@ export type LoanContractEstimate = Readonly<{
   automaticTotalPayment?: Money;
   initialPaymentDifference?: Money;
   hasConfiguredPaymentDifference: boolean;
+  projectionStartDate?: string;
   periods: readonly ContractEstimatePeriod[];
+}>;
+
+export type LoanContractEstimateOptions = Readonly<{
+  bankReset?: BankReset;
+  historicalPayments?: readonly PaymentRecord[];
 }>;
 
 export class ContractEstimateError extends Error {
@@ -56,7 +66,7 @@ export class ContractEstimateError extends Error {
  */
 export function estimateLoanContract(
   loan: Loan,
-  options: Readonly<{ bankReset?: BankReset }> = {},
+  options: LoanContractEstimateOptions = {},
 ): LoanContractEstimate {
   const contract = loan.contract;
   if (!contract) {
@@ -68,11 +78,20 @@ export function estimateLoanContract(
     );
   }
 
+  const historicalState =
+    !options.bankReset && options.historicalPayments?.length
+      ? reconstructHistoricalState({
+          initialBalance: loan.initialBalance,
+          payments: options.historicalPayments,
+          cutoffDate: latestPaymentDate(options.historicalPayments),
+        })
+      : undefined;
+  const projectionStartDate = options.bankReset?.cutoffDate ?? historicalState?.cutoffDate;
   const fullDates = options.bankReset
     ? generateMonthlyDates(loan.startDate, { endDate: options.bankReset.bankFinalInstallmentDate })
     : generateMonthlyDates(loan.startDate, contract.term);
-  const dates = options.bankReset
-    ? fullDates.filter((date) => date > options.bankReset!.cutoffDate)
+  const dates = projectionStartDate
+    ? fullDates.filter((date) => date > projectionStartDate)
     : fullDates;
   if (!dates.length) {
     throw new ContractEstimateError('El reset bancario no deja cuotas futuras para proyectar.');
@@ -84,8 +103,9 @@ export function estimateLoanContract(
   ) {
     throw new ContractEstimateError('El saldo del reset debe usar la moneda del préstamo.');
   }
-  let openingBalance = options.bankReset?.reportedBalance ?? loan.initialBalance;
-  let periodStartDate = options.bankReset?.cutoffDate ?? loan.startDate;
+  let openingBalance =
+    options.bankReset?.reportedBalance ?? historicalState?.currentBalance ?? loan.initialBalance;
+  let periodStartDate = projectionStartDate ?? loan.startDate;
   let estimatedInterest = zero;
   let estimatedPrincipal = zero;
   let estimatedInsurance = zero;
@@ -203,8 +223,18 @@ export function estimateLoanContract(
     ...(initialPaymentDifference ? { initialPaymentDifference } : {}),
     hasConfiguredPaymentDifference:
       Boolean(initialPaymentDifference) && !initialPaymentDifference?.isZero(),
+    ...(projectionStartDate ? { projectionStartDate } : {}),
     periods: Object.freeze(periods),
   });
+}
+
+function latestPaymentDate(payments: readonly PaymentRecord[]): string {
+  const latest = payments.reduce<string | undefined>(
+    (current, payment) => (!current || payment.date > current ? payment.date : current),
+    undefined,
+  );
+  if (!latest) throw new ContractEstimateError('No hay pagos históricos para determinar el corte.');
+  return latest;
 }
 
 function calculateTermPreservingInstallment(input: {

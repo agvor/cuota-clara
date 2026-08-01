@@ -89,7 +89,10 @@ export function ProjectionView({
   const result = useMemo(() => {
     try {
       const periods: readonly DisplayProjectionPeriod[] = loan.contract
-        ? estimateLoanContract(loan, bankReset ? { bankReset } : {}).periods.map((period) => ({
+        ? estimateLoanContract(
+            loan,
+            bankReset ? { bankReset } : payments.length ? { historicalPayments: payments } : {},
+          ).periods.map((period) => ({
             period: period.period,
             date: period.date,
             openingBalance: period.openingBalance,
@@ -117,7 +120,7 @@ export function ProjectionView({
         error: cause instanceof Error ? cause.message : 'No se pudo generar la proyección.',
       };
     }
-  }, [loan]);
+  }, [bankReset, loan, payments]);
   if ('error' in result)
     return (
       <section className="projection-view">
@@ -126,7 +129,10 @@ export function ProjectionView({
       </section>
     );
 
-  const comparableScenarios = bankReset ? [] : scenarios.filter(isComparableScenario);
+  const hasHistoricalContinuation = payments.length > 0 && !bankReset;
+  const comparableScenarios =
+    bankReset || hasHistoricalContinuation ? [] : scenarios.filter(isComparableScenario);
+  const historicalBalances = historicalClosingBalances(payments, loan);
   const selectedScenario = comparableScenarios.find(
     (scenario) => scenario.id === selectedTableSourceId,
   );
@@ -189,11 +195,18 @@ export function ProjectionView({
           reset esté vigente.
         </p>
       ) : null}
+      {hasHistoricalContinuation ? (
+        <p className="reconciliation-note" role="status">
+          La proyección inicia después del último pago histórico y usa el saldo reconstruido con sus
+          aportes a principal. Configura un reset bancario si el saldo informado por la entidad es
+          distinto.
+        </p>
+      ) : null}
       <BalanceChart
         loan={loan}
         payments={payments}
         periods={result.periods}
-        scenarios={scenarios}
+        scenarios={comparableScenarios}
         {...(chartConfiguration ? { chartConfiguration } : {})}
         {...(onChartConfigurationChange ? { onChartConfigurationChange } : {})}
       />
@@ -221,7 +234,9 @@ export function ProjectionView({
         <table className="financial-table financial-table-projection">
           <caption>
             Historial y proyección de amortización — {tableProjectionLabel}
-            <span className="projection-table-key">H: histórico · P: proyección</span>
+            <span className="projection-table-key">
+              H: histórico · P: proyección · R: ajuste de reconciliación
+            </span>
           </caption>
           <thead>
             <tr>
@@ -288,7 +303,11 @@ export function ProjectionView({
                     ? formatMoney(payment.extraPrincipalAmount, loan.roundingPolicy)
                     : '—'}
                 </td>
-                <td>—</td>
+                <td>
+                  {historicalBalances.get(payment.id)
+                    ? formatMoney(historicalBalances.get(payment.id)!, loan.roundingPolicy)
+                    : '—'}
+                </td>
               </tr>
             ))}
             {bankReset?.adjustment ? (
@@ -300,7 +319,7 @@ export function ProjectionView({
                 <td>{formatMoney(bankReset.adjustment.principalAmount, loan.roundingPolicy)}</td>
                 <td>—</td>
                 <td>{formatMoney(bankReset.adjustment.principalAmount, loan.roundingPolicy)}</td>
-                <td>—</td>
+                <td>{formatMoney(bankReset.reportedBalance, loan.roundingPolicy)}</td>
                 <td>{formatMoney(bankReset.adjustment.principalAmount, loan.roundingPolicy)}</td>
                 <td>—</td>
               </tr>
@@ -913,6 +932,7 @@ function mapExtraPrincipalByPeriod(
   const values = new Map<number, Loan['initialBalance']>();
   for (const payment of payments) {
     if (!payment.extraPrincipalAmount?.isPositive()) continue;
+    if (periods[0] && payment.date < periods[0].date) continue;
     const period = periods.find((item) => item.date >= payment.date) ?? periods.at(-1);
     if (!period) continue;
     values.set(
@@ -921,6 +941,24 @@ function mapExtraPrincipalByPeriod(
     );
   }
   return values;
+}
+
+function historicalClosingBalances(
+  payments: readonly PaymentRecord[],
+  loan: Loan,
+): ReadonlyMap<string, Loan['initialBalance']> {
+  const balances = new Map<string, Loan['initialBalance']>();
+  let balance = loan.initialBalance;
+  for (const payment of [...payments].sort((left, right) => left.date.localeCompare(right.date))) {
+    if (!payment.principalAmount) continue;
+    const appliedPrincipal = payment.principalAmount.add(
+      payment.extraPrincipalAmount ?? zeroMoney(loan),
+    );
+    if (balance.isLessThan(appliedPrincipal)) continue;
+    balance = balance.subtract(appliedPrincipal);
+    balances.set(payment.id, balance);
+  }
+  return balances;
 }
 
 function isComparableScenario(

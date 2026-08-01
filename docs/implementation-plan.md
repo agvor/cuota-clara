@@ -13,7 +13,7 @@ Un ítem solo se marca `blocked` cuando describe la decisión o evidencia extern
 | Épica                               | Resultado                                                                        | Historias                                        |
 | ----------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------ |
 | E1 · Motor financiero verificable   | Cálculo fijo, estado histórico, pagos extra y transición a tasa variable manual. | US-001 a US-007                                  |
-| E2 · Importación y datos locales    | CSV previsualizado, validado y almacenamiento local abstraído.                   | US-008, US-008a, US-009, US-042 y US-043         |
+| E2 · Importación y datos locales    | CSV previsualizado, validado y almacenamiento local abstraído.                   | US-008, US-008a, US-009, US-042 a US-044         |
 | E3 · PWA y gestión de préstamos     | Aplicación instalable, CRUD, captura/importación de pagos y espacio de trabajo.  | US-010 a US-012, US-035 a US-041                 |
 | E4 · Escenarios y resultados        | Comparación, tabla de amortización y gráfico de señales.                         | US-013, US-014, US-027 a US-028, US-030 a US-034 |
 | E5 · Respaldo y publicación         | Recuperación de datos y operación offline completa.                              | US-015 a US-016                                  |

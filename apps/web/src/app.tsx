@@ -718,13 +718,17 @@ function ContractEstimateSummary({
       return {
         estimate: estimateLoanContract(
           loan,
-          aggregate?.bankReset ? { bankReset: aggregate.bankReset } : {},
+          aggregate?.bankReset
+            ? { bankReset: aggregate.bankReset }
+            : aggregate?.payments.length
+              ? { historicalPayments: aggregate.payments }
+              : {},
         ),
       };
     } catch (cause) {
       return { error: cause instanceof Error ? cause.message : 'No se pudo estimar el préstamo.' };
     }
-  }, [aggregate?.bankReset, loan]);
+  }, [aggregate?.bankReset, aggregate?.payments, loan]);
 
   if ('error' in result) return <p role="alert">{result.error}</p>;
   return (

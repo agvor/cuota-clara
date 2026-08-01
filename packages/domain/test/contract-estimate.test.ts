@@ -5,6 +5,7 @@ import { describe, expect, test } from 'vitest';
 import {
   ContractEstimateError,
   createBankReset,
+  createPaymentRecord,
   createLoanV2,
   createLoanV3,
   estimateLoanContract,
@@ -244,5 +245,33 @@ describe('estimateLoanContract', () => {
     expect(estimate.estimatedPrincipal.toFixed(roundingPolicy)).toBe('600.00');
     expect(estimate.remainingPrincipal.toFixed(roundingPolicy)).toBe('0.00');
     expect(estimate.projectedInitialTotalPayment?.toFixed(roundingPolicy)).toBe('309.51');
+  });
+
+  test('continúa desde el saldo reconstruido y la cuota posterior al último pago histórico', () => {
+    const loan = createContractLoan({ totalInstallments: 4 });
+    const payments = [
+      createPaymentRecord({
+        id: 'historical-1',
+        date: '2026-02-01',
+        totalAmount: Money.from('340.00', 'CRC'),
+        interestAmount: Money.from('10.00', 'CRC'),
+        principalAmount: Money.from('330.00', 'CRC'),
+        source: 'csv_import',
+      }),
+      createPaymentRecord({
+        id: 'historical-2',
+        date: '2026-03-01',
+        totalAmount: Money.from('340.00', 'CRC'),
+        interestAmount: Money.from('6.70', 'CRC'),
+        principalAmount: Money.from('333.30', 'CRC'),
+        source: 'csv_import',
+      }),
+    ];
+
+    const estimate = estimateLoanContract(loan, { historicalPayments: payments });
+
+    expect(estimate.projectionStartDate).toBe('2026-03-01');
+    expect(estimate.periods[0]).toMatchObject({ date: '2026-04-01' });
+    expect(estimate.periods[0]?.openingBalance.toFixed(roundingPolicy)).toBe('336.70');
   });
 });

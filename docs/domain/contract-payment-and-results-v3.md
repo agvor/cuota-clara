@@ -39,6 +39,8 @@ Para v3, la fecha final o cantidad total de cuotas es autoritativa. En cada per�
 
 Con un reset bancario confirmado, la fecha final bancaria sustituye el límite de cuotas solo para el cálculo posterior a la fecha de corte. El saldo principal reportado sustituye el saldo de arranque de esos periodos y la cuota se recalcula para liquidarlo en esa fecha. El resumen conserva los pagos históricos: su interés se suma al interés futuro para informar el costo total acumulado, y el ajuste especial de reconciliación se expone como principal histórico separado.
 
+Antes de configurar un reset, los pagos históricos ya afectan la proyección: el estimador reconstruye su saldo y omite las cuotas ya cubiertas. Por ello un calendario importado que termina el `2026-07-15` empieza a proyectarse en la siguiente cuota contractual, no desde la fecha de inicio del préstamo. Las comparaciones de escenarios se mantienen ocultas durante esta continuidad hasta que admitan el mismo saldo de inicio.
+
 ## Presentación acordada
 
 1. Un único formateador monetario se usa en toda la PWA, con separadores de miles y decimales coherentes con el locale seleccionado (`es-CR` inicialmente), sin convertir el decimal financiero a `number`. Los campos editables conservan el literal canónico.

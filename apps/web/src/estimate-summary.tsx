@@ -21,14 +21,17 @@ export function EstimateSummary({
   heading?: string;
 }>) {
   const titleId = useId();
-  const historical = aggregate?.bankReset
-    ? reconstructHistoricalState({
-        initialBalance: loan.initialBalance,
-        payments: aggregate.payments,
-        cutoffDate: aggregate.bankReset.cutoffDate,
-        bankReset: aggregate.bankReset,
-      })
-    : undefined;
+  const historicalCutoffDate =
+    aggregate?.bankReset?.cutoffDate ?? latestPaymentDate(aggregate?.payments);
+  const historical =
+    historicalCutoffDate && aggregate
+      ? reconstructHistoricalState({
+          initialBalance: loan.initialBalance,
+          payments: aggregate.payments,
+          cutoffDate: historicalCutoffDate,
+          ...(aggregate.bankReset ? { bankReset: aggregate.bankReset } : {}),
+        })
+      : undefined;
   const zero = loan.initialBalance.subtract(loan.initialBalance);
   const historicalTotal = aggregate?.payments.reduce(
     (total, payment) => total.add(payment.totalAmount),
@@ -145,5 +148,14 @@ export function EstimateSummary({
         </p>
       ) : null}
     </section>
+  );
+}
+
+function latestPaymentDate(
+  payments: readonly LoanAggregate['payments'][number][] | undefined,
+): string | undefined {
+  return payments?.reduce<string | undefined>(
+    (current, payment) => (!current || payment.date > current ? payment.date : current),
+    undefined,
   );
 }

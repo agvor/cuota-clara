@@ -81,6 +81,7 @@ export {
   ContractEstimateError,
   type ContractEstimatePeriod,
   type LoanContractEstimate,
+  type LoanContractEstimateOptions,
 } from './loan/contract-estimate.js';
 export type {
   LoanAggregate,
