@@ -7,6 +7,7 @@ import {
   isOneTimeExtraPaymentScenario,
   isRecurringExtraPaymentScenario,
   projectLoanAmortization,
+  Money,
   type Loan,
   type BankReset,
   type PaymentRecord,
@@ -17,7 +18,8 @@ import {
 import { formatCompactMoney, formatMoney } from './money-format.js';
 import { createScenarioProjectionContext } from './scenario-projection-context.js';
 
-const PAGE_SIZE = 24;
+const DEFAULT_PAGE_SIZE = 24;
+const PAGE_SIZE_OPTIONS = [12, 24, 48, 96] as const;
 const CHART = { left: 94, right: 770, top: 30, bottom: 276 } as const;
 
 const SERIES = [
@@ -29,6 +31,8 @@ const SERIES = [
 ] as const;
 
 type SortDirection = 'ascending' | 'descending';
+type TableTypeFilter = 'all' | AmortizationTableRow['kind'];
+type VerticalScaleMode = 'full' | 'range';
 export type ChartSeriesId = (typeof SERIES)[number]['id'];
 type SelectedSeries = Readonly<Record<ChartSeriesId, boolean>>;
 export type ChartConfiguration = Readonly<{
@@ -38,6 +42,7 @@ export type ChartConfiguration = Readonly<{
   firstScenarioId?: string;
   secondScenarioId?: string;
   lockedPeriodNumber?: number;
+  verticalScaleMode?: VerticalScaleMode;
 }>;
 type ComparableScenario = ProjectionScenarioSnapshot;
 type DisplayProjectionPeriod = Readonly<{
@@ -97,8 +102,10 @@ export function ProjectionView({
   onChartConfigurationChange?: (configuration: ChartConfiguration) => void;
 }>) {
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [sortDirection, setSortDirection] = useState<SortDirection>('ascending');
   const [selectedTableSourceId, setSelectedTableSourceId] = useState('base');
+  const [tableTypeFilter, setTableTypeFilter] = useState<TableTypeFilter>('all');
   const result = useMemo(() => {
     try {
       const periods: readonly DisplayProjectionPeriod[] = loan.contract
@@ -200,14 +207,17 @@ export function ProjectionView({
       date: period.date,
       period,
     })),
-  ].sort((left, right) =>
-    sortDirection === 'ascending'
-      ? left.date.localeCompare(right.date)
-      : right.date.localeCompare(left.date),
-  );
-  const start = page * PAGE_SIZE;
-  const visibleTableRows = orderedTableRows.slice(start, start + PAGE_SIZE);
-  const pages = Math.ceil(orderedTableRows.length / PAGE_SIZE);
+  ]
+    .filter((row) => tableTypeFilter === 'all' || row.kind === tableTypeFilter)
+    .sort((left, right) =>
+      sortDirection === 'ascending'
+        ? left.date.localeCompare(right.date)
+        : right.date.localeCompare(left.date),
+    );
+  const pages = Math.max(1, Math.ceil(orderedTableRows.length / pageSize));
+  const currentPage = Math.min(page, pages - 1);
+  const start = currentPage * pageSize;
+  const visibleTableRows = orderedTableRows.slice(start, start + pageSize);
   const nextSortDirection = sortDirection === 'ascending' ? 'descending' : 'ascending';
 
   function toggleDateSort() {
@@ -259,6 +269,37 @@ export function ProjectionView({
             {comparableScenarios.map((scenario) => (
               <option key={scenario.id} value={scenario.id}>
                 {scenario.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Filtrar por tipo
+          <select
+            value={tableTypeFilter}
+            onChange={(event) => {
+              setTableTypeFilter(event.target.value as TableTypeFilter);
+              setPage(0);
+            }}
+          >
+            <option value="all">Todos</option>
+            <option value="payment">Histórico (H)</option>
+            <option value="projection">Proyección (P)</option>
+            <option value="reconciliation">Ajuste de reconciliación (R)</option>
+          </select>
+        </label>
+        <label>
+          Filas por página
+          <select
+            value={pageSize}
+            onChange={(event) => {
+              setPageSize(Number(event.target.value));
+              setPage(0);
+            }}
+          >
+            {PAGE_SIZE_OPTIONS.map((size) => (
+              <option key={size} value={size}>
+                {size}
               </option>
             ))}
           </select>
@@ -317,7 +358,9 @@ export function ProjectionView({
                   <td>
                     {row.payment.interestAmount
                       ? formatMoney(row.payment.interestAmount, loan.roundingPolicy)
-                      : '—'}
+                      : row.payment.extraPrincipalAmount && row.payment.principalAmount?.isZero()
+                        ? formatMoney(zeroMoney(loan), loan.roundingPolicy)
+                        : '—'}
                   </td>
                   <td>
                     {row.payment.principalAmount
@@ -388,18 +431,18 @@ export function ProjectionView({
         <nav className="pagination" aria-label="Paginación de amortización">
           <button
             type="button"
-            disabled={page === 0}
-            onClick={() => setPage((current) => current - 1)}
+            disabled={currentPage === 0}
+            onClick={() => setPage(currentPage - 1)}
           >
             Anterior
           </button>
           <span>
-            Página {page + 1} de {pages}
+            Página {currentPage + 1} de {pages}
           </span>
           <button
             type="button"
-            disabled={page + 1 === pages}
-            onClick={() => setPage((current) => current + 1)}
+            disabled={currentPage + 1 === pages}
+            onClick={() => setPage(currentPage + 1)}
           >
             Siguiente
           </button>
@@ -467,6 +510,9 @@ function BalanceChart({
   const [secondScenarioId, setSecondScenarioId] = useState(
     chartConfiguration?.secondScenarioId ?? '',
   );
+  const [verticalScaleMode, setVerticalScaleMode] = useState<VerticalScaleMode>(
+    chartConfiguration?.verticalScaleMode ?? 'full',
+  );
   const visiblePeriods = allPeriods.filter(
     (period) => period.date >= rangeStartDate && period.date <= rangeEndDate,
   );
@@ -508,16 +554,16 @@ function BalanceChart({
     ...scenarioSources,
   ];
   const activeSeries = SERIES.filter((series) => selectedSeries[series.id]);
-  const maximumValue = findMaximumValue(
+  const yAxisDomain = chartYAxisDomain(
     sources.flatMap((source) => activeSeries.flatMap((series) => source.values[series.id])),
     loan,
+    verticalScaleMode,
   );
-  const maximumValueAsNumber = Math.max(Number(maximumValue.toDecimalString()), 1);
   const chartLines: readonly ChartLine[] = sources.flatMap((source) =>
     activeSeries.map((series) => ({
       source,
       series,
-      points: toChartPoints(visiblePeriods, source.values[series.id], maximumValueAsNumber),
+      points: toChartPoints(visiblePeriods, source.values[series.id], yAxisDomain),
     })),
   );
   const interactionPoints =
@@ -543,6 +589,7 @@ function BalanceChart({
       selectedSeries,
       firstScenarioId,
       secondScenarioId,
+      verticalScaleMode,
       ...(lockedPeriod ? { lockedPeriodNumber: lockedPeriod.period } : {}),
     });
   }, [
@@ -553,6 +600,7 @@ function BalanceChart({
     rangeStartDate,
     secondScenarioId,
     selectedSeries,
+    verticalScaleMode,
   ]);
 
   if (!startPeriod || !endPeriod) return null;
@@ -585,6 +633,7 @@ function BalanceChart({
   function resetChartRange() {
     setRangeStartDate(totalStartDate);
     setRangeEndDate(totalEndDate);
+    setVerticalScaleMode('full');
     setHoveredPeriod(undefined);
     setLockedPeriod(undefined);
   }
@@ -630,9 +679,20 @@ function BalanceChart({
           <button
             type="button"
             onClick={resetChartRange}
-            disabled={rangeStartDate === totalStartDate && rangeEndDate === totalEndDate}
+            disabled={
+              rangeStartDate === totalStartDate &&
+              rangeEndDate === totalEndDate &&
+              verticalScaleMode === 'full'
+            }
           >
             Restablecer todo el plazo
+          </button>
+          <button
+            type="button"
+            onClick={() => setVerticalScaleMode('range')}
+            disabled={verticalScaleMode === 'range'}
+          >
+            Ajustar eje Y al rango
           </button>
         </div>
         <p>
@@ -641,7 +701,10 @@ function BalanceChart({
       </div>
       <p className="chart-range-status" aria-live="polite">
         Mostrando {visiblePeriods.length} {visiblePeriods.length === 1 ? 'periodo' : 'periodos'}:{' '}
-        {startPeriod.date} a {endPeriod.date}.
+        {startPeriod.date} a {endPeriod.date}.{' '}
+        {verticalScaleMode === 'range'
+          ? 'El eje Y está ajustado a los datos visibles.'
+          : 'El eje Y parte de cero.'}
       </p>
       <fieldset className="chart-series" aria-label="Series del gráfico">
         <legend>Señales visibles en base y escenarios</legend>
@@ -701,6 +764,7 @@ function BalanceChart({
         </fieldset>
       ) : null}
       <svg
+        data-y-axis-scale={verticalScaleMode}
         viewBox="0 0 800 330"
         role="img"
         aria-labelledby="balance-chart-title"
@@ -728,7 +792,7 @@ function BalanceChart({
         </desc>
         {horizontalTicks.map((fraction) => {
           const y = CHART.bottom - fraction * (CHART.bottom - CHART.top);
-          const value = maximumValue.multiplyBy(fraction.toString());
+          const value = yAxisDomain.minimum.add(yAxisDomain.span.multiplyBy(fraction.toString()));
           return (
             <g key={`horizontal-${fraction}`}>
               <line className="chart-grid" x1={CHART.left} x2={CHART.right} y1={y} y2={y} />
@@ -1009,9 +1073,14 @@ function displayScenarioPeriods(
 function toChartPoints(
   periods: readonly DisplayProjectionPeriod[],
   values: readonly Loan['initialBalance'][],
-  maximumValue: number,
+  yAxisDomain: Readonly<{
+    minimum: Loan['initialBalance'];
+    span: Loan['initialBalance'];
+  }>,
 ): readonly ChartPoint[] {
   const denominator = Math.max(periods.length - 1, 1);
+  const spanAsNumber = Math.max(Number(yAxisDomain.span.toDecimalString()), 1);
+  const minimumAsNumber = Number(yAxisDomain.minimum.toDecimalString());
   return periods.flatMap((period, index) => {
     const value = values[index];
     if (!value) return [];
@@ -1021,7 +1090,11 @@ function toChartPoints(
       x: CHART.left + (index / denominator) * (CHART.right - CHART.left),
       y:
         CHART.top +
-        (1 - Math.max(0, Math.min(Number(value.toDecimalString()), maximumValue)) / maximumValue) *
+        (1 -
+          Math.max(
+            0,
+            Math.min((Number(value.toDecimalString()) - minimumAsNumber) / spanAsNumber, 1),
+          )) *
           (CHART.bottom - CHART.top),
     };
   });
@@ -1031,14 +1104,36 @@ function zeroMoney(loan: Loan): Loan['initialBalance'] {
   return loan.initialBalance.subtract(loan.initialBalance);
 }
 
-function findMaximumValue(
+function chartYAxisDomain(
   values: readonly Loan['initialBalance'][],
   loan: Loan,
-): Loan['initialBalance'] {
-  return values.reduce(
-    (maximum, value) => (maximum.isLessThan(value) ? value : maximum),
-    zeroMoney(loan),
+  scaleMode: VerticalScaleMode,
+): Readonly<{
+  minimum: Loan['initialBalance'];
+  span: Loan['initialBalance'];
+}> {
+  const zero = zeroMoney(loan);
+  const maximum = values.reduce(
+    (current, value) => (current.isLessThan(value) ? value : current),
+    zero,
   );
+  if (scaleMode === 'full') {
+    return { minimum: zero, span: maximum.isZero() ? Money.from('1', zero.currency) : maximum };
+  }
+
+  const minimum = values.reduce(
+    (current, value) => (value.isLessThan(current) ? value : current),
+    maximum,
+  );
+  const unpaddedSpan = maximum.subtract(minimum);
+  const padding = unpaddedSpan.isZero()
+    ? maximum.isZero()
+      ? Money.from('1', zero.currency)
+      : maximum.multiplyBy('0.05')
+    : unpaddedSpan.multiplyBy('0.05');
+  const paddedMinimum = minimum.isLessThanOrEqualTo(padding) ? zero : minimum.subtract(padding);
+  const paddedMaximum = maximum.add(padding);
+  return { minimum: paddedMinimum, span: paddedMaximum.subtract(paddedMinimum) };
 }
 
 function historicalChartPeriods(

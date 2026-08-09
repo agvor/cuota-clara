@@ -36,14 +36,27 @@ describe('ProjectionView', () => {
     expect(screen.getByRole('img', { name: 'Evolución estimada del saldo' })).toBeVisible();
     expect(screen.getByLabelText('Desde')).toHaveValue('2026-02-01');
     expect(screen.getByLabelText('Hasta')).toHaveValue('2026-12-01');
-    expect(screen.getByText('Mostrando 11 periodos: 2026-02-01 a 2026-12-01.')).toBeVisible();
+    expect(screen.getByText(/Mostrando 11 periodos: 2026-02-01 a 2026-12-01/)).toBeVisible();
     expect(screen.getByRole('button', { name: 'Restablecer todo el plazo' })).toBeDisabled();
     fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-04-01' } });
     fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '2026-09-01' } });
-    expect(screen.getByText('Mostrando 6 periodos: 2026-04-01 a 2026-09-01.')).toBeVisible();
+    expect(screen.getByText(/Mostrando 6 periodos: 2026-04-01 a 2026-09-01/)).toBeVisible();
+    expect(screen.getByRole('img', { name: 'Evolución estimada del saldo' })).toHaveAttribute(
+      'data-y-axis-scale',
+      'full',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Ajustar eje Y al rango' }));
+    expect(screen.getByRole('img', { name: 'Evolución estimada del saldo' })).toHaveAttribute(
+      'data-y-axis-scale',
+      'range',
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Restablecer todo el plazo' }));
     expect(screen.getByLabelText('Desde')).toHaveValue('2026-02-01');
     expect(screen.getByLabelText('Hasta')).toHaveValue('2026-12-01');
+    expect(screen.getByRole('img', { name: 'Evolución estimada del saldo' })).toHaveAttribute(
+      'data-y-axis-scale',
+      'full',
+    );
     expect(screen.getAllByRole('cell', { name: 'Proyección base' }).length).toBeGreaterThan(1);
     expect(
       screen.getByRole('table', {
@@ -251,6 +264,10 @@ describe('ProjectionView', () => {
     });
     render(<ProjectionView loan={longLoan} payments={[]} />);
 
+    expect(screen.getByLabelText('Filtrar por tipo')).toHaveValue('all');
+    expect(screen.getByLabelText('Filas por página')).toHaveValue('24');
+    fireEvent.change(screen.getByLabelText('Filas por página'), { target: { value: '12' } });
+    expect(screen.getByLabelText('Filas por página')).toHaveValue('12');
     expect(screen.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
     const firstProjectedRowBefore = screen
       .getAllByRole('cell', { name: 'Proyección base' })[0]
@@ -268,6 +285,26 @@ describe('ProjectionView', () => {
     expect(screen.getByText(/Página 2 de \d+/)).toBeVisible();
     expect(screen.getByRole('columnheader', { name: 'Saldo final' })).toBeVisible();
     expect(screen.getByRole('columnheader', { name: 'Principal extraordinario' })).toBeVisible();
+  });
+
+  test('filtra las filas por origen y muestra cero de interés para un aporte extra separado', () => {
+    const extraOnlyPayment = createPaymentRecord({
+      id: 'history-extra',
+      date: '2026-02-01',
+      totalAmount: Money.from('25.00', 'CRC'),
+      principalAmount: Money.from('0.00', 'CRC'),
+      extraPrincipalAmount: Money.from('25.00', 'CRC'),
+      source: 'csv_import',
+    });
+    render(<ProjectionView loan={loan} payments={[extraOnlyPayment]} />);
+
+    const historicalRow = screen.getByRole('cell', { name: 'Histórico' }).closest('tr');
+    expect(historicalRow).toHaveTextContent('₡0,00');
+    fireEvent.change(screen.getByLabelText('Filtrar por tipo'), {
+      target: { value: 'payment' },
+    });
+    expect(screen.getAllByRole('cell', { name: 'Histórico' })).toHaveLength(1);
+    expect(screen.queryByRole('cell', { name: 'Proyección base' })).not.toBeInTheDocument();
   });
 
   test('aplica cada señal a base y escenarios, agrupa el detalle y permite fijar un punto', () => {
