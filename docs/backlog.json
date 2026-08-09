@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-31",
+  "updatedAt": "2026-08-09",
   "items": [
     {
       "id": "US-001",
@@ -669,6 +669,76 @@
         "El gráfico incorpora los importes y saldos de todos los pagos históricos desde el inicio del préstamo antes de los periodos proyectados.",
         "Un ajuste de reconciliación se incluye en la secuencia del gráfico cuando existe.",
         "Una línea vertical sutil separa el último registro histórico de la primera cuota proyectada sin modificar la codificación de color por señal."
+      ]
+    },
+    {
+      "id": "US-046",
+      "epic": "E4 · Escenarios y resultados",
+      "title": "Aclarar el resumen financiero con historial, proyección y seguros",
+      "story": "Como persona usuaria, quiero distinguir en el resumen qué parte del costo ya ocurrió, qué parte se proyecta y cómo interviene el seguro para interpretar mi posición financiera sin sumar datos ambiguos.",
+      "requirements": ["RF-004", "RF-007", "RF-013", "RF-015", "RNF-001", "RNF-008"],
+      "dependsOn": ["US-045"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "El resumen identifica los importes históricos y proyectados cuando existen pagos importados o un reset bancario, sin volver a contabilizar cuotas anteriores al corte.",
+        "El seguro se presenta separado del principal y del interés, y el total refleja los componentes aplicables al periodo histórico y proyectado.",
+        "Las etiquetas, cifras y ayudas del resumen explican cualquier saldo o cuota final pendiente sin alterar el cálculo contractual."
+      ]
+    },
+    {
+      "id": "US-047",
+      "epic": "E4 · Escenarios y resultados",
+      "title": "Controlar la exploración de historial y proyección",
+      "story": "Como persona usuaria, quiero ordenar toda la tabla y ajustar el gráfico a un horizonte útil para revisar mis pagos y proyecciones sin perder la continuidad cronológica.",
+      "requirements": ["RF-007", "RF-010", "RNF-008"],
+      "dependsOn": ["US-046"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "El orden por fecha se aplica a todas las filas, incluidos historial, ajustes de reconciliación y proyección, y la tabla permite filtrar su origen y elegir un tamaño de página legible.",
+        "El gráfico conserva sus series y comparación al ajustar su escala vertical, permite restablecer la escala completa y comunica el rango activo.",
+        "Además del plazo completo y del rango manual, existe un acceso para ver desde el inicio hasta la fecha actual más dos meses sin modificar el contrato ni los datos almacenados."
+      ]
+    },
+    {
+      "id": "US-048",
+      "epic": "E3 · PWA y gestión de préstamos",
+      "title": "Duplicar un préstamo con contenido seleccionado",
+      "story": "Como persona usuaria, quiero elegir el nombre y los datos que copia un préstamo para crear una alternativa sin arrastrar historial o escenarios que no quiero comparar.",
+      "requirements": ["RF-001", "RNF-004", "RNF-006", "RNF-008"],
+      "dependsOn": ["US-041"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "La duplicación solicita un nombre y permite incluir o excluir pagos y escenarios antes de confirmar.",
+        "Cada entidad copiada recibe identificadores nuevos y queda asociada solo al nuevo préstamo, sin mutar ni mezclar los datos de origen.",
+        "La interfaz comunica qué contenido se duplicará y valida el nombre antes de guardar."
+      ]
+    },
+    {
+      "id": "US-049",
+      "epic": "E5 · Respaldo y publicación",
+      "title": "Seleccionar créditos y nombrar respaldos",
+      "story": "Como persona usuaria, quiero escoger qué créditos exporto o restauro y asignar un nombre reconocible a mi respaldo para recuperar solo la información necesaria.",
+      "requirements": ["RF-011", "RNF-005", "RNF-006", "RNF-008"],
+      "dependsOn": ["US-015"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "La exportación permite seleccionar uno o varios créditos y propone un nombre de archivo con timestamp que la persona puede personalizar antes de descargar.",
+        "La restauración valida el archivo antes de mostrar los créditos disponibles, permite seleccionar el subconjunto y requiere confirmación antes de cambiar los datos locales.",
+        "Un respaldo parcial conserva la versión de esquema y las relaciones de pagos y escenarios de cada crédito seleccionado."
+      ]
+    },
+    {
+      "id": "US-050",
+      "epic": "E3 · PWA y gestión de préstamos",
+      "title": "Administrar créditos desde un panel central",
+      "story": "Como persona usuaria, quiero seleccionar y eliminar créditos desde un único panel para organizar mi cartera local con una confirmación clara y sin borrar datos por accidente.",
+      "requirements": ["RF-001", "RF-011", "RNF-004", "RNF-006", "RNF-008"],
+      "dependsOn": ["US-048", "US-049"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "El panel central permite seleccionar créditos individuales, todos los créditos visibles o ninguno, y muestra con claridad el alcance de la eliminación.",
+        "La eliminación de uno, varios o todos los créditos requiere confirmación explícita y elimina transaccionalmente el préstamo junto con sus pagos y escenarios asociados.",
+        "Al completar la operación, la cartera se actualiza y no conserva una selección ni una ruta activa de un crédito eliminado."
       ]
     }
   ]

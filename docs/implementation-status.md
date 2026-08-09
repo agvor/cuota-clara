@@ -1,6 +1,6 @@
 # Estado de implementación
 
-> Generado desde `docs/backlog.json` el 2026-07-31. No editar manualmente.
+> Generado desde `docs/backlog.json` el 2026-08-09. No editar manualmente.
 
 **Siguiente ítem habilitado:** ninguno; revisar dependencias o bloqueos.
 
@@ -8,9 +8,9 @@
 | --- | ---: | ---: | ---: | ---: | ---: |
 | E1 · Motor financiero verificable | 0 | 0 | 0 | 0 | 7 |
 | E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 6 |
-| E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 10 |
-| E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 10 |
-| E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 1 |
+| E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 12 |
+| E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 12 |
+| E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 2 |
 | E6 · Contrato financiero v2 | 1 | 0 | 0 | 0 | 4 |
 | E7 · Contrato y resultados legibles | 0 | 0 | 0 | 0 | 6 |
 
@@ -64,3 +64,8 @@
 | US-043 | E2 · Importación y datos locales | Reconciliar pagos importados con un reset bancario | Completado | US-042 |
 | US-044 | E2 · Importación y datos locales | Continuar la proyección desde pagos históricos | Completado | US-043 |
 | US-045 | E4 · Escenarios y resultados | Mostrar historial y proyección en un solo gráfico | Completado | US-044 |
+| US-046 | E4 · Escenarios y resultados | Aclarar el resumen financiero con historial, proyección y seguros | Completado | US-045 |
+| US-047 | E4 · Escenarios y resultados | Controlar la exploración de historial y proyección | Completado | US-046 |
+| US-048 | E3 · PWA y gestión de préstamos | Duplicar un préstamo con contenido seleccionado | Completado | US-041 |
+| US-049 | E5 · Respaldo y publicación | Seleccionar créditos y nombrar respaldos | Completado | US-015 |
+| US-050 | E3 · PWA y gestión de préstamos | Administrar créditos desde un panel central | Completado | US-048, US-049 |
