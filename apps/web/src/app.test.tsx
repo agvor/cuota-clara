@@ -147,7 +147,7 @@ bank-2;01/03/2026;100,00;90,00`;
     fireEvent.change(screen.getByLabelText('Archivo CSV de pagos'), {
       target: { files: [{ text: async () => csv }] },
     });
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar importación' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Importar 2 pagos nuevos' }));
 
     await waitFor(() => expect(repository.saveAggregate).toHaveBeenCalled());
     const saved = vi.mocked(repository.saveAggregate).mock.calls[0]?.[0];

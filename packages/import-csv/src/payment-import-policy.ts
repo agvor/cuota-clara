@@ -95,7 +95,7 @@ export function mergePaymentImports(
   const unresolvedPossibleDuplicates: PossiblePaymentDuplicate[] = [];
 
   for (const conflict of classification.conflicts) {
-    const decision = decisions.conflicts?.[conflict.incoming.id];
+    const decision = decisions.conflicts?.[decisionKey(conflict.incoming)];
     if (!decision) {
       unresolvedConflicts.push(conflict);
       continue;
@@ -111,7 +111,7 @@ export function mergePaymentImports(
   }
 
   for (const possible of classification.possibleDuplicates) {
-    const decision = decisions.possibleDuplicates?.[possible.incoming.id];
+    const decision = decisions.possibleDuplicates?.[decisionKey(possible.incoming)];
     if (!decision) {
       unresolvedPossibleDuplicates.push(possible);
       continue;
@@ -131,6 +131,10 @@ export function mergePaymentImports(
     unresolvedConflicts: Object.freeze(unresolvedConflicts),
     unresolvedPossibleDuplicates: Object.freeze(unresolvedPossibleDuplicates),
   });
+}
+
+function decisionKey(payment: PaymentRecord): string {
+  return payment.sourcePaymentId ?? payment.id;
 }
 
 function samePaymentContent(left: PaymentRecord, right: PaymentRecord): boolean {

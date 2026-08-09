@@ -1,6 +1,6 @@
 # ADR-0008: Identidad y deduplicación de pagos importados
 
-- Estado: aceptado; identidad y política implementadas en US-053 y US-054, experiencia pendiente en US-055
+- Estado: aceptado e implementado en US-053 a US-055
 - Fecha: 2026-08-09
 
 ## Contexto

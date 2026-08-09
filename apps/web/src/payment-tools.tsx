@@ -1,6 +1,12 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 
-import { previewPaymentCsv } from '@cuotaclara/import-csv';
+import {
+  previewPaymentCsv,
+  type PaymentImportDecisions,
+  type PaymentImportMatch,
+  type PaymentImportMergeResult,
+  type PossiblePaymentDuplicate,
+} from '@cuotaclara/import-csv';
 import {
   createBankReset,
   createPaymentRecord,
@@ -23,7 +29,10 @@ type PaymentToolsProps = Readonly<{
   /** Compatibilidad temporal con la pantalla de reset v4. */
   bankReset?: BankReset;
   onSavePayment: (payment: PaymentRecord) => Promise<void>;
-  onImportPayments: (payments: readonly PaymentRecord[]) => Promise<void>;
+  onImportPayments: (
+    payments: readonly PaymentRecord[],
+    decisions: PaymentImportDecisions,
+  ) => Promise<PaymentImportMergeResult>;
   onSaveBalanceReconciliation?: (reconciliation: BankBalanceReconciliation) => Promise<void>;
   onDeleteBalanceReconciliation?: (reconciliationId: string) => Promise<void>;
   onSaveBankFinalDateReconciliation?: (
@@ -49,6 +58,8 @@ export function PaymentTools({
   const [payment, setPayment] = useState<PaymentRecord | undefined>();
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [csvText, setCsvText] = useState<string>();
+  const [importDecisions, setImportDecisions] = useState<PaymentImportDecisions>({});
+  const [importSummary, setImportSummary] = useState<string>();
   const [error, setError] = useState<string>();
   const [isResetOpen, setIsResetOpen] = useState(
     Boolean(balanceReconciliations.length || bankFinalDateReconciliation || bankReset),
@@ -61,12 +72,56 @@ export function PaymentTools({
         existingPayments: payments,
       })
     : undefined;
+  const unresolvedConflicts =
+    preview?.classification.conflicts.filter(
+      ({ incoming }) => !importDecisions.conflicts?.[paymentDecisionKey(incoming)],
+    ) ?? [];
+  const unresolvedPossibleDuplicates =
+    preview?.classification.possibleDuplicates.filter(
+      ({ incoming }) => !importDecisions.possibleDuplicates?.[paymentDecisionKey(incoming)],
+    ) ?? [];
+  const selectedPossibleImports =
+    preview?.classification.possibleDuplicates.filter(
+      ({ incoming }) =>
+        importDecisions.possibleDuplicates?.[paymentDecisionKey(incoming)] === 'import',
+    ).length ?? 0;
+  const importCount = (preview?.classification.newRecords.length ?? 0) + selectedPossibleImports;
+  const fileAlreadyProcessed = Boolean(
+    preview &&
+    preview.errors.length === 0 &&
+    preview.validRecords.length > 0 &&
+    preview.classification.newRecords.length === 0 &&
+    preview.classification.alreadyRegistered.length === preview.validRecords.length,
+  );
+  const canConfirm = Boolean(
+    preview &&
+    preview.errors.length === 0 &&
+    preview.validRecords.length > 0 &&
+    unresolvedConflicts.length === 0 &&
+    unresolvedPossibleDuplicates.length === 0 &&
+    !fileAlreadyProcessed,
+  );
 
   async function readCsv(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
     setError(undefined);
+    setImportSummary(undefined);
     setCsvText(await file.text());
+  }
+
+  function decideConflict(sourcePaymentId: string, decision: 'keep_existing' | 'replace') {
+    setImportDecisions((current) => ({
+      ...current,
+      conflicts: { ...current.conflicts, [sourcePaymentId]: decision },
+    }));
+  }
+
+  function decidePossibleDuplicate(sourcePaymentId: string, decision: 'omit' | 'import') {
+    setImportDecisions((current) => ({
+      ...current,
+      possibleDuplicates: { ...current.possibleDuplicates, [sourcePaymentId]: decision },
+    }));
   }
 
   return (
@@ -181,49 +236,121 @@ export function PaymentTools({
               onChange={(event) => void readCsv(event)}
             />
             {preview ? (
-              <div className="csv-preview" aria-live="polite">
-                <p>
-                  {preview.validRecords.length} filas válidas; {preview.errors.length} con error.
-                </p>
+              <div className="csv-preview">
+                <ul className="csv-preview-summary" aria-label="Resumen de la importación">
+                  <li>
+                    {countLabel(
+                      preview.classification.newRecords.length,
+                      'pago nuevo',
+                      'pagos nuevos',
+                    )}
+                  </li>
+                  <li>
+                    {countLabel(
+                      preview.classification.alreadyRegistered.length,
+                      'ya registrado',
+                      'ya registrados',
+                    )}
+                  </li>
+                  <li>
+                    {countLabel(
+                      preview.classification.possibleDuplicates.length,
+                      'posible duplicado',
+                      'posibles duplicados',
+                    )}
+                  </li>
+                  <li>
+                    {countLabel(preview.classification.conflicts.length, 'conflicto', 'conflictos')}
+                  </li>
+                  <li>{countLabel(preview.errors.length, 'fila inválida', 'filas inválidas')}</li>
+                </ul>
                 {preview.missingPeriods.length ? (
                   <p>Meses sin pago detectados: {preview.missingPeriods.join(', ')}.</p>
                 ) : null}
+                {preview.classification.newRecords.length ? (
+                  <CsvPaymentGroup
+                    id="csv-new-payments"
+                    title="Pagos nuevos"
+                    records={preview.classification.newRecords}
+                    loan={loan}
+                  />
+                ) : null}
+                {preview.classification.alreadyRegistered.length ? (
+                  <CsvPaymentGroup
+                    id="csv-registered-payments"
+                    title="Pagos ya registrados que se omitirán"
+                    records={preview.classification.alreadyRegistered.map(
+                      ({ incoming }) => incoming,
+                    )}
+                    loan={loan}
+                  />
+                ) : null}
                 {preview.errors.length ? (
-                  <ul>
-                    {preview.errors.map((item, index) => (
-                      <li key={`${item.rowNumber}-${item.code}-${index}`}>
-                        Fila {item.rowNumber ?? '—'}: {item.message}
-                      </li>
-                    ))}
-                  </ul>
+                  <section aria-labelledby="csv-invalid-title">
+                    <h4 id="csv-invalid-title">Filas inválidas</h4>
+                    <ul>
+                      {preview.errors.map((item, index) => (
+                        <li key={`${item.rowNumber}-${item.code}-${index}`}>
+                          Fila {item.rowNumber ?? '—'}: {item.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+                {preview.classification.conflicts.map((conflict) => (
+                  <CsvConflictResolution
+                    key={conflict.incoming.id}
+                    conflict={conflict}
+                    loan={loan}
+                    decision={importDecisions.conflicts?.[paymentDecisionKey(conflict.incoming)]}
+                    onDecision={decideConflict}
+                  />
+                ))}
+                {preview.classification.possibleDuplicates.map((possible) => (
+                  <CsvPossibleDuplicateResolution
+                    key={possible.incoming.id}
+                    possible={possible}
+                    loan={loan}
+                    decision={
+                      importDecisions.possibleDuplicates?.[paymentDecisionKey(possible.incoming)]
+                    }
+                    onDecision={decidePossibleDuplicate}
+                  />
+                ))}
+                {fileAlreadyProcessed ? (
+                  <p role="status">Este archivo ya fue procesado; no hay pagos nuevos.</p>
                 ) : (
-                  <p>La importación está lista para confirmar.</p>
+                  <button
+                    type="button"
+                    disabled={!canConfirm}
+                    onClick={() =>
+                      void onImportPayments(preview.validRecords, importDecisions)
+                        .then((result) => {
+                          setImportSummary(importResultMessage(result));
+                          setCsvText(undefined);
+                          setImportDecisions({});
+                          setIsImportOpen(false);
+                          setIsResetOpen(true);
+                        })
+                        .catch((cause: unknown) =>
+                          setError(
+                            cause instanceof Error
+                              ? cause.message
+                              : 'No se pudo importar el archivo.',
+                          ),
+                        )
+                    }
+                  >
+                    {importCount > 0
+                      ? `Importar ${importCount} ${importCount === 1 ? 'pago nuevo' : 'pagos nuevos'}`
+                      : 'Confirmar importación'}
+                  </button>
                 )}
-                <button
-                  type="button"
-                  disabled={preview.errors.length > 0 || preview.validRecords.length === 0}
-                  onClick={() =>
-                    void onImportPayments(preview.validRecords)
-                      .then(() => {
-                        setCsvText(undefined);
-                        setIsImportOpen(false);
-                        setIsResetOpen(true);
-                      })
-                      .catch((cause: unknown) =>
-                        setError(
-                          cause instanceof Error
-                            ? cause.message
-                            : 'No se pudo importar el archivo.',
-                        ),
-                      )
-                  }
-                >
-                  Confirmar importación
-                </button>
               </div>
             ) : null}
           </>
         ) : null}
+        {importSummary ? <p role="status">{importSummary}</p> : null}
       </section>
       <section className="payment-reconciliation" aria-labelledby="payment-reconciliation-title">
         <div className="section-heading-action">
@@ -269,6 +396,177 @@ export function PaymentTools({
       {error ? <p role="alert">{error}</p> : null}
     </section>
   );
+}
+
+function CsvPaymentGroup({
+  id,
+  title,
+  records,
+  loan,
+}: Readonly<{
+  id: string;
+  title: string;
+  records: readonly PaymentRecord[];
+  loan: Loan;
+}>) {
+  return (
+    <section aria-labelledby={id}>
+      <h4 id={id}>
+        {title} ({records.length})
+      </h4>
+      <ul>
+        {records.map((record) => (
+          <li key={record.id}>{paymentImportLabel(record, loan)}</li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function CsvConflictResolution({
+  conflict,
+  loan,
+  decision,
+  onDecision,
+}: Readonly<{
+  conflict: PaymentImportMatch;
+  loan: Loan;
+  decision: 'keep_existing' | 'replace' | undefined;
+  onDecision: (sourcePaymentId: string, decision: 'keep_existing' | 'replace') => void;
+}>) {
+  const sourcePaymentId = paymentDecisionKey(conflict.incoming);
+  const comparison = paymentComparison(conflict.existing, conflict.incoming, loan);
+  return (
+    <fieldset className="csv-resolution">
+      <legend>Conflicto {sourcePaymentId}</legend>
+      <div className="table-scroll">
+        <table className="financial-table">
+          <caption>Comparación del conflicto {sourcePaymentId}</caption>
+          <thead>
+            <tr>
+              <th scope="col">Campo</th>
+              <th scope="col">Registrado</th>
+              <th scope="col">CSV</th>
+            </tr>
+          </thead>
+          <tbody>
+            {comparison.map(([label, existing, incoming]) => (
+              <tr key={label}>
+                <th scope="row">{label}</th>
+                <td>{existing}</td>
+                <td>{incoming}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <label>
+        <input
+          type="radio"
+          name={`conflict-${sourcePaymentId}`}
+          checked={decision === 'keep_existing'}
+          onChange={() => onDecision(sourcePaymentId, 'keep_existing')}
+        />
+        Conservar el pago registrado {sourcePaymentId}
+      </label>
+      <label>
+        <input
+          type="radio"
+          name={`conflict-${sourcePaymentId}`}
+          checked={decision === 'replace'}
+          onChange={() => onDecision(sourcePaymentId, 'replace')}
+        />
+        Reemplazar {sourcePaymentId} con los datos del CSV
+      </label>
+    </fieldset>
+  );
+}
+
+function CsvPossibleDuplicateResolution({
+  possible,
+  loan,
+  decision,
+  onDecision,
+}: Readonly<{
+  possible: PossiblePaymentDuplicate;
+  loan: Loan;
+  decision: 'omit' | 'import' | undefined;
+  onDecision: (sourcePaymentId: string, decision: 'omit' | 'import') => void;
+}>) {
+  const sourcePaymentId = paymentDecisionKey(possible.incoming);
+  return (
+    <fieldset className="csv-resolution">
+      <legend>Posible duplicado {sourcePaymentId}</legend>
+      <p>{paymentImportLabel(possible.incoming, loan)}</p>
+      <p>
+        Coincide por fecha e importes con:{' '}
+        {possible.matches.map((match) => paymentDecisionKey(match)).join(', ')}.
+      </p>
+      <label>
+        <input
+          type="radio"
+          name={`possible-${sourcePaymentId}`}
+          checked={decision === 'omit'}
+          onChange={() => onDecision(sourcePaymentId, 'omit')}
+        />
+        Omitir {sourcePaymentId}
+      </label>
+      <label>
+        <input
+          type="radio"
+          name={`possible-${sourcePaymentId}`}
+          checked={decision === 'import'}
+          onChange={() => onDecision(sourcePaymentId, 'import')}
+        />
+        Importar {sourcePaymentId} de todas formas
+      </label>
+    </fieldset>
+  );
+}
+
+function paymentComparison(
+  existing: PaymentRecord,
+  incoming: PaymentRecord,
+  loan: Loan,
+): readonly (readonly [string, string, string])[] {
+  const money = (value: PaymentRecord['interestAmount']) =>
+    value ? formatMoney(value, loan.roundingPolicy) : '—';
+  return [
+    ['Fecha', existing.date, incoming.date],
+    ['Total', money(existing.totalAmount), money(incoming.totalAmount)],
+    ['Interés', money(existing.interestAmount), money(incoming.interestAmount)],
+    ['Principal', money(existing.principalAmount), money(incoming.principalAmount)],
+    [
+      'Principal extraordinario',
+      money(existing.extraPrincipalAmount),
+      money(incoming.extraPrincipalAmount),
+    ],
+    ['Seguro', money(existing.insuranceAmount), money(incoming.insuranceAmount)],
+    ['Comisión', money(existing.feeAmount), money(incoming.feeAmount)],
+    ['Notas', existing.notes?.trim() || '—', incoming.notes?.trim() || '—'],
+  ];
+}
+
+function paymentDecisionKey(payment: PaymentRecord): string {
+  return payment.sourcePaymentId ?? payment.id;
+}
+
+function paymentImportLabel(payment: PaymentRecord, loan: Loan): string {
+  return `${paymentDecisionKey(payment)} · ${payment.date} · ${formatMoney(
+    payment.totalAmount,
+    loan.roundingPolicy,
+  )}`;
+}
+
+function countLabel(count: number, singular: string, plural = `${singular}s`): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function importResultMessage(result: PaymentImportMergeResult): string {
+  return `Importación completada: ${countLabel(result.imported.length, 'importado')}, ${countLabel(
+    result.omitted.length,
+    'omitido',
+  )} y ${countLabel(result.replaced.length, 'reemplazado')}.`;
 }
 
 function BankReconciliationTools({

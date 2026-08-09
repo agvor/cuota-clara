@@ -950,6 +950,57 @@ h1 {
   margin-top: 0;
 }
 
+.csv-preview {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.csv-preview-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.csv-preview-summary li {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  color: #334155;
+  background: #fff;
+}
+
+.csv-preview h4 {
+  margin: 0 0 0.5rem;
+}
+
+.csv-resolution {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.csv-resolution legend {
+  padding: 0 0.35rem;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.csv-resolution label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: #334155;
+}
+
 .scenario-form-panel h3 {
   margin-top: 0;
 }

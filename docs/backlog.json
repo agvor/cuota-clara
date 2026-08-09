@@ -809,7 +809,7 @@
       "story": "Como persona usuaria, quiero entender qué pagos se importarán, omitirán o necesitan mi decisión para confirmar el CSV con confianza.",
       "requirements": ["RF-006", "RNF-006", "RNF-008"],
       "dependsOn": ["US-054"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "La previsualización accesible resume por separado pagos nuevos, ya registrados, posibles duplicados, conflictos e inválidos, con conteos y filas identificables.",
         "Los ya registrados no bloquean la acción Importar N pagos nuevos y, si no hay nuevos, la interfaz informa que el archivo ya fue procesado.",

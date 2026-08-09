@@ -6,6 +6,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { createLoan, createPaymentRecord, Money } from '@cuotaclara/domain';
+import { mergePaymentImports } from '@cuotaclara/import-csv';
 
 import { PaymentTools } from './payment-tools.js';
 
@@ -22,7 +23,134 @@ const loan = createLoan({
   roundingPolicy: { scale: 2, mode: 'half_up' },
 });
 
+function importedPayment(id: string, sourcePaymentId: string, totalAmount = '100.00') {
+  return createPaymentRecord({
+    id,
+    sourcePaymentId,
+    date: '2026-02-01',
+    totalAmount: Money.from(totalAmount, 'CRC'),
+    principalAmount: Money.from('90.00', 'CRC'),
+    source: 'csv_import',
+  });
+}
+
+async function loadCsv(csv: string): Promise<void> {
+  fireEvent.change(screen.getByLabelText('Archivo CSV de pagos'), {
+    target: { files: [{ text: async () => csv }] },
+  });
+  await screen.findByRole('list', { name: 'Resumen de la importación' });
+}
+
 describe('PaymentTools', () => {
+  test('importa las filas nuevas de un archivo mixto y anuncia las omitidas', async () => {
+    const existing = importedPayment('stored-1', 'p-001');
+    const onImportPayments = vi.fn(async (incoming, decisions) =>
+      mergePaymentImports([existing], incoming, decisions),
+    );
+    render(
+      <PaymentTools
+        loan={loan}
+        payments={[existing]}
+        onSavePayment={vi.fn()}
+        onImportPayments={onImportPayments}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Importar CSV' }));
+    await loadCsv(`id;date;total_amount;principal_amount
+p-001;01/02/2026;100,00;90,00
+p-002;01/03/2026;100,00;90,00`);
+
+    expect(screen.getByText('1 pago nuevo')).toBeVisible();
+    expect(screen.getByText('1 ya registrado')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Importar 1 pago nuevo' }));
+
+    await waitFor(() => expect(onImportPayments).toHaveBeenCalledTimes(1));
+    expect(
+      await screen.findByText('Importación completada: 1 importado, 1 omitido y 0 reemplazados.'),
+    ).toBeVisible();
+  });
+
+  test('compara y resuelve conflictos y posibles duplicados conservando las decisiones', async () => {
+    const existing = importedPayment('stored-1', 'p-001');
+    const onImportPayments = vi.fn(async (incoming, decisions) =>
+      mergePaymentImports([existing], incoming, decisions),
+    );
+    render(
+      <PaymentTools
+        loan={loan}
+        payments={[existing]}
+        onSavePayment={vi.fn()}
+        onImportPayments={onImportPayments}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Importar CSV' }));
+    const csv = `id;date;total_amount;principal_amount
+p-001;01/02/2026;105,00;90,00
+p-002;01/02/2026;100,00;90,00`;
+    await loadCsv(csv);
+
+    expect(screen.getByRole('table', { name: 'Comparación del conflicto p-001' })).toBeVisible();
+    const confirm = screen.getByRole('button', { name: 'Confirmar importación' });
+    expect(confirm).toBeDisabled();
+    fireEvent.click(screen.getByRole('radio', { name: 'Reemplazar p-001 con los datos del CSV' }));
+    await loadCsv(csv);
+    expect(
+      screen.getByRole('radio', { name: 'Reemplazar p-001 con los datos del CSV' }),
+    ).toBeChecked();
+    fireEvent.click(screen.getByRole('radio', { name: 'Importar p-002 de todas formas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Importar 1 pago nuevo' }));
+
+    await waitFor(() => expect(onImportPayments).toHaveBeenCalledTimes(1));
+    expect(onImportPayments).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.objectContaining({
+        conflicts: { 'p-001': 'replace' },
+        possibleDuplicates: { 'p-002': 'import' },
+      }),
+    );
+    expect(
+      await screen.findByText('Importación completada: 1 importado, 0 omitidos y 1 reemplazado.'),
+    ).toBeVisible();
+  });
+
+  test('informa cuando el archivo completo ya fue procesado', async () => {
+    const existing = importedPayment('stored-1', 'p-001');
+    render(
+      <PaymentTools
+        loan={loan}
+        payments={[existing]}
+        onSavePayment={vi.fn()}
+        onImportPayments={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Importar CSV' }));
+    await loadCsv(`id;date;total_amount;principal_amount
+p-001;01/02/2026;100,00;90,00`);
+
+    expect(screen.getByText('Este archivo ya fue procesado; no hay pagos nuevos.')).toBeVisible();
+    expect(screen.queryByRole('button', { name: /Importar \d+ pago/ })).not.toBeInTheDocument();
+  });
+
+  test('conserva la previsualización y muestra un error recuperable si falla la persistencia', async () => {
+    const onImportPayments = vi.fn().mockRejectedValue(new Error('IndexedDB no disponible.'));
+    render(
+      <PaymentTools
+        loan={loan}
+        payments={[]}
+        onSavePayment={vi.fn()}
+        onImportPayments={onImportPayments}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Importar CSV' }));
+    await loadCsv(`id;date;total_amount;principal_amount
+p-001;01/02/2026;100,00;90,00`);
+    fireEvent.click(screen.getByRole('button', { name: 'Importar 1 pago nuevo' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('IndexedDB no disponible.');
+    expect(screen.getByRole('list', { name: 'Resumen de la importación' })).toBeVisible();
+  });
+
   test('registra un pago manual con principal para el historial', async () => {
     const onSavePayment = vi.fn().mockResolvedValue(undefined);
     render(

@@ -79,8 +79,8 @@ describe('política de importación de pagos', () => {
     expect(unresolved.payments).toEqual(existing);
 
     const resolved = mergePaymentImports(existing, [conflict, possible], {
-      conflicts: { [conflict.id]: 'replace' },
-      possibleDuplicates: { [possible.id]: 'import' },
+      conflicts: { 'bank-1': 'replace' },
+      possibleDuplicates: { 'bank-2': 'import' },
     });
     expect(resolved.payments).toMatchObject([
       { id: 'stored-1', sourcePaymentId: 'bank-1' },
@@ -97,7 +97,7 @@ describe('política de importación de pagos', () => {
     const legitimateSecondPayment = payment('incoming-2', 'bank-2');
 
     const result = mergePaymentImports(existing, [legitimateSecondPayment], {
-      possibleDuplicates: { [legitimateSecondPayment.id]: 'import' },
+      possibleDuplicates: { 'bank-2': 'import' },
     });
 
     expect(result.payments).toHaveLength(2);

@@ -5,7 +5,11 @@ import {
   estimateLoanContract,
   isTbpMarginScenario,
 } from '@cuotaclara/domain';
-import { mergePaymentImports } from '@cuotaclara/import-csv';
+import {
+  mergePaymentImports,
+  type PaymentImportDecisions,
+  type PaymentImportMergeResult,
+} from '@cuotaclara/import-csv';
 import type {
   Loan,
   LoanAggregate,
@@ -273,12 +277,15 @@ export function App({ repository }: AppProps) {
     setSelectedAggregate(aggregate);
   }
 
-  async function importPayments(payments: readonly PaymentRecord[]) {
-    if (!selectedAggregate) return;
+  async function importPayments(
+    payments: readonly PaymentRecord[],
+    decisions: PaymentImportDecisions,
+  ): Promise<PaymentImportMergeResult> {
+    if (!selectedAggregate) throw new Error('No hay un préstamo seleccionado para importar.');
     const currentAggregate = await repository.loadAggregate(selectedAggregate.loan.id);
     if (!currentAggregate)
       throw new Error('No se encontró el préstamo al confirmar la importación.');
-    const result = mergePaymentImports(currentAggregate.payments, payments);
+    const result = mergePaymentImports(currentAggregate.payments, payments, decisions);
     if (result.unresolvedConflicts.length || result.unresolvedPossibleDuplicates.length) {
       throw new Error(
         'La importación contiene conflictos o posibles duplicados que requieren resolución.',
@@ -290,6 +297,7 @@ export function App({ repository }: AppProps) {
     };
     await repository.saveAggregate(aggregate);
     setSelectedAggregate(aggregate);
+    return result;
   }
 
   async function saveBalanceReconciliation(reconciliation: BankBalanceReconciliation) {
@@ -633,7 +641,10 @@ function LoanWorkspace({
   chartConfiguration?: ChartConfiguration;
   onChartConfigurationChange: (configuration: ChartConfiguration) => void;
   onSavePayment: (payment: PaymentRecord) => Promise<void>;
-  onImportPayments: (payments: readonly PaymentRecord[]) => Promise<void>;
+  onImportPayments: (
+    payments: readonly PaymentRecord[],
+    decisions: PaymentImportDecisions,
+  ) => Promise<PaymentImportMergeResult>;
   onSaveBalanceReconciliation: (reconciliation: BankBalanceReconciliation) => Promise<void>;
   onDeleteBalanceReconciliation: (reconciliationId: string) => Promise<void>;
   onSaveBankFinalDateReconciliation: (reconciliation: BankFinalDateReconciliation) => Promise<void>;
