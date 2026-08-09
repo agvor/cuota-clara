@@ -23,6 +23,17 @@ python3 tooling/convert_payment_plan_pdf.py \
   --until 2026-07-31
 ```
 
+Para inferir opcionalmente aportes extraordinarios a partir de la columna **Saldo**, agrega `--infer-extra-principal`:
+
+```bash
+python3 tooling/convert_payment_plan_pdf.py \
+  "/ruta/GeneratePDF (1).pdf" \
+  /tmp/pagos-con-extra.csv \
+  --infer-extra-principal
+```
+
+El conversor toma cada saldo como el saldo de cierre de su cuota. Entre dos filas consecutivas, resta el principal ordinario de la fila siguiente a la reducción observada de saldo; una diferencia positiva mayor a un centavo se registra como `extra_principal_amount` en la fecha de la fila anterior. También se agrega a `total_amount` y se deja una nota trazable. Como el PDF no expone el día exacto del aporte dentro de ese intervalo, revisa las inferencias antes de importarlas. La última fila del corte no recibe una inferencia porque no existe un saldo posterior para verificarla.
+
 El archivo generado usa `;`, coma decimal y fechas `DD/MM/AAAA`, la configuración regional inicial de la importación. Sus columnas se asignan así:
 
 | Campo CSV                | Campo leído del PDF                                        |
@@ -32,7 +43,7 @@ El archivo generado usa `;`, coma decimal y fechas `DD/MM/AAAA`, la configuraci�
 | `interest_amount`        | Intereses corrientes                                       |
 | `insurance_amount`       | Pólizas                                                    |
 | `fee_amount`             | Otros                                                      |
-| `extra_principal_amount` | Vacío: el PDF no declara un aporte extraordinario separado |
+| `extra_principal_amount` | Vacío por defecto. Con `--infer-extra-principal`, reducción adicional de saldo inferida entre cuotas. |
 
 ## Importación segura
 

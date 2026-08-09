@@ -31,6 +31,7 @@ CSV_HEADERS = [
     "fee_amount",
     "notes",
 ]
+CENT = Decimal("0.01")
 
 
 @dataclass(frozen=True)
@@ -40,6 +41,18 @@ class TextItem:
     x: float
     y: float
     text: str
+
+
+@dataclass
+class ParsedPayment:
+    """Fila del PDF con los datos necesarios para inferir cambios de saldo."""
+
+    payment_date: date
+    sequence: int
+    total: Decimal
+    principal: Decimal
+    closing_balance: Decimal
+    record: dict[str, str]
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -57,6 +70,14 @@ def parse_arguments() -> argparse.Namespace:
         default=date.today(),
         metavar="AAAA-MM-DD",
         help="Incluye cuotas hasta esta fecha inclusive (por defecto: hoy).",
+    )
+    parser.add_argument(
+        "--infer-extra-principal",
+        action="store_true",
+        help=(
+            "Infiere aportes extraordinarios con las diferencias positivas entre "
+            "saldos consecutivos y los registra en la cuota anterior."
+        ),
     )
     return parser.parse_args()
 
@@ -299,8 +320,10 @@ def items_near(items: list[TextItem], x_min: float, x_max: float, y: float, tole
     ]
 
 
-def build_records(items: list[TextItem], until: date) -> list[dict[str, str]]:
-    records: list[tuple[date, int, dict[str, str]]] = []
+def build_records(
+    items: list[TextItem], until: date, infer_extra_principal: bool = False
+) -> list[dict[str, str]]:
+    payments: list[ParsedPayment] = []
     date_pattern = re.compile(r"^\d{2}/\d{2}/\d{4}$")
 
     for date_item in items:
@@ -312,13 +335,15 @@ def build_records(items: list[TextItem], until: date) -> list[dict[str, str]]:
 
         sequence_candidates = items_near(items, 0, 100, date_item.y)
         amount_candidates = items_near(items, 380, 550, date_item.y)
-        if not sequence_candidates or not amount_candidates:
+        balance_candidates = items_near(items, 870, 950, date_item.y)
+        if not sequence_candidates or not amount_candidates or not balance_candidates:
             raise ValueError(
-                f"No se pudo leer la fila del {date_item.text}: faltan número o cuota total."
+                f"No se pudo leer la fila del {date_item.text}: faltan número, cuota o saldo."
             )
         try:
             sequence = int(sequence_candidates[0].text)
             total = parse_money(amount_candidates[0].text)
+            closing_balance = parse_money(balance_candidates[0].text)
         except (ValueError, IndexError) as error:
             raise ValueError(f"No se pudo leer la fila del {date_item.text}.") from error
 
@@ -360,12 +385,47 @@ def build_records(items: list[TextItem], until: date) -> list[dict[str, str]]:
             "fee_amount": csv_amount(fields["fee_amount"]),
             "notes": f"Plan de pagos PDF; cuota {sequence}.",
         }
-        records.append((payment_date, sequence, record))
+        payments.append(
+            ParsedPayment(
+                payment_date=payment_date,
+                sequence=sequence,
+                total=total,
+                principal=fields["principal_amount"],
+                closing_balance=closing_balance,
+                record=record,
+            )
+        )
 
-    records.sort(key=lambda record: (record[0], record[1]))
-    if not records:
+    payments.sort(key=lambda payment: (payment.payment_date, payment.sequence))
+    if not payments:
         raise ValueError("No se encontraron cuotas con fecha hasta el corte indicado.")
-    return [record for _, _, record in records]
+    if infer_extra_principal:
+        infer_extra_principal_from_balances(payments)
+    return [payment.record for payment in payments]
+
+
+def infer_extra_principal_from_balances(payments: list[ParsedPayment]) -> None:
+    """Atribuye a la cuota anterior la reducción de saldo no explicada por la siguiente.
+
+    El saldo del PDF corresponde al cierre de cada cuota. Entre dos filas, la
+    reducción esperada es el principal ordinario de la fila siguiente. Una
+    reducción adicional positiva se registra como aporte extraordinario en la
+    fecha de la fila anterior, porque el documento no expone la fecha exacta
+    dentro de ese intervalo.
+    """
+
+    for current, following in zip(payments, payments[1:]):
+        inferred_extra = current.closing_balance - following.closing_balance - following.principal
+        if inferred_extra <= CENT:
+            continue
+
+        current.record["extra_principal_amount"] = csv_amount(inferred_extra)
+        current.record["total_amount"] = csv_amount(current.total + inferred_extra)
+        current.record["notes"] = (
+            f"{current.record['notes']} Aporte extraordinario inferido: "
+            f"{csv_amount(inferred_extra)}; diferencia de saldo observada "
+            f"hasta la cuota {following.sequence} ({following.payment_date:%d/%m/%Y})."
+        )
 
 
 def write_csv(records: list[dict[str, str]], output_csv: Path) -> None:
@@ -384,14 +444,24 @@ def main() -> None:
 
     try:
         items = extract_text_items(arguments.input_pdf.read_bytes())
-        records = build_records(items, arguments.until)
+        records = build_records(
+            items,
+            arguments.until,
+            infer_extra_principal=arguments.infer_extra_principal,
+        )
     except (OSError, ValueError) as error:
         raise SystemExit(f"No se pudo convertir el PDF: {error}") from error
 
     write_csv(records, arguments.output_csv)
+    inferred_count = sum(bool(record["extra_principal_amount"]) for record in records)
+    inferred_message = (
+        f" Se infirieron {inferred_count} aportes extraordinarios."
+        if arguments.infer_extra_principal
+        else ""
+    )
     print(
         f"Se escribieron {len(records)} pagos en {arguments.output_csv} "
-        f"(corte: {arguments.until.isoformat()})."
+        f"(corte: {arguments.until.isoformat()}).{inferred_message}"
     )
 
 
