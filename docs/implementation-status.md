@@ -2,12 +2,12 @@
 
 > Generado desde `docs/backlog.json` el 2026-08-09. No editar manualmente.
 
-**Siguiente ítem habilitado:** ninguno; revisar dependencias o bloqueos.
+**Siguiente ítem habilitado:** US-053 — Separar identidad interna y referencia externa de pagos
 
 | Épica | Planeado | Listo | En curso | Bloqueado | Completado |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | E1 · Motor financiero verificable | 0 | 0 | 0 | 0 | 7 |
-| E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 7 |
+| E2 · Importación y datos locales | 2 | 1 | 0 | 0 | 8 |
 | E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 12 |
 | E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 12 |
 | E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 2 |
@@ -70,3 +70,7 @@
 | US-049 | E5 · Respaldo y publicación | Seleccionar créditos y nombrar respaldos | Completado | US-015 |
 | US-050 | E3 · PWA y gestión de préstamos | Administrar créditos desde un panel central | Completado | US-048, US-049 |
 | US-051 | E2 · Importación y datos locales | Componer saldo conciliado con pagos posteriores | Completado | US-043, US-044 |
+| US-052 | E2 · Importación y datos locales | Cerrar documentación de persistencia conciliada | Completado | US-043, US-051 |
+| US-053 | E2 · Importación y datos locales | Separar identidad interna y referencia externa de pagos | Listo | US-015, US-048, US-052 |
+| US-054 | E2 · Importación y datos locales | Clasificar y mezclar importaciones de forma idempotente | Planeado | US-053 |
+| US-055 | E2 · Importación y datos locales | Resolver duplicados y conflictos desde la previsualización | Planeado | US-054 |

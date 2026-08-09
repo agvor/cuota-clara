@@ -39,15 +39,17 @@ El código de aplicación dependerá de puertos como `LoanRepository`, `BackupSe
 
 ```text
 CSV → parseo regional → filas normalizadas → validación y detección de duplicados
-    → previsualización y resolución de errores → confirmación
+    → clasificación (nuevos / existentes / posibles / conflictos / inválidos)
+    → previsualización y resolución explícita → confirmación
+    → revalidación defensiva y mezcla transaccional
     → comparación opcional con saldo bancario → ajuste confirmado y reset → repositorio local
 ```
 
-La previsualización es obligatoria. Las filas rechazadas no se persisten y la importación confirmada conserva su procedencia.
+La previsualización es obligatoria. Un pago importado usa un identificador interno opaco separado del identificador externo del CSV. La referencia externa se evalúa dentro del préstamo: una coincidencia con el mismo contenido se omite como ya registrada y una coincidencia con contenido distinto se trata como conflicto. Una huella de fecha e importes solo señala posibles duplicados, pues pueden existir dos pagos legítimos iguales el mismo día. Las filas rechazadas no se persisten y la importación confirmada conserva su procedencia.
 
 Como apoyo externo a este flujo, `tooling/convert_payment_plan_pdf.py` transforma localmente un formato de plan PDF conocido en el CSV regional. No forma parte del dominio ni del adaptador de importación: su salida sigue pasando por la misma validación, previsualización y confirmación, pues un plan programado no prueba un pago histórico.
 
-El adaptador reutilizable `packages/import-csv` convierte texto CSV en una previsualización de `PaymentRecord`; no depende de IndexedDB ni puede confirmar la importación. El dominio calcula los acumulados, la discrepancia y la cuota posterior al reset; la PWA solo solicita la confirmación explícita y el adaptador local persiste el agregado resultante.
+El adaptador reutilizable `packages/import-csv` convierte texto CSV en una previsualización clasificada; no depende de IndexedDB ni puede confirmar la importación. Un caso de uso de aplicación vuelve a comparar la previsualización con el agregado vigente antes de persistir, para que la integridad no dependa solo de la interfaz. El dominio calcula los acumulados, la discrepancia y la cuota posterior al reset; la PWA solicita las decisiones explícitas y el adaptador local persiste el agregado resultante.
 
 ## Flujo de proyección
 

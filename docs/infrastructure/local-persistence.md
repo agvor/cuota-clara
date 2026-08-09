@@ -4,7 +4,7 @@
 
 ## Datos y transacciones
 
-La versión de esquema actual es **3** y define tres tablas:
+La versión de esquema actual es **5** y define tres tablas:
 
 | Tabla       | Clave e índices                 | Contenido                                                                            |
 | ----------- | ------------------------------- | ------------------------------------------------------------------------------------ |
@@ -18,7 +18,9 @@ Los importes se guardan como `{ amount: string, currency: string }`; no se convi
 
 ## Migraciones
 
-La versión 2 añade el campo no indexado `contract` a `loans`. No transforma las filas v1: la ausencia de ese campo identifica un préstamo heredado y evita inventar plazo o seguro. La versión 3 conserva ese diseño físico y permite serializar el contrato v3 con `monthlyTotalPayment`; las filas v2 no se reinterpretan como cuota total. Pagos y escenarios se conservan. Las pruebas cubren apertura de datos v1, lectura de v2 y escritura/lectura de v3.
+La versión 2 añade el campo no indexado `contract` a `loans`. No transforma las filas v1: la ausencia de ese campo identifica un préstamo heredado y evita inventar plazo o seguro. La versión 3 conserva ese diseño físico y permite serializar el contrato v3 con `monthlyTotalPayment`; las filas v2 no se reinterpretan como cuota total. La versión 4 conserva junto al préstamo un reset bancario opcional y la versión 5 separa varios saldos conciliados de la fecha final bancaria única, manteniendo lectura compatible del reset v4. Pagos y escenarios se conservan.
+
+La siguiente migración planificada separará la clave interna de cada pago de su identificador externo de importación. Los pagos CSV existentes conservarán su `id` actual como clave interna cuando sea válido y lo copiarán como referencia externa estable; los pagos nuevos recibirán una clave interna globalmente única. El índice de referencia se acotará por préstamo para que dos préstamos puedan importar la misma referencia sin sobrescribirse. El respaldo deberá versionar y conservar ambos identificadores antes de publicar esta migración. La decisión completa está en [`ADR-0008`](../adr/0008-payment-import-identity-and-deduplication.md).
 
 Una modificación persistente incrementa la versión declarada por Dexie y añade una migración explícita. La migración debe ser compatible con datos reales y tener una prueba con datos de la versión previa. No se cambia el esquema existente sin una ruta de actualización ni se borra la base automáticamente.
 

@@ -12,6 +12,11 @@
 | Estimación contractual           | Proyección no bancaria de cuotas, costo y saldo según contrato v2/v3 y supuestos declarados.                                                              |
 | Agregado de préstamo             | Préstamo con sus pagos históricos y snapshots de escenarios, unidad de persistencia.                                                                      |
 | Pago histórico (`PaymentRecord`) | Hecho real registrado manualmente o importado; nunca es resultado de una simulación.                                                                      |
+| Identificador interno de pago    | Clave opaca y globalmente única generada por CuotaClara; no reutiliza ni expone como clave primaria el identificador aportado por una fuente externa.     |
+| Identificador externo de pago    | Referencia estable aportada por una fuente de importación y evaluada dentro del préstamo para reconocer reimportaciones o conflictos.                     |
+| Pago ya registrado               | Fila importada cuyo identificador externo y contenido normalizado coinciden con un pago del mismo préstamo; se omite sin impedir importar filas nuevas.   |
+| Conflicto de importación         | Fila cuyo identificador externo coincide con un pago del mismo préstamo, pero cuyo contenido normalizado difiere y requiere una decisión explícita.       |
+| Posible duplicado                | Coincidencia por fecha e importes con distinto identificador externo; produce advertencia, no una omisión automática.                                     |
 | Escenario (`ProjectionScenario`) | Hipótesis futura asociada a un préstamo. No modifica el préstamo ni su historial.                                                                         |
 | Periodo de proyección            | Intervalo de pago calculado que contiene saldo inicial/final, interés, principal y cargos.                                                                |
 | Plan de tasas (`InterestPlan`)   | Secuencia de reglas que resuelve la tasa aplicable a cada periodo.                                                                                        |
@@ -36,6 +41,7 @@
 - Todos los importes pertenecen a una moneda y precisan su escala decimal.
 - Una operación entre importes de monedas distintas falla de forma explícita.
 - Un agregado asocia pagos y escenarios a un único préstamo mediante su identificador.
+- La identidad interna de un pago es globalmente única; una referencia externa se compara únicamente dentro del préstamo al que se importa.
 - Una fecha de pago no puede ser anterior al inicio del préstamo.
 - Ningún saldo, pago o cargo puede ser negativo, salvo un tipo de ajuste definido explícitamente.
 - El saldo final de cada periodo no puede ser menor que cero; el último pago se limita al importe necesario.
@@ -49,6 +55,8 @@
 - Toda tasa usada contiene su fuente o supuesto, fecha de vigencia y versión de la regla.
 - Un periodo variable sin tasa manual vigente es inválido; el motor no infiere ni reutiliza tasas silenciosamente.
 - Un pago importado conserva archivo/origen, fila de procedencia y resultado de validación para trazabilidad.
+- Reimportar un pago con la misma referencia externa y el mismo contenido no crea otro registro; la misma referencia con contenido distinto nunca se reemplaza silenciosamente.
+- Una coincidencia de fecha e importes sin la misma referencia externa es solo una señal de posible duplicado, porque pueden existir pagos legítimos iguales.
 - Un contrato v2/v3 declara plazo por fecha final o número total de cuotas y separa monto original de saldo reconciliado. En v3, el plazo es autoritativo para la proyección y la cuota configurada se compara con la cuota proyectada necesaria.
 - La cuota base equivale a cuota mensual total menos seguro y debe ser positiva; el seguro no reduce principal ni genera interés mientras no exista una regla contractual que disponga lo contrario.
 - Una estimación que alcanza el plazo con saldo pendiente lo muestra; no inventa cuotas posteriores.

@@ -8,7 +8,7 @@ Usa la [plantilla CSV](payment-history-template.csv). Los encabezados son obliga
 
 | Campo                    | Obligatorio | Descripción                                                                  |
 | ------------------------ | ----------- | ---------------------------------------------------------------------------- |
-| `id`                     | Sí          | Identificador único del pago.                                                |
+| `id`                     | Sí          | Identificador externo estable del pago dentro del préstamo.                  |
 | `date`                   | Sí          | Fecha, en el formato regional elegido.                                       |
 | `total_amount`           | Sí          | Total pagado.                                                                |
 | `interest_amount`        | No          | Interés conocido.                                                            |
@@ -30,7 +30,11 @@ Para un plan de pagos PDF de la entidad compatible, el conversor local descrito 
 
 - Encabezados obligatorios y errores estructurales de CSV.
 - Fechas reales en el calendario e importes decimales válidos.
-- Identificadores duplicados dentro del archivo o contra una lista existente.
+- Identificadores externos duplicados dentro del archivo o contra los pagos del préstamo.
+- Contenido normalizado para distinguir pagos ya registrados de conflictos con la misma referencia.
+- Coincidencias de fecha e importes con otra referencia, mostradas solo como posibles duplicados.
 - Meses faltantes entre pagos válidos, como señal diagnóstica; no implica por sí mismo que el banco haya omitido un cobro.
 
-La interfaz confirma únicamente una previsualización sin errores y persiste todas sus filas en una única operación del préstamo seleccionado. Una fila sin principal puede previsualizarse, pero no permitirá reconstruir saldo hasta completar ese dato o reconciliar explícitamente. Tras la importación, la persona puede indicar saldo principal bancario, fecha de corte y fecha de última cuota proyectada por la entidad. La interfaz muestra el principal e interés acumulados del CSV, compara el saldo reconstruido con el reportado y solo ofrece un ajuste especial cuando el saldo reportado es menor. Ese ajuste requiere confirmación, se muestra en el historial y no inventa interés ni cargos.
+La previsualización separa pagos nuevos, ya registrados, posibles duplicados, conflictos y filas inválidas. Los ya registrados se omiten y no impiden confirmar los nuevos. Un conflicto exige conservar el pago existente, reemplazarlo explícitamente o cancelar; un posible duplicado puede omitirse o importarse de forma consciente. Antes de guardar, el caso de uso repite la comparación contra el agregado vigente y persiste el resultado en una única operación del préstamo seleccionado.
+
+Una fila sin principal puede previsualizarse, pero no permitirá reconstruir saldo hasta completar ese dato o reconciliar explícitamente. Tras la importación, la persona puede indicar saldo principal bancario, fecha de corte y fecha de última cuota proyectada por la entidad. La interfaz muestra el principal e interés acumulados del CSV, compara el saldo reconstruido con el reportado y solo ofrece un ajuste especial cuando el saldo reportado es menor. Ese ajuste requiere confirmación, se muestra en el historial y no inventa interés ni cargos.

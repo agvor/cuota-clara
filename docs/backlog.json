@@ -755,6 +755,68 @@
         "La proyección base y todos los escenarios parten del mismo saldo compuesto y conservan la fecha final bancaria configurada.",
         "La tabla y el gráfico mantienen los pagos y ajustes históricos en su fecha real."
       ]
+    },
+    {
+      "id": "US-052",
+      "epic": "E2 · Importación y datos locales",
+      "title": "Cerrar documentación de persistencia conciliada",
+      "story": "Como equipo de desarrollo, quiero que la documentación refleje las versiones locales ya entregadas para planificar la siguiente migración desde una base verificable.",
+      "requirements": ["RF-007", "RF-011", "RNF-006"],
+      "dependsOn": ["US-043", "US-051"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "La documentación de persistencia identifica la versión 4 que incorporó el reset bancario sin cambiar índices.",
+        "La documentación identifica la versión 5 que separó varios saldos conciliados de la fecha final bancaria única y mantuvo compatibilidad con v4.",
+        "La siguiente migración parte explícitamente de la versión 5 y conserva la política de no borrar ni reinterpretar datos existentes."
+      ]
+    },
+    {
+      "id": "US-053",
+      "epic": "E2 · Importación y datos locales",
+      "title": "Separar identidad interna y referencia externa de pagos",
+      "story": "Como persona usuaria, quiero que los pagos importados de cada préstamo tengan identidad segura para que una referencia repetida no sobrescriba datos propios ni de otro crédito.",
+      "requirements": ["RF-001", "RF-005", "RF-006", "RF-011", "RNF-004", "RNF-006", "RNF-010"],
+      "dependsOn": ["US-015", "US-048", "US-052"],
+      "status": "ready",
+      "acceptanceCriteria": [
+        "PaymentRecord separa un identificador interno globalmente único de la referencia externa opcional, cuyo ámbito de comparación es el préstamo.",
+        "Una migración transaccional desde el esquema v5 conserva IDs y datos existentes, deriva la referencia externa de pagos CSV sin reinterpretar importes y evita colisiones entre préstamos.",
+        "Duplicar un préstamo genera identidades internas nuevas y conserva la procedencia sin compartir claves primarias con el original.",
+        "El respaldo versionado exporta, valida y restaura ambos identificadores, incluyendo compatibilidad comprobada con respaldos anteriores.",
+        "Pruebas de dominio, repositorio y respaldo cubren migración, aislamiento entre préstamos, rollback y datos heredados."
+      ]
+    },
+    {
+      "id": "US-054",
+      "epic": "E2 · Importación y datos locales",
+      "title": "Clasificar y mezclar importaciones de forma idempotente",
+      "story": "Como persona usuaria, quiero reimportar un CSV y agregar solo los pagos nuevos para mantener mi historial sin editar manualmente el archivo ni duplicar movimientos.",
+      "requirements": ["RF-006", "RNF-002", "RNF-004", "RNF-006"],
+      "dependsOn": ["US-053"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "Una política determinista clasifica cada fila como nueva, ya registrada, posible duplicado, conflicto o inválida según ADR-0008.",
+        "Reimportar el mismo archivo produce cero pagos nuevos; un archivo mixto conserva los existentes y prepara únicamente sus filas nuevas.",
+        "Una coincidencia por fecha e importes con otra referencia es solo una advertencia y dos pagos legítimos iguales pueden conservarse.",
+        "La confirmación revalida contra el agregado vigente y aplica la mezcla transaccionalmente; una decisión obsoleta vuelve a conflicto sin sobrescribir datos.",
+        "Pruebas unitarias y de integración cubren IDs repetidos dentro del CSV, estado desactualizado, reemplazo explícito y rollback."
+      ]
+    },
+    {
+      "id": "US-055",
+      "epic": "E2 · Importación y datos locales",
+      "title": "Resolver duplicados y conflictos desde la previsualización",
+      "story": "Como persona usuaria, quiero entender qué pagos se importarán, omitirán o necesitan mi decisión para confirmar el CSV con confianza.",
+      "requirements": ["RF-006", "RNF-006", "RNF-008"],
+      "dependsOn": ["US-054"],
+      "status": "planned",
+      "acceptanceCriteria": [
+        "La previsualización accesible resume por separado pagos nuevos, ya registrados, posibles duplicados, conflictos e inválidos, con conteos y filas identificables.",
+        "Los ya registrados no bloquean la acción Importar N pagos nuevos y, si no hay nuevos, la interfaz informa que el archivo ya fue procesado.",
+        "Cada conflicto compara el registro guardado con el CSV y permite conservar, reemplazar explícitamente o cancelar; cada posible duplicado permite omitir o importar.",
+        "La confirmación anuncia el resultado final de importados, omitidos y reemplazados, y conserva las decisiones al corregir otras filas.",
+        "Pruebas de interfaz cubren teclado, mensajes accesibles, archivo mixto, reimportación completa y errores de persistencia recuperables."
+      ]
     }
   ]
 }
