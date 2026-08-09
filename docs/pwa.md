@@ -18,6 +18,8 @@ La tabla de amortización y el gráfico se montan solo al seleccionar **Ver deta
 
 La PWA precachea la página, manifiesto, iconos y recursos de construcción. Después de la primera visita, la página raíz puede servirse mediante el service worker sin red. La verificación de actualización de caché y de recuperación ante datos locales inválidos requiere una prueba de navegador con Chromium y sigue pendiente dentro de `US-016`.
 
+En **Datos y respaldo**, el respaldo local permite marcar los créditos que se exportarán y editar el nombre del archivo; el valor inicial contiene un timestamp UTC. Al seleccionar un archivo de respaldo, se valida completo antes de presentar su propia lista de créditos para restaurar. Solo después de esa selección se confirma la sustitución de coincidencias por identificador.
+
 Desde el detalle de un préstamo se registran y corrigen pagos manuales, o se importa un CSV tras revisar sus filas, duplicados y meses faltantes. La confirmación no admite una previsualización con errores y los pagos se persisten dentro del agregado del préstamo seleccionado.
 
 La sección **Configuración de escenarios** presenta un formulario separado y tarjetas con descripción, resumen, edición y eliminación para pagos extraordinarios únicos, extraordinarios mensuales constantes o aportes mensuales constantes al principal. En el último caso, la PWA aporta únicamente la diferencia entre el objetivo y el principal ya cubierto por la cuota ordinaria. **Ver resumen** presenta ahí mismo fecha final, plazo e interés ahorrados, seguro y total pagado. Si hay historial o reset bancario, cada escenario inicia desde el mismo saldo y fecha de corte de la proyección base. Los escenarios nunca modifican pagos reales ni la configuración del préstamo.

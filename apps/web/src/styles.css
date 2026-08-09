@@ -1471,6 +1471,50 @@ body {
   color: #64748b;
 }
 
+.backup-action-card > label:not(.backup-file-control) {
+  display: grid;
+  width: 100%;
+  gap: 0.35rem;
+  color: #334155;
+  font-weight: 650;
+}
+
+.backup-action-card > label:not(.backup-file-control) input {
+  min-width: 0;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #64748b;
+  border-radius: 0.4rem;
+  color: #0f172a;
+  background: #fff;
+  font: inherit;
+}
+
+.backup-selection {
+  display: grid;
+  width: 100%;
+  gap: 0.55rem;
+  margin: 1rem 0;
+  padding: 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  color: #334155;
+  background: #fff;
+}
+
+.backup-selection legend {
+  padding: 0 0.25rem;
+  color: #1e3a5f;
+  font-weight: 700;
+}
+
+.backup-selection label {
+  color: #334155;
+}
+
+.backup-selection p {
+  margin: 0;
+}
+
 .backup-file-control {
   display: inline-flex;
   align-items: center;
