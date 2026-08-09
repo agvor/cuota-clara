@@ -9,6 +9,7 @@ import {
   createLoan,
   createLoanV2,
   createLoanV3,
+  createPaymentRecord,
   Money,
   type LoanRepository,
 } from '@cuotaclara/domain';
@@ -36,6 +37,17 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Aún no hay préstamos' })).toBeVisible();
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeVisible();
     expect(screen.getByText(/Las estimaciones son informativas/)).toBeVisible();
+  });
+
+  test('muestra una salida recuperable si la ruta apunta a un préstamo no disponible', async () => {
+    window.history.replaceState(null, '', '#/prestamos/no-disponible/summary');
+    render(<App repository={createRepository([])} />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'No se pudo abrir el préstamo seleccionado' }),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: '← Todos los préstamos' }));
+    expect(await screen.findByRole('heading', { name: 'Aún no hay préstamos' })).toBeVisible();
   });
 
   test('muestra el resumen de cada préstamo sin recalcularlo en la interfaz', async () => {
@@ -321,5 +333,67 @@ describe('App', () => {
       '1115.00',
     );
     expect(saved.loan.ordinaryPayment.toFixed(saved.loan.roundingPolicy)).toBe('1100.00');
+  });
+
+  test('permite elegir los datos incluidos al duplicar sin reutilizar registros', async () => {
+    const loan = createLoan({
+      id: 'loan-duplicate',
+      name: 'Casa original',
+      startDate: '2026-01-01',
+      initialBalance: Money.from('1000.00', 'CRC'),
+      ordinaryPayment: Money.from('100.00', 'CRC'),
+      annualNominalRate: '0.12',
+      periodsPerYear: 12,
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+    });
+    const aggregate = {
+      loan,
+      payments: [
+        createPaymentRecord({
+          id: 'payment-original',
+          date: '2026-02-01',
+          totalAmount: Money.from('100.00', 'CRC'),
+          principalAmount: Money.from('50.00', 'CRC'),
+          source: 'csv_import',
+        }),
+      ],
+      scenarios: [
+        {
+          id: 'scenario-original',
+          loanId: loan.id,
+          name: 'Aporte extra',
+          configuration: { kind: 'constant_extra' },
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    };
+    const repository = createRepository([loan]);
+    vi.mocked(repository.loadAggregate).mockResolvedValue(aggregate);
+    render(<App repository={repository} />);
+
+    await screen.findByRole('heading', { name: 'Casa original' });
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir préstamo Casa original' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Configuración' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Duplicar préstamo' }));
+
+    expect(await screen.findByRole('dialog', { name: 'Duplicar préstamo' })).toBeVisible();
+    fireEvent.change(screen.getByLabelText('Nombre de la copia'), {
+      target: { value: 'Casa para comparar' },
+    });
+    fireEvent.click(screen.getByLabelText('Copiar pagos registrados (1)'));
+    fireEvent.click(screen.getByLabelText('Copiar escenarios (1)'));
+    fireEvent.click(screen.getByRole('button', { name: 'Crear copia' }));
+
+    await waitFor(() => expect(repository.saveAggregate).toHaveBeenCalledTimes(1));
+    const saved = vi.mocked(repository.saveAggregate).mock.calls[0]?.[0];
+    expect(saved).toMatchObject({
+      loan: { name: 'Casa para comparar' },
+      payments: [{ id: expect.any(String) }],
+      scenarios: [{ id: expect.any(String) }],
+    });
+    expect(saved?.loan.id).not.toBe(loan.id);
+    expect(saved?.payments[0]?.id).not.toBe('payment-original');
+    expect(saved?.scenarios[0]?.id).not.toBe('scenario-original');
+    expect(saved?.scenarios[0]?.loanId).toBe(saved?.loan.id);
   });
 });

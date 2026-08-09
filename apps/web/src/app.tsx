@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import {
   createTbpMarginScenario,
@@ -22,6 +22,7 @@ import { PaymentTools } from './payment-tools.js';
 import { decimalRateToPercent } from './percentage.js';
 import { ProjectionView, type ChartConfiguration } from './projection-view.js';
 import { ScenarioTools } from './scenario-tools.js';
+import { createDuplicateLoanAggregate, type DuplicateLoanOptions } from './duplicate-loan.js';
 import './styles.css';
 
 export type AppProps = Readonly<{
@@ -66,6 +67,8 @@ export function App({ repository }: AppProps) {
   const [activeLoanTab, setActiveLoanTab] = useState<LoanTab>('summary');
   const [formLoan, setFormLoan] = useState<Loan | null | undefined>(undefined);
   const [selectedAggregate, setSelectedAggregate] = useState<LoanAggregate>();
+  const [duplicateSource, setDuplicateSource] = useState<LoanAggregate>();
+  const [actionError, setActionError] = useState<string>();
   const [chartConfigurations, setChartConfigurations] = useState<
     Readonly<Record<string, ChartConfiguration>>
   >({});
@@ -187,18 +190,36 @@ export function App({ repository }: AppProps) {
     setFormLoan(undefined);
   }
 
-  async function duplicateLoan(loan: Loan) {
-    if (!window.confirm(`¿Duplicar el préstamo “${loan.name}” sin sus pagos ni escenarios?`))
-      return;
-    const duplicate = { ...loan, id: crypto.randomUUID(), name: `${loan.name} (copia)` };
-    const aggregate: LoanAggregate = { loan: duplicate, payments: [], scenarios: [] };
-    await repository.saveAggregate(aggregate);
-    await reloadLoans();
-    setSelectedLoanId(duplicate.id);
-    setSelectedAggregate(aggregate);
-    setActiveLoanTab('summary');
-    setAppView('loans');
-    writeRoute(routeForLoan(duplicate.id, 'summary'));
+  async function requestDuplicate(loan: Loan) {
+    try {
+      const aggregate =
+        selectedAggregate?.loan.id === loan.id
+          ? selectedAggregate
+          : await repository.loadAggregate(loan.id);
+      if (!aggregate) throw new Error('No se encontró el préstamo que se desea duplicar.');
+      setActionError(undefined);
+      setDuplicateSource(aggregate);
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : 'No se pudo preparar la copia.');
+    }
+  }
+
+  async function duplicateLoan(options: DuplicateLoanOptions) {
+    if (!duplicateSource) return;
+    try {
+      const aggregate = createDuplicateLoanAggregate(duplicateSource, options);
+      await repository.saveAggregate(aggregate);
+      await reloadLoans();
+      setSelectedLoanId(aggregate.loan.id);
+      setSelectedAggregate(aggregate);
+      setActiveLoanTab('summary');
+      setAppView('loans');
+      setDuplicateSource(undefined);
+      setActionError(undefined);
+      writeRoute(routeForLoan(aggregate.loan.id, 'summary'));
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : 'No se pudo guardar la copia.');
+    }
   }
 
   async function deleteLoan(loan: Loan) {
@@ -321,6 +342,11 @@ export function App({ repository }: AppProps) {
         </nav>
       </header>
       <main id="main-content">
+        {actionError ? (
+          <p className="app-action-error" role="alert">
+            {actionError}
+          </p>
+        ) : null}
         {formLoan !== undefined ? (
           <LoanEditor
             {...(formLoan ? { loan: formLoan } : {})}
@@ -344,7 +370,7 @@ export function App({ repository }: AppProps) {
             onChangeTab={changeLoanTab}
             onBack={showLoanLibrary}
             onEdit={() => setFormLoan(state.loans.find((loan) => loan.id === selectedLoanId))}
-            onDuplicate={duplicateLoan}
+            onDuplicate={requestDuplicate}
             onDelete={deleteLoan}
             aggregate={selectedAggregate}
             {...(chartConfigurations[selectedLoanId]
@@ -365,6 +391,13 @@ export function App({ repository }: AppProps) {
           />
         )}
       </main>
+      {duplicateSource ? (
+        <DuplicateLoanDialog
+          source={duplicateSource}
+          onCancel={() => setDuplicateSource(undefined)}
+          onConfirm={(options) => void duplicateLoan(options)}
+        />
+      ) : null}
       <footer className="site-footer">
         <p>CuotaClara guarda tus datos localmente y no requiere cuenta.</p>
         <p>
@@ -519,7 +552,19 @@ function LoanWorkspace({
   onSaveScenario: (scenario: ProjectionScenarioSnapshot) => Promise<void>;
   onDeleteScenario: (scenarioId: string) => Promise<void>;
 }>) {
-  if (!loan) return null;
+  if (!loan)
+    return (
+      <section className="loan-workspace-error" role="alert">
+        <h1>No se pudo abrir el préstamo seleccionado</h1>
+        <p>
+          El préstamo no está disponible en la lista local actual. Vuelve a la lista y recarga la
+          aplicación si el problema continúa.
+        </p>
+        <button type="button" onClick={onBack}>
+          ← Todos los préstamos
+        </button>
+      </section>
+    );
   return (
     <section className="loan-workspace" aria-labelledby="loan-workspace-title">
       <button className="back-link" type="button" onClick={onBack}>
@@ -712,6 +757,90 @@ function LoanSettings({
         </button>
       </section>
     </section>
+  );
+}
+
+function DuplicateLoanDialog({
+  source,
+  onCancel,
+  onConfirm,
+}: Readonly<{
+  source: LoanAggregate;
+  onCancel: () => void;
+  onConfirm: (options: DuplicateLoanOptions) => void;
+}>) {
+  const [name, setName] = useState(`${source.loan.name} (copia)`);
+  const [includePayments, setIncludePayments] = useState(false);
+  const [includeScenarios, setIncludeScenarios] = useState(false);
+  const [error, setError] = useState<string>();
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedName = name.trim();
+    if (!normalizedName) {
+      setError('Indica un nombre para la copia.');
+      return;
+    }
+    onConfirm({ name: normalizedName, includePayments, includeScenarios });
+  }
+
+  return (
+    <div className="duplicate-dialog-backdrop">
+      <section
+        className="duplicate-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="duplicate-dialog-title"
+      >
+        <form onSubmit={submit}>
+          <h2 id="duplicate-dialog-title">Duplicar préstamo</h2>
+          <p>
+            Crea una copia independiente de <strong>{source.loan.name}</strong>. El préstamo
+            original no se modifica.
+          </p>
+          <label>
+            Nombre de la copia
+            <input value={name} onChange={(event) => setName(event.target.value)} autoFocus />
+          </label>
+          <fieldset>
+            <legend>Contenido de la copia</legend>
+            <label>
+              <input
+                type="checkbox"
+                checked={includePayments}
+                onChange={(event) => setIncludePayments(event.target.checked)}
+              />{' '}
+              Copiar pagos registrados ({source.payments.length})
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={includeScenarios}
+                onChange={(event) => setIncludeScenarios(event.target.checked)}
+              />{' '}
+              Copiar escenarios ({source.scenarios.length})
+            </label>
+          </fieldset>
+          {includePayments && source.bankReset ? (
+            <p className="duplicate-dialog-note">
+              También se copiará el punto de reset bancario para conservar la coherencia del
+              historial.
+            </p>
+          ) : null}
+          <p className="duplicate-dialog-note">
+            Los elementos copiados reciben identificadores nuevos para permanecer separados del
+            original.
+          </p>
+          {error ? <p role="alert">{error}</p> : null}
+          <div className="form-actions">
+            <button type="button" onClick={onCancel}>
+              Cancelar
+            </button>
+            <button type="submit">Crear copia</button>
+          </div>
+        </form>
+      </section>
+    </div>
   );
 }
 

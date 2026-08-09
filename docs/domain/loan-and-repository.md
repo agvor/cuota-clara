@@ -20,4 +20,4 @@ Un snapshot de escenario conserva identificador, préstamo asociado, nombre, con
 
 ## Gestión desde la PWA
 
-La PWA permite crear, editar, duplicar y eliminar un préstamo. Guardar conserva los pagos y escenarios del mismo agregado; duplicar genera un identificador nuevo y empieza sin pagos ni escenarios para no mezclar datos reales. Duplicación y borrado solicitan confirmación explícita. La eliminación borra el agregado completo mediante el repositorio transaccional.
+La PWA permite crear, editar, duplicar y eliminar un préstamo. Guardar conserva los pagos y escenarios del mismo agregado. Al duplicar, se indica nombre y si se incluyen pagos y/o escenarios; por defecto la copia empieza solo con la configuración. Cada pago y escenario incluido recibe un identificador nuevo y el escenario se reasigna al nuevo préstamo, porque esos registros usan claves primarias globales en la persistencia local. Si se copian pagos y existe un reset bancario, también se copia con sus identificadores nuevos para conservar el mismo punto de partida. El original nunca se modifica. La eliminación borra el agregado completo mediante el repositorio transaccional.

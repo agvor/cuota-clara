@@ -287,6 +287,99 @@ h1 {
   margin-top: 1rem;
 }
 
+.app-action-error {
+  max-width: 72rem;
+  margin: 1rem auto 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  color: #991b1b;
+  background: #fef2f2;
+}
+
+.loan-workspace-error {
+  max-width: 48rem;
+  margin: 2rem auto;
+  padding: 1.25rem;
+  border: 1px solid #fecaca;
+  border-radius: 0.75rem;
+  color: #7f1d1d;
+  background: #fff7ed;
+}
+
+.loan-workspace-error h1 {
+  margin-top: 0;
+}
+
+.duplicate-dialog-backdrop {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(15 23 42 / 55%);
+}
+
+.duplicate-dialog {
+  width: min(100%, 34rem);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: 1.25rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  color: #0f172a;
+  background: #fff;
+  box-shadow: 0 1.5rem 4rem rgb(15 23 42 / 30%);
+}
+
+.duplicate-dialog h2,
+.duplicate-dialog p {
+  margin-top: 0;
+}
+
+.duplicate-dialog form {
+  display: grid;
+  gap: 1rem;
+}
+
+.duplicate-dialog label:not(fieldset label) {
+  display: grid;
+  gap: 0.35rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+.duplicate-dialog input:not([type='checkbox']) {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #64748b;
+  border-radius: 0.4rem;
+  color: #0f172a;
+  background: #fff;
+  font: inherit;
+}
+
+.duplicate-dialog fieldset {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0.85rem 1rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+}
+
+.duplicate-dialog fieldset label {
+  color: #334155;
+}
+
+.duplicate-dialog-note {
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.4rem;
+  color: #334155;
+  background: #f1f5f9;
+}
+
 .amortization-detail > p {
   max-width: 46rem;
   color: #475569;
