@@ -3,7 +3,7 @@
 import '@testing-library/jest-dom/vitest';
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import {
   createBankReset,
@@ -16,7 +16,10 @@ import {
 
 import { ProjectionView, type ChartConfiguration } from './projection-view.js';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 const loan = createLoan({
   id: 'loan-001',
@@ -115,6 +118,21 @@ describe('ProjectionView', () => {
     expect(screen.getByRole('cell', { name: 'Histórico' }).closest('tr')).toHaveTextContent(
       '₡0,00',
     );
+  });
+
+  test('acota el gráfico hasta hoy más dos meses y permite restablecer el plazo', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 9, 12));
+    render(<ProjectionView loan={loan} payments={[]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar hasta hoy + 2 meses' }));
+    expect(screen.getByLabelText('Desde')).toHaveValue('2026-02-01');
+    expect(screen.getByLabelText('Hasta')).toHaveValue('2026-10-09');
+    expect(screen.getByText(/Mostrando 9 periodos: 2026-02-01 a 2026-10-01/)).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restablecer todo el plazo' }));
+    expect(screen.getByLabelText('Hasta')).toHaveValue('2026-12-01');
+    expect(screen.getByText(/Mostrando 11 periodos: 2026-02-01 a 2026-12-01/)).toBeVisible();
   });
 
   test('ordena los registros históricos y el ajuste de reconciliación por fecha', () => {

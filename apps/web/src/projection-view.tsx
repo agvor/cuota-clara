@@ -478,6 +478,7 @@ function BalanceChart({
   }));
   const totalStartDate = allPeriods[0]?.date ?? '';
   const totalEndDate = allPeriods.at(-1)?.date ?? '';
+  const nearTermEndDate = clampDateToRange(localDatePlusMonths(2), totalStartDate, totalEndDate);
   const savedRangeStartDate = chartConfiguration?.rangeStartDate;
   const savedRangeEndDate = chartConfiguration?.rangeEndDate;
   const [rangeStartDate, setRangeStartDate] = useState(() =>
@@ -638,6 +639,13 @@ function BalanceChart({
     setLockedPeriod(undefined);
   }
 
+  function showThroughCurrentPlusTwoMonths() {
+    setRangeStartDate(totalStartDate);
+    setRangeEndDate(nearTermEndDate);
+    setHoveredPeriod(undefined);
+    setLockedPeriod(undefined);
+  }
+
   function setChartRangeStart(value: string) {
     setRangeStartDate(value);
     if (value > rangeEndDate) setRangeEndDate(value);
@@ -686,6 +694,13 @@ function BalanceChart({
             }
           >
             Restablecer todo el plazo
+          </button>
+          <button
+            type="button"
+            onClick={showThroughCurrentPlusTwoMonths}
+            disabled={rangeStartDate === totalStartDate && rangeEndDate === nearTermEndDate}
+          >
+            Mostrar hasta hoy + 2 meses
           </button>
           <button
             type="button"
@@ -1229,4 +1244,20 @@ function compareScenario(
 
 function formatChartDate(date: string): string {
   return date.slice(0, 7);
+}
+
+function localDatePlusMonths(months: number, now = new Date()): string {
+  const monthIndex = now.getMonth() + months;
+  const year = now.getFullYear() + Math.floor(monthIndex / 12);
+  const month = (monthIndex % 12) + 1;
+  const lastDayOfTargetMonth = new Date(year, month, 0).getDate();
+  const day = Math.min(now.getDate(), lastDayOfTargetMonth);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function clampDateToRange(date: string, startDate: string, endDate: string): string {
+  if (!startDate || !endDate) return '';
+  if (date < startDate) return startDate;
+  if (date > endDate) return endDate;
+  return date;
 }
