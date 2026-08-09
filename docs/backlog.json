@@ -740,6 +740,21 @@
         "La eliminación de uno, varios o todos los créditos requiere confirmación explícita y elimina transaccionalmente el préstamo junto con sus pagos y escenarios asociados.",
         "Al completar la operación, la cartera se actualiza y no conserva una selección ni una ruta activa de un crédito eliminado."
       ]
+    },
+    {
+      "id": "US-051",
+      "epic": "E2 · Importación y datos locales",
+      "title": "Componer saldo conciliado con pagos posteriores",
+      "story": "Como persona usuaria, quiero que los pagos CSV posteriores al saldo informado por el banco reduzcan la proyección para no ignorar aportes ya registrados.",
+      "requirements": ["RF-004", "RF-006", "RF-007", "RF-009", "RF-013", "RNF-001", "RNF-002"],
+      "dependsOn": ["US-043", "US-044"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "El saldo reconciliado más reciente no vuelve a aplicar pagos históricos anteriores a su fecha reportada.",
+        "El principal ordinario y extraordinario de cada pago CSV posterior reduce el saldo conciliado y el corte de la proyección se desplaza al último pago posterior.",
+        "La proyección base y todos los escenarios parten del mismo saldo compuesto y conservan la fecha final bancaria configurada.",
+        "La tabla y el gráfico mantienen los pagos y ajustes históricos en su fecha real."
+      ]
     }
   ]
 }

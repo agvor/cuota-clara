@@ -22,7 +22,7 @@ export function EstimateSummary({
   heading?: string;
 }>) {
   const titleId = useId();
-  const activeReset = activeBalanceReconciliation(aggregate);
+  const activeReset = activeBalanceReconciliation(aggregate, aggregate?.payments);
   const historicalCutoffDate = activeReset?.cutoffDate ?? latestPaymentDate(aggregate?.payments);
   const historical =
     historicalCutoffDate && aggregate

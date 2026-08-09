@@ -724,7 +724,7 @@ function LoanWorkspace({
         {activeTab === 'scenarios' && aggregate?.loan.id === loan.id ? (
           <>
             {(() => {
-              const activeReset = activeBalanceReconciliation(aggregate);
+              const activeReset = activeBalanceReconciliation(aggregate, aggregate.payments);
               const finalDate = reconciledFinalDate(aggregate);
               return (
                 <ScenarioTools
@@ -746,7 +746,7 @@ function LoanWorkspace({
         ) : null}
         {activeTab === 'projection' && aggregate?.loan.id === loan.id
           ? (() => {
-              const activeReset = activeBalanceReconciliation(aggregate);
+              const activeReset = activeBalanceReconciliation(aggregate, aggregate.payments);
               const finalDate = reconciledFinalDate(aggregate);
               return (
                 <ProjectionView
@@ -754,6 +754,7 @@ function LoanWorkspace({
                   payments={aggregate.payments}
                   {...(activeReset ? { bankReset: activeReset } : {})}
                   {...(finalDate ? { bankFinalInstallmentDate: finalDate } : {})}
+                  balanceReconciliations={aggregate.balanceReconciliations ?? []}
                   scenarios={aggregate.scenarios}
                   {...(chartConfiguration ? { chartConfiguration } : {})}
                   onChartConfigurationChange={onChartConfigurationChange}

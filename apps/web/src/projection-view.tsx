@@ -10,6 +10,7 @@ import {
   Money,
   type Loan,
   type BankReset,
+  type BankBalanceReconciliation,
   type PaymentRecord,
   type ProjectionScenarioSnapshot,
   type ScenarioProjectionContext,
@@ -91,6 +92,7 @@ export function ProjectionView({
   payments,
   bankReset,
   bankFinalInstallmentDate,
+  balanceReconciliations = [],
   scenarios = [],
   chartConfiguration,
   onChartConfigurationChange,
@@ -99,6 +101,7 @@ export function ProjectionView({
   payments: readonly PaymentRecord[];
   bankReset?: BankReset;
   bankFinalInstallmentDate?: string;
+  balanceReconciliations?: readonly BankBalanceReconciliation[];
   scenarios?: readonly ProjectionScenarioSnapshot[];
   chartConfiguration?: ChartConfiguration;
   onChartConfigurationChange?: (configuration: ChartConfiguration) => void;
@@ -169,7 +172,7 @@ export function ProjectionView({
     }
   }, [bankFinalInstallmentDate, bankReset, loan, payments]);
   const comparableScenarios = scenarios.filter(isComparableScenario);
-  const historicalBalances = historicalClosingBalances(payments, loan);
+  const historicalBalances = historicalClosingBalances(payments, loan, balanceReconciliations);
   const selectedScenario = comparableScenarios.find(
     (scenario) => scenario.id === selectedTableSourceId,
   );
@@ -196,16 +199,7 @@ export function ProjectionView({
   }
   const historicalRows: readonly HistoricalTableRow[] = [
     ...payments.map((payment) => ({ kind: 'payment' as const, date: payment.date, payment })),
-    ...(bankReset?.adjustment
-      ? [
-          {
-            kind: 'reconciliation' as const,
-            date: bankReset.adjustment.date,
-            adjustment: bankReset.adjustment,
-            reportedBalance: bankReset.reportedBalance,
-          },
-        ]
-      : []),
+    ...reconciliationRows(balanceReconciliations, bankReset),
   ];
   const orderedTableRows: readonly AmortizationTableRow[] = [
     ...historicalRows,
@@ -241,8 +235,9 @@ export function ProjectionView({
       </p>
       {bankReset ? (
         <p className="reconciliation-note" role="status">
-          La proyección inicia con el saldo bancario del {bankReset.cutoffDate} y recalcula la cuota
-          hasta {bankReset.bankFinalInstallmentDate}. Los escenarios también parten de ese saldo.
+          La proyección parte del saldo bancario conciliado y aplica los pagos históricos
+          posteriores hasta {bankReset.cutoffDate}; desde ahí recalcula la cuota hasta{' '}
+          {bankReset.bankFinalInstallmentDate}. Los escenarios usan el mismo punto.
         </p>
       ) : null}
       {hasHistoricalContinuation ? (
@@ -256,6 +251,7 @@ export function ProjectionView({
         loan={loan}
         payments={payments}
         {...(bankReset ? { bankReset } : {})}
+        balanceReconciliations={balanceReconciliations}
         periods={result.periods}
         scenarios={comparableScenarios}
         {...(scenarioProjectionContext ? { scenarioProjectionContext } : {})}
@@ -463,6 +459,7 @@ function BalanceChart({
   loan,
   payments,
   bankReset,
+  balanceReconciliations,
   periods,
   scenarios,
   scenarioProjectionContext,
@@ -472,13 +469,19 @@ function BalanceChart({
   loan: Loan;
   payments: readonly PaymentRecord[];
   bankReset?: BankReset;
+  balanceReconciliations: readonly BankBalanceReconciliation[];
   periods: readonly DisplayProjectionPeriod[];
   scenarios: readonly ProjectionScenarioSnapshot[];
   scenarioProjectionContext?: ScenarioProjectionContext;
   chartConfiguration?: ChartConfiguration;
   onChartConfigurationChange?: (configuration: ChartConfiguration) => void;
 }>) {
-  const historicalPeriods = historicalChartPeriods(payments, bankReset, loan);
+  const historicalPeriods = historicalChartPeriods(
+    payments,
+    bankReset,
+    balanceReconciliations,
+    loan,
+  );
   const allPeriods = [...historicalPeriods, ...periods].map((period, index) => ({
     ...period,
     period: index + 1,
@@ -1161,62 +1164,110 @@ function chartYAxisDomain(
 function historicalChartPeriods(
   payments: readonly PaymentRecord[],
   bankReset: BankReset | undefined,
+  balanceReconciliations: readonly BankBalanceReconciliation[],
   loan: Loan,
 ): readonly DisplayProjectionPeriod[] {
   const zero = zeroMoney(loan);
   let balance = loan.initialBalance;
-  const historical = [...payments]
-    .sort((left, right) => left.date.localeCompare(right.date))
-    .map((payment, index) => {
-      const ordinaryPrincipal = payment.principalAmount ?? zero;
-      const extraordinaryPrincipal = payment.extraPrincipalAmount ?? zero;
-      const principal = ordinaryPrincipal.add(extraordinaryPrincipal);
-      const closingBalance = balance.isLessThan(principal) ? balance : balance.subtract(principal);
+  const entries = [
+    ...payments.map((payment) => ({ kind: 'payment' as const, date: payment.date, payment })),
+    ...reconciliationRows(balanceReconciliations, bankReset).map((reconciliation) => ({
+      ...reconciliation,
+    })),
+  ].sort((left, right) => left.date.localeCompare(right.date));
+  return entries.map((entry, index) => {
+    if (entry.kind === 'reconciliation') {
       const period = {
         period: index + 1,
-        date: payment.date,
+        date: entry.date,
         openingBalance: balance,
-        interest: payment.interestAmount ?? zero,
-        principal,
-        ordinaryPrincipal,
-        extraordinaryPrincipal,
-        payment: payment.totalAmount,
-        closingBalance,
+        interest: zero,
+        principal: entry.adjustment.principalAmount,
+        ordinaryPrincipal: zero,
+        extraordinaryPrincipal: entry.adjustment.principalAmount,
+        payment: entry.adjustment.principalAmount,
+        closingBalance: entry.reportedBalance,
       } satisfies DisplayProjectionPeriod;
-      balance = closingBalance;
+      balance = entry.reportedBalance;
       return period;
-    });
-  if (!bankReset?.adjustment) return historical;
-  return [
-    ...historical,
-    {
-      period: historical.length + 1,
-      date: bankReset.adjustment.date,
+    }
+    const payment = entry.payment;
+    const ordinaryPrincipal = payment.principalAmount ?? zero;
+    const extraordinaryPrincipal = payment.extraPrincipalAmount ?? zero;
+    const principal = ordinaryPrincipal.add(extraordinaryPrincipal);
+    const closingBalance = balance.isLessThan(principal) ? balance : balance.subtract(principal);
+    const period = {
+      period: index + 1,
+      date: payment.date,
       openingBalance: balance,
-      interest: zero,
-      principal: bankReset.adjustment.principalAmount,
-      ordinaryPrincipal: zero,
-      extraordinaryPrincipal: bankReset.adjustment.principalAmount,
-      payment: bankReset.adjustment.principalAmount,
-      closingBalance: bankReset.reportedBalance,
-    },
-  ];
+      interest: payment.interestAmount ?? zero,
+      principal,
+      ordinaryPrincipal,
+      extraordinaryPrincipal,
+      payment: payment.totalAmount,
+      closingBalance,
+    } satisfies DisplayProjectionPeriod;
+    balance = closingBalance;
+    return period;
+  });
+}
+
+function reconciliationRows(
+  balanceReconciliations: readonly BankBalanceReconciliation[],
+  bankReset: BankReset | undefined,
+): readonly HistoricalTableRow[] {
+  if (balanceReconciliations.length) {
+    return balanceReconciliations.flatMap((reconciliation) =>
+      reconciliation.adjustment
+        ? [
+            {
+              kind: 'reconciliation' as const,
+              date: reconciliation.adjustment.date,
+              adjustment: reconciliation.adjustment,
+              reportedBalance: reconciliation.reportedBalance,
+            },
+          ]
+        : [],
+    );
+  }
+  return bankReset?.adjustment
+    ? [
+        {
+          kind: 'reconciliation' as const,
+          date: bankReset.adjustment.date,
+          adjustment: bankReset.adjustment,
+          reportedBalance: bankReset.reportedBalance,
+        },
+      ]
+    : [];
 }
 
 function historicalClosingBalances(
   payments: readonly PaymentRecord[],
   loan: Loan,
+  balanceReconciliations: readonly BankBalanceReconciliation[],
 ): ReadonlyMap<string, Loan['initialBalance']> {
   const balances = new Map<string, Loan['initialBalance']>();
+  const zero = zeroMoney(loan);
   let balance = loan.initialBalance;
-  for (const payment of [...payments].sort((left, right) => left.date.localeCompare(right.date))) {
-    if (!payment.principalAmount) continue;
-    const appliedPrincipal = payment.principalAmount.add(
-      payment.extraPrincipalAmount ?? zeroMoney(loan),
+  const events = [
+    ...payments.map((payment) => ({ kind: 'payment' as const, date: payment.date, payment })),
+    ...reconciliationRows(balanceReconciliations, undefined).map((reconciliation) => ({
+      ...reconciliation,
+    })),
+  ].sort((left, right) => left.date.localeCompare(right.date));
+  for (const event of events) {
+    if (event.kind === 'reconciliation') {
+      balance = event.reportedBalance;
+      continue;
+    }
+    if (!event.payment.principalAmount) continue;
+    const appliedPrincipal = event.payment.principalAmount.add(
+      event.payment.extraPrincipalAmount ?? zero,
     );
     if (balance.isLessThan(appliedPrincipal)) continue;
     balance = balance.subtract(appliedPrincipal);
-    balances.set(payment.id, balance);
+    balances.set(event.payment.id, balance);
   }
   return balances;
 }

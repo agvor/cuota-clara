@@ -7,7 +7,7 @@
 | Épica | Planeado | Listo | En curso | Bloqueado | Completado |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | E1 · Motor financiero verificable | 0 | 0 | 0 | 0 | 7 |
-| E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 6 |
+| E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 7 |
 | E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 12 |
 | E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 12 |
 | E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 2 |
@@ -69,3 +69,4 @@
 | US-048 | E3 · PWA y gestión de préstamos | Duplicar un préstamo con contenido seleccionado | Completado | US-041 |
 | US-049 | E5 · Respaldo y publicación | Seleccionar créditos y nombrar respaldos | Completado | US-015 |
 | US-050 | E3 · PWA y gestión de préstamos | Administrar créditos desde un panel central | Completado | US-048, US-049 |
+| US-051 | E2 · Importación y datos locales | Componer saldo conciliado con pagos posteriores | Completado | US-043, US-044 |
