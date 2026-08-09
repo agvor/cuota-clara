@@ -109,6 +109,54 @@ describe('App', () => {
     expect(window.location.hash).toBe('#/prestamos');
   });
 
+  test('revalida la importación contra el agregado vigente antes de guardar', async () => {
+    const loan = createLoan({
+      id: 'loan-revalidate-import',
+      name: 'Préstamo con importación concurrente',
+      startDate: '2026-01-01',
+      initialBalance: Money.from('1000.00', 'CRC'),
+      ordinaryPayment: Money.from('100.00', 'CRC'),
+      annualNominalRate: '0.12',
+      periodsPerYear: 12,
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+    });
+    const paymentStoredAfterPreview = createPaymentRecord({
+      id: 'stored-internal-id',
+      sourcePaymentId: 'bank-1',
+      date: '2026-02-01',
+      totalAmount: Money.from('100.00', 'CRC'),
+      principalAmount: Money.from('90.00', 'CRC'),
+      source: 'csv_import',
+    });
+    const repository = createRepository([loan]);
+    vi.mocked(repository.loadAggregate)
+      .mockResolvedValueOnce({ loan, payments: [], scenarios: [] })
+      .mockResolvedValueOnce({ loan, payments: [paymentStoredAfterPreview], scenarios: [] });
+    render(<App repository={repository} />);
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: 'Abrir préstamo Préstamo con importación concurrente',
+      }),
+    );
+    fireEvent.click(screen.getByRole('tab', { name: 'Pagos' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Importar CSV' }));
+    const csv = `id;date;total_amount;principal_amount
+bank-1;01/02/2026;100,00;90,00
+bank-2;01/03/2026;100,00;90,00`;
+    fireEvent.change(screen.getByLabelText('Archivo CSV de pagos'), {
+      target: { files: [{ text: async () => csv }] },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar importación' }));
+
+    await waitFor(() => expect(repository.saveAggregate).toHaveBeenCalled());
+    const saved = vi.mocked(repository.saveAggregate).mock.calls[0]?.[0];
+    expect(saved?.payments).toMatchObject([
+      { id: 'stored-internal-id', sourcePaymentId: 'bank-1' },
+      { sourcePaymentId: 'bank-2' },
+    ]);
+  });
+
   test('muestra importes grandes formateados y el resumen financiero contractual', async () => {
     const loan = createLoanV3({
       id: 'loan-summary',

@@ -5,6 +5,7 @@ import {
   estimateLoanContract,
   isTbpMarginScenario,
 } from '@cuotaclara/domain';
+import { mergePaymentImports } from '@cuotaclara/import-csv';
 import type {
   Loan,
   LoanAggregate,
@@ -274,9 +275,18 @@ export function App({ repository }: AppProps) {
 
   async function importPayments(payments: readonly PaymentRecord[]) {
     if (!selectedAggregate) return;
+    const currentAggregate = await repository.loadAggregate(selectedAggregate.loan.id);
+    if (!currentAggregate)
+      throw new Error('No se encontró el préstamo al confirmar la importación.');
+    const result = mergePaymentImports(currentAggregate.payments, payments);
+    if (result.unresolvedConflicts.length || result.unresolvedPossibleDuplicates.length) {
+      throw new Error(
+        'La importación contiene conflictos o posibles duplicados que requieren resolución.',
+      );
+    }
     const aggregate = {
-      ...selectedAggregate,
-      payments: [...selectedAggregate.payments, ...payments],
+      ...currentAggregate,
+      payments: result.payments,
     };
     await repository.saveAggregate(aggregate);
     setSelectedAggregate(aggregate);

@@ -1,6 +1,11 @@
 import { createPaymentRecord, Money, type PaymentRecord } from '@cuotaclara/domain';
 import Papa from 'papaparse';
 
+import {
+  classifyPaymentImports,
+  type PaymentImportClassification,
+} from './payment-import-policy.js';
+
 const REQUIRED_HEADERS = ['id', 'date', 'total_amount'] as const;
 const DECIMAL_LITERAL = /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/;
 
@@ -39,7 +44,15 @@ export type PaymentCsvPreview = Readonly<{
   errors: readonly CsvPreviewError[];
   duplicates: readonly Readonly<{ id: string; rowNumber: number }>[];
   missingPeriods: readonly string[];
+  classification: PaymentImportClassification;
 }>;
+
+const EMPTY_CLASSIFICATION: PaymentImportClassification = Object.freeze({
+  newRecords: Object.freeze([]),
+  alreadyRegistered: Object.freeze([]),
+  conflicts: Object.freeze([]),
+  possibleDuplicates: Object.freeze([]),
+});
 
 function normalizeAmount(raw: string, format: CsvRegionalFormat): string {
   const trimmed = raw.trim();
@@ -125,6 +138,7 @@ export function previewPaymentCsv(input: {
   currency: string;
   format: CsvRegionalFormat;
   existingPaymentIds?: readonly string[];
+  existingPayments?: readonly PaymentRecord[];
   createId?: () => string;
 }): PaymentCsvPreview {
   const parsed = Papa.parse<Record<string, string>>(input.csvText, {
@@ -145,10 +159,22 @@ export function previewPaymentCsv(input: {
     }
   }
   if (errors.some((error) => error.code === 'missing_required_header')) {
-    return { rows: [], validRecords: [], errors, duplicates: [], missingPeriods: [] };
+    return {
+      rows: [],
+      validRecords: [],
+      errors,
+      duplicates: [],
+      missingPeriods: [],
+      classification: EMPTY_CLASSIFICATION,
+    };
   }
 
-  const knownIds = new Set(input.existingPaymentIds ?? []);
+  const knownIds = new Set([
+    ...(input.existingPaymentIds ?? []),
+    ...(input.existingPayments ?? []).flatMap((payment) =>
+      payment.sourcePaymentId ? [payment.sourcePaymentId] : [],
+    ),
+  ]);
   const duplicates: Array<{ id: string; rowNumber: number }> = [];
   const rows: CsvPreviewRow[] = [];
   const validRecords: PaymentRecord[] = [];
@@ -158,12 +184,6 @@ export function previewPaymentCsv(input: {
     const rowErrors: CsvPreviewError[] = [];
     const id = raw.id?.trim() ?? '';
     if (knownIds.has(id)) {
-      const error = {
-        code: 'duplicate_id' as const,
-        rowNumber,
-        message: `El identificador ${id} está duplicado.`,
-      };
-      rowErrors.push(error);
       duplicates.push({ id, rowNumber });
     }
 
@@ -196,13 +216,9 @@ export function previewPaymentCsv(input: {
         ...(feeAmount ? { feeAmount } : {}),
         ...(raw.notes?.trim() ? { notes: raw.notes.trim() } : {}),
       });
-      if (rowErrors.length === 0) {
-        knownIds.add(id);
-        validRecords.push(record);
-        rows.push({ rowNumber, raw, record, errors: rowErrors });
-      } else {
-        rows.push({ rowNumber, raw, errors: rowErrors });
-      }
+      knownIds.add(id);
+      validRecords.push(record);
+      rows.push({ rowNumber, raw, record, errors: rowErrors });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Fila inválida.';
       const code: CsvPreviewErrorCode = /fecha/i.test(message)
@@ -222,5 +238,6 @@ export function previewPaymentCsv(input: {
     errors,
     duplicates,
     missingPeriods: detectMissingPeriods(validRecords),
+    classification: classifyPaymentImports(input.existingPayments ?? [], validRecords),
   };
 }

@@ -26,11 +26,12 @@ describe('previewPaymentCsv', () => {
       })(),
     });
 
-    expect(preview.validRecords).toHaveLength(3);
+    expect(preview.validRecords).toHaveLength(4);
     expect(preview.validRecords.map((record) => record.date)).toEqual([
       '2026-02-01',
       '2026-03-01',
       '2026-05-01',
+      '2026-06-01',
     ]);
     expect(preview.validRecords[0]?.totalAmount.toFixed({ scale: 2, mode: 'half_up' })).toBe(
       '340.00',
@@ -39,8 +40,11 @@ describe('previewPaymentCsv', () => {
       id: 'internal-1',
       sourcePaymentId: 'p-001',
     });
-    expect(preview.errors.map((error) => error.code)).toEqual(['duplicate_id', 'invalid_date']);
+    expect(preview.errors.map((error) => error.code)).toEqual(['invalid_date']);
     expect(preview.duplicates).toEqual([{ id: 'p-002', rowNumber: 5 }]);
+    expect(preview.classification.conflicts).toMatchObject([
+      { incoming: { sourcePaymentId: 'p-002' }, existing: { sourcePaymentId: 'p-002' } },
+    ]);
     expect(preview.missingPeriods).toEqual(['2026-04']);
   });
 

@@ -793,7 +793,7 @@
       "story": "Como persona usuaria, quiero reimportar un CSV y agregar solo los pagos nuevos para mantener mi historial sin editar manualmente el archivo ni duplicar movimientos.",
       "requirements": ["RF-006", "RNF-002", "RNF-004", "RNF-006"],
       "dependsOn": ["US-053"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "Una política determinista clasifica cada fila como nueva, ya registrada, posible duplicado, conflicto o inválida según ADR-0008.",
         "Reimportar el mismo archivo produce cero pagos nuevos; un archivo mixto conserva los existentes y prepara únicamente sus filas nuevas.",
@@ -809,7 +809,7 @@
       "story": "Como persona usuaria, quiero entender qué pagos se importarán, omitirán o necesitan mi decisión para confirmar el CSV con confianza.",
       "requirements": ["RF-006", "RNF-006", "RNF-008"],
       "dependsOn": ["US-054"],
-      "status": "planned",
+      "status": "ready",
       "acceptanceCriteria": [
         "La previsualización accesible resume por separado pagos nuevos, ya registrados, posibles duplicados, conflictos e inválidos, con conteos y filas identificables.",
         "Los ya registrados no bloquean la acción Importar N pagos nuevos y, si no hay nuevos, la interfaz informa que el archivo ya fue procesado.",
