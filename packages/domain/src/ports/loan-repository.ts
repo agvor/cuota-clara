@@ -22,4 +22,5 @@ export interface LoanRepository {
   loadAggregate(loanId: string): Promise<LoanAggregate | undefined>;
   saveAggregate(aggregate: LoanAggregate): Promise<void>;
   deleteLoan(loanId: string): Promise<void>;
+  deleteLoans(loanIds: readonly string[]): Promise<void>;
 }

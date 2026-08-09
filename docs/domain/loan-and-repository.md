@@ -12,7 +12,7 @@ Este contrato representa la configuración del préstamo; los pagos históricos 
 
 ## Agregado y persistencia
 
-`LoanAggregate` reúne un préstamo, sus `PaymentRecord`, un reset bancario opcional y sus snapshots de escenarios. El reset conserva saldo principal reportado, fecha de corte, fecha final bancaria, diferencia calculada y, si fue confirmado, su ajuste histórico especial. `LoanRepository` solo expresa las operaciones asíncronas de listar, cargar, guardar y eliminar agregados.
+`LoanAggregate` reúne un préstamo, sus `PaymentRecord`, un reset bancario opcional y sus snapshots de escenarios. El reset conserva saldo principal reportado, fecha de corte, fecha final bancaria, diferencia calculada y, si fue confirmado, su ajuste histórico especial. `LoanRepository` expresa las operaciones asíncronas de listar, cargar, guardar y eliminar uno o varios agregados.
 
 El puerto no conoce Dexie, IndexedDB, React ni red. El siguiente adaptador local implementará este contrato con IndexedDB; una sincronización futura podrá implementar el mismo puerto con consentimiento de la persona usuaria.
 
@@ -20,4 +20,4 @@ Un snapshot de escenario conserva identificador, préstamo asociado, nombre, con
 
 ## Gestión desde la PWA
 
-La PWA permite crear, editar, duplicar y eliminar un préstamo. Guardar conserva los pagos y escenarios del mismo agregado. Al duplicar, se indica nombre y si se incluyen pagos y/o escenarios; por defecto la copia empieza solo con la configuración. Cada pago y escenario incluido recibe un identificador nuevo y el escenario se reasigna al nuevo préstamo, porque esos registros usan claves primarias globales en la persistencia local. Si se copian pagos y existe un reset bancario, también se copia con sus identificadores nuevos para conservar el mismo punto de partida. El original nunca se modifica. La eliminación borra el agregado completo mediante el repositorio transaccional.
+La PWA permite crear, editar, duplicar y eliminar un préstamo. Guardar conserva los pagos y escenarios del mismo agregado. Al duplicar, se indica nombre y si se incluyen pagos y/o escenarios; por defecto la copia empieza solo con la configuración. Cada pago y escenario incluido recibe un identificador nuevo y el escenario se reasigna al nuevo préstamo, porque esos registros usan claves primarias globales en la persistencia local. Si se copian pagos y existe un reset bancario, también se copia con sus identificadores nuevos para conservar el mismo punto de partida. El original nunca se modifica. La eliminación borra el agregado completo mediante el repositorio transaccional; desde el panel central puede abarcar una selección o todos los préstamos, siempre tras confirmación.

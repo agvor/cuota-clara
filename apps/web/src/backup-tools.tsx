@@ -17,7 +17,12 @@ function normalizeBackupFilename(value: string): string {
 export function BackupTools({
   repository,
   onRestored,
-}: Readonly<{ repository: LoanRepository; onRestored: () => Promise<void> }>) {
+  refreshToken = 0,
+}: Readonly<{
+  repository: LoanRepository;
+  onRestored: () => Promise<void>;
+  refreshToken?: number;
+}>) {
   const [loans, setLoans] = useState<readonly Loan[]>([]);
   const [selectedBackupIds, setSelectedBackupIds] = useState<ReadonlySet<string>>(new Set());
   const [backupName, setBackupName] = useState(() => defaultBackupFilename());
@@ -46,7 +51,7 @@ export function BackupTools({
     return () => {
       active = false;
     };
-  }, [repository]);
+  }, [refreshToken, repository]);
 
   const selectedBackupLoans = loans.filter((loan) => selectedBackupIds.has(loan.id));
   const selectedRestoreAggregates =

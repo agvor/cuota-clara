@@ -27,6 +27,7 @@ function createRepository(loans: Awaited<ReturnType<LoanRepository['listLoans']>
     loadAggregate: vi.fn(),
     saveAggregate: vi.fn(),
     deleteLoan: vi.fn(),
+    deleteLoans: vi.fn(),
   };
 }
 

@@ -115,6 +115,26 @@ describe('DexieLoanRepository', () => {
     await repository.close();
   });
 
+  test('elimina varios préstamos y sus hijos en una sola operación', async () => {
+    const repository = createRepository();
+    const first = createAggregate('loan-001');
+    const second = createAggregate('loan-002');
+    const retained = createAggregate('loan-003');
+    await repository.saveAggregate(first);
+    await repository.saveAggregate(second);
+    await repository.saveAggregate(retained);
+
+    await repository.deleteLoans([first.loan.id, second.loan.id, first.loan.id]);
+
+    await expect(repository.loadAggregate(first.loan.id)).resolves.toBeUndefined();
+    await expect(repository.loadAggregate(second.loan.id)).resolves.toBeUndefined();
+    await expect(repository.loadAggregate(retained.loan.id)).resolves.toMatchObject({
+      loan: { id: retained.loan.id },
+      payments: [{ id: 'loan-003-payment-001' }],
+    });
+    await repository.close();
+  });
+
   test('persiste el reset bancario y su ajuste especial junto al agregado', async () => {
     const repository = createRepository();
     const aggregate = createAggregate();

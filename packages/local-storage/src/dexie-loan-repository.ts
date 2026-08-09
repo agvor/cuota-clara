@@ -198,15 +198,23 @@ export class DexieLoanRepository implements LoanRepository {
   }
 
   async deleteLoan(loanId: string): Promise<void> {
+    await this.deleteLoans([loanId]);
+  }
+
+  async deleteLoans(loanIds: readonly string[]): Promise<void> {
+    const uniqueLoanIds = [...new Set(loanIds)];
+    if (!uniqueLoanIds.length) return;
     await this.database.transaction(
       'rw',
       this.loans(),
       this.payments(),
       this.scenarios(),
       async () => {
-        await this.payments().where('loanId').equals(loanId).delete();
-        await this.scenarios().where('loanId').equals(loanId).delete();
-        await this.loans().delete(loanId);
+        for (const loanId of uniqueLoanIds) {
+          await this.payments().where('loanId').equals(loanId).delete();
+          await this.scenarios().where('loanId').equals(loanId).delete();
+          await this.loans().delete(loanId);
+        }
       },
     );
   }

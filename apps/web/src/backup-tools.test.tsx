@@ -40,6 +40,7 @@ function repositoryFor(aggregates: readonly LoanAggregate[]): LoanRepository {
       .mockImplementation(async (id: string) => aggregates.find((item) => item.loan.id === id)),
     saveAggregate: vi.fn(),
     deleteLoan: vi.fn(),
+    deleteLoans: vi.fn(),
   };
 }
 

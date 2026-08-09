@@ -16,6 +16,7 @@ import type {
 
 import { LoanForm } from './loan-form.js';
 import { BackupTools } from './backup-tools.js';
+import { LoanManagementTools } from './loan-management-tools.js';
 import { EstimateSummary } from './estimate-summary.js';
 import { formatMoney } from './money-format.js';
 import { PaymentTools } from './payment-tools.js';
@@ -69,6 +70,7 @@ export function App({ repository }: AppProps) {
   const [selectedAggregate, setSelectedAggregate] = useState<LoanAggregate>();
   const [duplicateSource, setDuplicateSource] = useState<LoanAggregate>();
   const [actionError, setActionError] = useState<string>();
+  const [dataRevision, setDataRevision] = useState(0);
   const [chartConfigurations, setChartConfigurations] = useState<
     Readonly<Record<string, ChartConfiguration>>
   >({});
@@ -89,6 +91,11 @@ export function App({ repository }: AppProps) {
   async function reloadLoans() {
     const loans = await repository.listLoans();
     setState({ status: 'ready', loans });
+  }
+
+  async function refreshLocalData() {
+    await reloadLoans();
+    setDataRevision((current) => current + 1);
   }
 
   function writeRoute(route: string) {
@@ -361,7 +368,12 @@ export function App({ repository }: AppProps) {
               Tu información permanece en este dispositivo. Puedes crear una copia o restaurar una
               previamente validada.
             </p>
-            <BackupTools repository={repository} onRestored={reloadLoans} />
+            <LoanManagementTools repository={repository} onChanged={refreshLocalData} />
+            <BackupTools
+              repository={repository}
+              onRestored={refreshLocalData}
+              refreshToken={dataRevision}
+            />
           </section>
         ) : selectedLoanId && state.status === 'ready' ? (
           <LoanWorkspace
