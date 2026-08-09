@@ -76,7 +76,7 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help=(
             "Infiere aportes extraordinarios con las diferencias positivas entre "
-            "saldos consecutivos y los registra en la cuota anterior."
+            "saldos consecutivos y crea una fila separada en la cuota siguiente."
         ),
     )
     return parser.parse_args()
@@ -399,33 +399,54 @@ def build_records(
     payments.sort(key=lambda payment: (payment.payment_date, payment.sequence))
     if not payments:
         raise ValueError("No se encontraron cuotas con fecha hasta el corte indicado.")
-    if infer_extra_principal:
-        infer_extra_principal_from_balances(payments)
-    return [payment.record for payment in payments]
+    inferred_records = (
+        infer_extra_principal_from_balances(payments) if infer_extra_principal else []
+    )
+    records = [
+        (payment.payment_date, 0, payment.sequence, payment.record) for payment in payments
+    ]
+    records.extend(inferred_records)
+    records.sort(key=lambda record: (record[0], record[1], record[2]))
+    return [record for _, _, _, record in records]
 
 
-def infer_extra_principal_from_balances(payments: list[ParsedPayment]) -> None:
-    """Atribuye a la cuota anterior la reducción de saldo no explicada por la siguiente.
+def infer_extra_principal_from_balances(
+    payments: list[ParsedPayment],
+) -> list[tuple[date, int, int, dict[str, str]]]:
+    """Crea aportes extra en la cuota siguiente por reducción de saldo no explicada.
 
     El saldo del PDF corresponde al cierre de cada cuota. Entre dos filas, la
     reducción esperada es el principal ordinario de la fila siguiente. Una
-    reducción adicional positiva se registra como aporte extraordinario en la
-    fecha de la fila anterior, porque el documento no expone la fecha exacta
-    dentro de ese intervalo.
+    reducción adicional positiva se registra como una fila separada de aporte
+    extraordinario en la fecha de la cuota siguiente. El documento no expone
+    el día exacto dentro de ese intervalo, por lo que esa fecha es una
+    convención trazable, no una confirmación del día del aporte.
     """
 
+    inferred_records: list[tuple[date, int, int, dict[str, str]]] = []
     for current, following in zip(payments, payments[1:]):
         inferred_extra = current.closing_balance - following.closing_balance - following.principal
         if inferred_extra <= CENT:
             continue
 
-        current.record["extra_principal_amount"] = csv_amount(inferred_extra)
-        current.record["total_amount"] = csv_amount(current.total + inferred_extra)
-        current.record["notes"] = (
-            f"{current.record['notes']} Aporte extraordinario inferido: "
-            f"{csv_amount(inferred_extra)}; diferencia de saldo observada "
-            f"hasta la cuota {following.sequence} ({following.payment_date:%d/%m/%Y})."
-        )
+        record = {
+            "id": f"pdf-plan-extra-{following.payment_date:%Y%m%d}-{following.sequence:03d}",
+            "date": following.payment_date.strftime("%d/%m/%Y"),
+            "total_amount": csv_amount(inferred_extra),
+            "interest_amount": "",
+            "principal_amount": "0,00",
+            "extra_principal_amount": csv_amount(inferred_extra),
+            "insurance_amount": "",
+            "fee_amount": "",
+            "notes": (
+                "Aporte extraordinario inferido desde saldo PDF: "
+                f"{csv_amount(inferred_extra)}; diferencia observada entre la cuota "
+                f"{current.sequence} ({current.payment_date:%d/%m/%Y}) y la cuota "
+                f"{following.sequence} ({following.payment_date:%d/%m/%Y})."
+            ),
+        }
+        inferred_records.append((following.payment_date, 1, following.sequence, record))
+    return inferred_records
 
 
 def write_csv(records: list[dict[str, str]], output_csv: Path) -> None:

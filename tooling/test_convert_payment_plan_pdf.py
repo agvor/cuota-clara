@@ -48,24 +48,30 @@ def parsed_payment(
 
 
 class InferExtraPrincipalFromBalancesTest(unittest.TestCase):
-    def test_registra_en_la_cuota_anterior_la_reduccion_adicional_de_saldo(self) -> None:
+    def test_crea_una_fila_separada_en_la_cuota_siguiente(self) -> None:
         first = parsed_payment(date(2024, 8, 15), 1, "100.00", "10.00", "990.00")
         second = parsed_payment(date(2024, 9, 15), 2, "100.00", "11.00", "959.00")
 
-        converter.infer_extra_principal_from_balances([first, second])
+        inferred = converter.infer_extra_principal_from_balances([first, second])
 
-        self.assertEqual(first.record["extra_principal_amount"], "20,00")
-        self.assertEqual(first.record["total_amount"], "120,00")
-        self.assertIn("15/09/2024", first.record["notes"])
-        self.assertEqual(second.record["extra_principal_amount"], "")
+        self.assertEqual(first.record["extra_principal_amount"], "")
+        self.assertEqual(first.record["total_amount"], "100.00")
+        self.assertEqual(len(inferred), 1)
+        _, _, _, record = inferred[0]
+        self.assertEqual(record["id"], "pdf-plan-extra-20240915-002")
+        self.assertEqual(record["date"], "15/09/2024")
+        self.assertEqual(record["total_amount"], "20,00")
+        self.assertEqual(record["principal_amount"], "0,00")
+        self.assertEqual(record["extra_principal_amount"], "20,00")
+        self.assertIn("15/09/2024", record["notes"])
 
     def test_ignora_la_diferencia_de_un_centavo_por_redondeo(self) -> None:
         first = parsed_payment(date(2024, 8, 15), 1, "100.00", "10.00", "990.00")
         second = parsed_payment(date(2024, 9, 15), 2, "100.00", "11.00", "978.99")
 
-        converter.infer_extra_principal_from_balances([first, second])
+        inferred = converter.infer_extra_principal_from_balances([first, second])
 
-        self.assertEqual(first.record["extra_principal_amount"], "")
+        self.assertEqual(inferred, [])
 
 
 if __name__ == "__main__":

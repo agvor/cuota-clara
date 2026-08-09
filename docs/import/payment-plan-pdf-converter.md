@@ -32,17 +32,17 @@ python3 tooling/convert_payment_plan_pdf.py \
   --infer-extra-principal
 ```
 
-El conversor toma cada saldo como el saldo de cierre de su cuota. Entre dos filas consecutivas, resta el principal ordinario de la fila siguiente a la reducción observada de saldo; una diferencia positiva mayor a un centavo se registra como `extra_principal_amount` en la fecha de la fila anterior. También se agrega a `total_amount` y se deja una nota trazable. Como el PDF no expone el día exacto del aporte dentro de ese intervalo, revisa las inferencias antes de importarlas. La última fila del corte no recibe una inferencia porque no existe un saldo posterior para verificarla.
+El conversor toma cada saldo como el saldo de cierre de su cuota. Entre dos filas consecutivas, resta el principal ordinario de la fila siguiente a la reducción observada de saldo; una diferencia positiva mayor a un centavo se registra como una **fila separada** de aporte extraordinario en la fecha de la cuota siguiente. La fila conserva `principal_amount` en cero, registra el importe en `extra_principal_amount` y `total_amount`, y deja una nota trazable. Como el PDF no expone el día exacto del aporte dentro de ese intervalo, esa fecha es una convención para importarlo y debe revisarse antes de confirmar. La última fila del corte no recibe una inferencia porque no existe un saldo posterior para verificarla.
 
 El archivo generado usa `;`, coma decimal y fechas `DD/MM/AAAA`, la configuración regional inicial de la importación. Sus columnas se asignan así:
 
-| Campo CSV                | Campo leído del PDF                                        |
-| ------------------------ | ---------------------------------------------------------- |
-| `total_amount`           | Cuota total                                                |
-| `principal_amount`       | Amortización a capital                                     |
-| `interest_amount`        | Intereses corrientes                                       |
-| `insurance_amount`       | Pólizas                                                    |
-| `fee_amount`             | Otros                                                      |
+| Campo CSV                | Campo leído del PDF                                                                                   |
+| ------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `total_amount`           | Cuota total                                                                                           |
+| `principal_amount`       | Amortización a capital                                                                                |
+| `interest_amount`        | Intereses corrientes                                                                                  |
+| `insurance_amount`       | Pólizas                                                                                               |
+| `fee_amount`             | Otros                                                                                                 |
 | `extra_principal_amount` | Vacío por defecto. Con `--infer-extra-principal`, reducción adicional de saldo inferida entre cuotas. |
 
 ## Importación segura
