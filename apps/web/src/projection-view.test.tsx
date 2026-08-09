@@ -102,6 +102,7 @@ describe('ProjectionView', () => {
       interestAmount: Money.from('10.00', 'CRC'),
       principalAmount: Money.from('50.00', 'CRC'),
       source: 'csv_import',
+      sourcePaymentId: 'history-1',
     });
 
     render(<ProjectionView loan={contractLoan} payments={[payment]} />);
@@ -155,6 +156,7 @@ describe('ProjectionView', () => {
         interestAmount: Money.from('10.00', 'CRC'),
         principalAmount: Money.from('50.00', 'CRC'),
         source: 'csv_import',
+        sourcePaymentId: 'history-march',
       }),
       createPaymentRecord({
         id: 'history-february',
@@ -163,6 +165,7 @@ describe('ProjectionView', () => {
         interestAmount: Money.from('10.00', 'CRC'),
         principalAmount: Money.from('50.00', 'CRC'),
         source: 'csv_import',
+        sourcePaymentId: 'history-february',
       }),
     ];
     const bankReset = createBankReset({
@@ -224,6 +227,7 @@ describe('ProjectionView', () => {
       interestAmount: Money.from('10.00', 'CRC'),
       principalAmount: Money.from('50.00', 'CRC'),
       source: 'csv_import',
+      sourcePaymentId: 'history-scenario',
     });
     const bankReset = createBankReset({
       id: 'reset-scenario',
@@ -313,6 +317,7 @@ describe('ProjectionView', () => {
       principalAmount: Money.from('0.00', 'CRC'),
       extraPrincipalAmount: Money.from('25.00', 'CRC'),
       source: 'csv_import',
+      sourcePaymentId: 'extra-only',
     });
     render(<ProjectionView loan={loan} payments={[extraOnlyPayment]} />);
 

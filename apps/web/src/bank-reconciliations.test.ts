@@ -23,6 +23,7 @@ describe('activeBalanceReconciliation', () => {
         principalAmount: Money.from('150', 'CRC'),
         extraPrincipalAmount: Money.from('50', 'CRC'),
         source: 'csv_import',
+        sourcePaymentId: 'payment-after-reset',
       }),
     ];
     const aggregate: LoanAggregate = {

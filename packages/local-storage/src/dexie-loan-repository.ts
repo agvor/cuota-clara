@@ -99,6 +99,7 @@ type StoredPayment = Readonly<{
   insuranceAmount?: StoredMoney;
   feeAmount?: StoredMoney;
   source: 'manual' | 'csv_import';
+  sourcePaymentId?: string;
   sourceReference?: string;
   notes?: string;
 }>;
@@ -167,6 +168,30 @@ export class DexieLoanRepository implements LoanRepository {
       payments: 'id, loanId, [loanId+date]',
       scenarios: 'id, loanId',
     });
+    // v6 separa la clave interna global de la referencia externa del CSV.
+    // Para pagos CSV heredados, el id estable anterior se conserva en ambos
+    // campos sin reinterpretar importes ni procedencia.
+    this.database
+      .version(6)
+      .stores({
+        loans: 'id',
+        payments: 'id, loanId, [loanId+date], &[loanId+sourcePaymentId]',
+        scenarios: 'id, loanId',
+      })
+      .upgrade(async (transaction) => {
+        await transaction
+          .table<{
+            id: string;
+            source: 'manual' | 'csv_import';
+            sourcePaymentId?: string;
+          }>('payments')
+          .toCollection()
+          .modify((payment) => {
+            if (payment.source === 'csv_import' && !payment.sourcePaymentId) {
+              payment.sourcePaymentId = payment.id;
+            }
+          });
+      });
   }
 
   async listLoans(): Promise<readonly Loan[]> {
@@ -231,6 +256,15 @@ export class DexieLoanRepository implements LoanRepository {
       this.payments(),
       this.scenarios(),
       async () => {
+        for (const payment of storedPayments) {
+          const occupyingPayment = await this.payments().get(payment.id);
+          if (occupyingPayment && occupyingPayment.loanId !== aggregate.loan.id) {
+            throw corruption(
+              'aggregate',
+              new Error(`el identificador interno de pago ${payment.id} pertenece a otro préstamo`),
+            );
+          }
+        }
         await this.payments().where('loanId').equals(aggregate.loan.id).delete();
         await this.scenarios().where('loanId').equals(aggregate.loan.id).delete();
         await this.loans().put(storedLoan);
@@ -600,6 +634,7 @@ function serializePayment(payment: PaymentRecord, loanId: string, currency: stri
       date: validPayment.date,
       totalAmount: serializeMoney(validPayment.totalAmount),
       source: validPayment.source,
+      ...(validPayment.sourcePaymentId ? { sourcePaymentId: validPayment.sourcePaymentId } : {}),
       ...(validPayment.interestAmount
         ? { interestAmount: serializeMoney(validPayment.interestAmount) }
         : {}),
@@ -636,6 +671,9 @@ function deserializePayment(value: unknown, loanId: string): PaymentRecord {
       date: readString(record, 'date', 'payment'),
       totalAmount: deserializeMoney(record.totalAmount, 'payment.totalAmount'),
       source,
+      ...(typeof record.sourcePaymentId === 'string'
+        ? { sourcePaymentId: record.sourcePaymentId }
+        : {}),
       ...(record.interestAmount
         ? { interestAmount: deserializeMoney(record.interestAmount, 'payment.interestAmount') }
         : {}),

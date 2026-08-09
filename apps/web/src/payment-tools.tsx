@@ -58,7 +58,7 @@ export function PaymentTools({
         csvText,
         currency: loan.initialBalance.currency,
         format: { delimiter: ';', decimalSeparator: ',', dateFormat: 'dd/mm/yyyy' },
-        existingPaymentIds: payments.map((record) => record.id),
+        existingPaymentIds: payments.map((record) => record.sourcePaymentId ?? record.id),
       })
     : undefined;
 

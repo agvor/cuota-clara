@@ -115,6 +115,54 @@ describe('DexieLoanRepository', () => {
     await repository.close();
   });
 
+  test('permite la misma referencia externa en préstamos distintos sin compartir identidad', async () => {
+    const repository = createRepository();
+    const first = createAggregate('loan-001');
+    const second = createAggregate('loan-002');
+    const imported = (id: string) =>
+      createPaymentRecord({
+        id,
+        sourcePaymentId: 'shared-bank-reference',
+        date: '2026-02-01',
+        totalAmount: Money.from('1000.00', 'CRC'),
+        source: 'csv_import',
+      });
+
+    await repository.saveAggregate({ ...first, payments: [imported('internal-first')] });
+    await repository.saveAggregate({ ...second, payments: [imported('internal-second')] });
+
+    await expect(repository.loadAggregate(first.loan.id)).resolves.toMatchObject({
+      payments: [{ id: 'internal-first', sourcePaymentId: 'shared-bank-reference' }],
+    });
+    await expect(repository.loadAggregate(second.loan.id)).resolves.toMatchObject({
+      payments: [{ id: 'internal-second', sourcePaymentId: 'shared-bank-reference' }],
+    });
+    await repository.close();
+  });
+
+  test('revierte el agregado si dos pagos CSV comparten referencia externa en un préstamo', async () => {
+    const repository = createRepository();
+    const aggregate = createAggregate();
+    await repository.saveAggregate(aggregate);
+    const duplicateReferencePayments = ['internal-a', 'internal-b'].map((id) =>
+      createPaymentRecord({
+        id,
+        sourcePaymentId: 'duplicated-reference',
+        date: '2026-03-01',
+        totalAmount: Money.from('1000.00', 'CRC'),
+        source: 'csv_import',
+      }),
+    );
+
+    await expect(
+      repository.saveAggregate({ ...aggregate, payments: duplicateReferencePayments }),
+    ).rejects.toThrow();
+    await expect(repository.loadAggregate(aggregate.loan.id)).resolves.toMatchObject({
+      payments: [{ id: 'loan-001-payment-001' }],
+    });
+    await repository.close();
+  });
+
   test('elimina varios préstamos y sus hijos en una sola operación', async () => {
     const repository = createRepository();
     const first = createAggregate('loan-001');
@@ -268,6 +316,43 @@ describe('DexieLoanRepository', () => {
     });
     const aggregate = await repository.loadAggregate('legacy-001');
     expect(aggregate?.loan.contract).toBeUndefined();
+    await repository.close();
+  });
+
+  test('migra pagos CSV de v5 conservando su ID y derivando la referencia externa', async () => {
+    const databaseName = `cuotaclara-test-${crypto.randomUUID()}`;
+    const v5 = new DexieConstructor(databaseName);
+    v5.version(5).stores({
+      loans: 'id',
+      payments: 'id, loanId, [loanId+date]',
+      scenarios: 'id, loanId',
+    });
+    const aggregate = createAggregate('legacy-csv-loan');
+    await v5.table('loans').put({
+      ...aggregate.loan,
+      initialBalance: { amount: '100000', currency: 'CRC' },
+      ordinaryPayment: { amount: '1000', currency: 'CRC' },
+    });
+    await v5.table('payments').put({
+      id: 'legacy-bank-id',
+      loanId: aggregate.loan.id,
+      date: '2026-02-01',
+      totalAmount: { amount: '1000', currency: 'CRC' },
+      source: 'csv_import',
+      sourceReference: 'legacy.csv:2',
+    });
+    v5.close();
+
+    const repository = new DexieLoanRepository({ databaseName });
+    await expect(repository.loadAggregate(aggregate.loan.id)).resolves.toMatchObject({
+      payments: [
+        {
+          id: 'legacy-bank-id',
+          sourcePaymentId: 'legacy-bank-id',
+          sourceReference: 'legacy.csv:2',
+        },
+      ],
+    });
     await repository.close();
   });
 

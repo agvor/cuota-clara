@@ -125,6 +125,7 @@ export function previewPaymentCsv(input: {
   currency: string;
   format: CsvRegionalFormat;
   existingPaymentIds?: readonly string[];
+  createId?: () => string;
 }): PaymentCsvPreview {
   const parsed = Papa.parse<Record<string, string>>(input.csvText, {
     header: true,
@@ -179,7 +180,8 @@ export function previewPaymentCsv(input: {
       const insuranceAmount = optionalAmount(raw, 'insurance_amount', input.currency, input.format);
       const feeAmount = optionalAmount(raw, 'fee_amount', input.currency, input.format);
       const record = createPaymentRecord({
-        id,
+        id: input.createId?.() ?? crypto.randomUUID(),
+        sourcePaymentId: id,
         date,
         totalAmount: Money.from(
           normalizeAmount(raw.total_amount ?? '', input.format),

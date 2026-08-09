@@ -13,7 +13,7 @@ import {
   type ProjectionScenarioSnapshot,
 } from '@cuotaclara/domain';
 
-const CURRENT_SCHEMA_VERSION = 5;
+const CURRENT_SCHEMA_VERSION = 6;
 
 type StoredMoney = Readonly<{ amount: string; currency: string }>;
 export type BackupDocument = Readonly<{
@@ -80,22 +80,38 @@ export function parseBackup(
     backup.schemaVersion !== 2 &&
     backup.schemaVersion !== 3 &&
     backup.schemaVersion !== 4 &&
+    backup.schemaVersion !== 5 &&
     backup.schemaVersion !== CURRENT_SCHEMA_VERSION
   )
     throw new BackupValidationError('la versión de esquema no es compatible.');
   if (typeof backup.createdAt !== 'string' || !Array.isArray(backup.aggregates))
     throw new BackupValidationError('faltan fecha o agregados.');
   const aggregateIds = new Set<string>();
-  const aggregates = backup.aggregates.map((item) => parseAggregate(item));
+  const schemaVersion = backup.schemaVersion as number;
+  const aggregates = backup.aggregates.map((item) => parseAggregate(item, schemaVersion));
+  const paymentIds = new Set<string>();
   for (const aggregate of aggregates) {
     if (aggregateIds.has(aggregate.loan.id))
       throw new BackupValidationError('hay préstamos duplicados.');
     aggregateIds.add(aggregate.loan.id);
+    const sourcePaymentIds = new Set<string>();
+    for (const payment of aggregate.payments) {
+      if (paymentIds.has(payment.id)) {
+        throw new BackupValidationError('hay identificadores internos de pago duplicados.');
+      }
+      paymentIds.add(payment.id);
+      if (payment.sourcePaymentId) {
+        if (sourcePaymentIds.has(payment.sourcePaymentId)) {
+          throw new BackupValidationError('hay referencias externas de pago duplicadas.');
+        }
+        sourcePaymentIds.add(payment.sourcePaymentId);
+      }
+    }
   }
   return Object.freeze({ createdAt: backup.createdAt, aggregates: Object.freeze(aggregates) });
 }
 
-function parseAggregate(value: unknown): LoanAggregate {
+function parseAggregate(value: unknown, schemaVersion: number): LoanAggregate {
   const recordValue = record(value, 'agregado');
   if (!Array.isArray(recordValue.payments) || !Array.isArray(recordValue.scenarios))
     throw new BackupValidationError('un agregado no contiene colecciones válidas.');
@@ -120,7 +136,7 @@ function parseAggregate(value: unknown): LoanAggregate {
       ...(variableRatePlan ? { variableRatePlan } : {}),
       ...(contract ? { contract } : {}),
     });
-    const payments = recordValue.payments.map((payment) => parsePayment(payment));
+    const payments = recordValue.payments.map((payment) => parsePayment(payment, schemaVersion));
     const scenarios = recordValue.scenarios.map((scenario) => parseScenario(scenario, loan.id));
     const bankReset = recordValue.bankReset
       ? parseBankReset(recordValue.bankReset, loan.initialBalance.currency)
@@ -353,16 +369,22 @@ function parseBankReset(value: unknown, currency: string): BankReset {
   }
   return bankReset;
 }
-function parsePayment(value: unknown) {
+function parsePayment(value: unknown, schemaVersion: number) {
   const payment = record(value, 'pago');
   const source = string(payment.source, 'pago.source');
   if (source !== 'manual' && source !== 'csv_import')
     throw new BackupValidationError('la fuente de pago no es válida.');
+  const id = string(payment.id, 'pago.id');
   return createPaymentRecord({
-    id: string(payment.id, 'pago.id'),
+    id,
     date: string(payment.date, 'pago.date'),
     totalAmount: parseMoney(payment.totalAmount, 'pago.total'),
     source,
+    ...(typeof payment.sourcePaymentId === 'string'
+      ? { sourcePaymentId: payment.sourcePaymentId }
+      : source === 'csv_import' && schemaVersion < 6
+        ? { sourcePaymentId: id }
+        : {}),
     ...(payment.interestAmount
       ? { interestAmount: parseMoney(payment.interestAmount, 'pago.interés') }
       : {}),

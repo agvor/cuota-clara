@@ -14,6 +14,7 @@ export type PaymentRecord = Readonly<{
   insuranceAmount?: Money;
   feeAmount?: Money;
   source: PaymentSource;
+  sourcePaymentId?: string;
   sourceReference?: string;
   notes?: string;
 }>;
@@ -90,6 +91,10 @@ function validateOptionalAmount(amount: Money | undefined, currency: string, fie
 export function createPaymentRecord(input: CreatePaymentRecordInput): PaymentRecord {
   if (!input.id.trim())
     throw new HistoricalStateError('El pago histórico requiere un identificador.');
+  const sourcePaymentId = input.sourcePaymentId?.trim();
+  if (input.source === 'csv_import' && !sourcePaymentId) {
+    throw new HistoricalStateError('El pago CSV requiere una referencia externa.');
+  }
   validateDate(input.date, 'La fecha de pago');
   validateNonNegativeAmount(input.totalAmount, 'El importe total');
   const currency = input.totalAmount.currency;
@@ -99,7 +104,10 @@ export function createPaymentRecord(input: CreatePaymentRecordInput): PaymentRec
   validateOptionalAmount(input.insuranceAmount, currency, 'El seguro');
   validateOptionalAmount(input.feeAmount, currency, 'La comisión');
 
-  return Object.freeze({ ...input });
+  return Object.freeze({
+    ...input,
+    ...(sourcePaymentId ? { sourcePaymentId } : {}),
+  });
 }
 
 export function createReconciliationAdjustment(

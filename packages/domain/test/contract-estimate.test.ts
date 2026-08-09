@@ -275,6 +275,7 @@ describe('estimateLoanContract', () => {
         interestAmount: Money.from('10.00', 'CRC'),
         principalAmount: Money.from('330.00', 'CRC'),
         source: 'csv_import',
+        sourcePaymentId: 'historical-1',
       }),
       createPaymentRecord({
         id: 'historical-2',
@@ -283,6 +284,7 @@ describe('estimateLoanContract', () => {
         interestAmount: Money.from('6.70', 'CRC'),
         principalAmount: Money.from('333.30', 'CRC'),
         source: 'csv_import',
+        sourcePaymentId: 'historical-2',
       }),
     ];
 

@@ -4,13 +4,13 @@
 
 ## Datos y transacciones
 
-La versión de esquema actual es **5** y define tres tablas:
+La versión de esquema actual es **6** y define tres tablas:
 
-| Tabla       | Clave e índices                 | Contenido                                                                            |
-| ----------- | ------------------------------- | ------------------------------------------------------------------------------------ |
-| `loans`     | `id`                            | Configuración financiera y, opcionalmente, contrato v2 o v3 con importes como texto. |
-| `payments`  | `id`, `loanId`, `[loanId+date]` | Pagos reales asociados a un préstamo.                                                |
-| `scenarios` | `id`, `loanId`                  | Capturas de configuración de escenarios.                                             |
+| Tabla       | Clave e índices                                              | Contenido                                                                            |
+| ----------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `loans`     | `id`                                                         | Configuración financiera y, opcionalmente, contrato v2 o v3 con importes como texto. |
+| `payments`  | `id`, `loanId`, `[loanId+date]`, `&[loanId+sourcePaymentId]` | Pagos reales con identidad interna global y referencia externa única por préstamo.   |
+| `scenarios` | `id`, `loanId`                                               | Capturas de configuración de escenarios.                                             |
 
 `saveAggregate` valida y serializa todo el agregado antes de abrir una transacción. Después reemplaza los pagos y escenarios del préstamo y escribe el préstamo en una única transacción de IndexedDB. Por ello, un error de validación o de almacenamiento no deja un agregado a medio actualizar. Borrar un préstamo también elimina sus hijos dentro de una transacción.
 
@@ -20,7 +20,7 @@ Los importes se guardan como `{ amount: string, currency: string }`; no se convi
 
 La versión 2 añade el campo no indexado `contract` a `loans`. No transforma las filas v1: la ausencia de ese campo identifica un préstamo heredado y evita inventar plazo o seguro. La versión 3 conserva ese diseño físico y permite serializar el contrato v3 con `monthlyTotalPayment`; las filas v2 no se reinterpretan como cuota total. La versión 4 conserva junto al préstamo un reset bancario opcional y la versión 5 separa varios saldos conciliados de la fecha final bancaria única, manteniendo lectura compatible del reset v4. Pagos y escenarios se conservan.
 
-La siguiente migración planificada separará la clave interna de cada pago de su identificador externo de importación. Los pagos CSV existentes conservarán su `id` actual como clave interna cuando sea válido y lo copiarán como referencia externa estable; los pagos nuevos recibirán una clave interna globalmente única. El índice de referencia se acotará por préstamo para que dos préstamos puedan importar la misma referencia sin sobrescribirse. El respaldo deberá versionar y conservar ambos identificadores antes de publicar esta migración. La decisión completa está en [`ADR-0008`](../adr/0008-payment-import-identity-and-deduplication.md).
+La versión 6 separa la clave interna de cada pago de su identificador externo de importación. Los pagos CSV existentes conservan su `id` como clave interna y lo copian como referencia externa estable; los pagos nuevos reciben una clave interna globalmente única. El índice compuesto limita la referencia externa al préstamo, por lo que dos préstamos pueden importar la misma referencia sin sobrescribirse. La migración, el guardado y el respaldo conservan ambos identificadores y rechazan colisiones de forma transaccional. La decisión completa está en [`ADR-0008`](../adr/0008-payment-import-identity-and-deduplication.md).
 
 Una modificación persistente incrementa la versión declarada por Dexie y añade una migración explícita. La migración debe ser compatible con datos reales y tener una prueba con datos de la versión previa. No se cambia el esquema existente sin una ruta de actualización ni se borra la base automáticamente.
 

@@ -34,6 +34,29 @@ function twoHistoricalPayments() {
 }
 
 describe('reconstructHistoricalState', () => {
+  test('exige y conserva la referencia externa de un pago CSV separada de su identidad', () => {
+    const payment = createPaymentRecord({
+      id: 'internal-payment-id',
+      sourcePaymentId: 'bank-payment-42',
+      date: '2026-02-01',
+      totalAmount: Money.from('340.00', 'CRC'),
+      source: 'csv_import',
+    });
+
+    expect(payment).toMatchObject({
+      id: 'internal-payment-id',
+      sourcePaymentId: 'bank-payment-42',
+    });
+    expect(() =>
+      createPaymentRecord({
+        id: 'missing-source-payment-id',
+        date: '2026-02-01',
+        totalAmount: Money.from('340.00', 'CRC'),
+        source: 'csv_import',
+      }),
+    ).toThrow('referencia externa');
+  });
+
   test('reconstruye el saldo con pagos históricos sin mutar sus registros', () => {
     const payments = Object.freeze(twoHistoricalPayments());
     const result = reconstructHistoricalState({
@@ -76,6 +99,7 @@ describe('reconstructHistoricalState', () => {
       date: '2026-02-01',
       totalAmount: Money.from('340.00', 'CRC'),
       source: 'csv_import',
+      sourcePaymentId: 'payment-without-principal',
       sourceReference: 'archivo.csv:2',
     });
 

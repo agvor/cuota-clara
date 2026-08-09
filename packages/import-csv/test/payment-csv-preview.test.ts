@@ -20,6 +20,10 @@ describe('previewPaymentCsv', () => {
         dateFormat: 'dd/mm/yyyy',
       },
       existingPaymentIds: ['payment-already-stored'],
+      createId: (() => {
+        let sequence = 0;
+        return () => `internal-${++sequence}`;
+      })(),
     });
 
     expect(preview.validRecords).toHaveLength(3);
@@ -31,6 +35,10 @@ describe('previewPaymentCsv', () => {
     expect(preview.validRecords[0]?.totalAmount.toFixed({ scale: 2, mode: 'half_up' })).toBe(
       '340.00',
     );
+    expect(preview.validRecords[0]).toMatchObject({
+      id: 'internal-1',
+      sourcePaymentId: 'p-001',
+    });
     expect(preview.errors.map((error) => error.code)).toEqual(['duplicate_id', 'invalid_date']);
     expect(preview.duplicates).toEqual([{ id: 'p-002', rowNumber: 5 }]);
     expect(preview.missingPeriods).toEqual(['2026-04']);

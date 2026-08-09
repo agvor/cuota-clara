@@ -777,7 +777,7 @@
       "story": "Como persona usuaria, quiero que los pagos importados de cada préstamo tengan identidad segura para que una referencia repetida no sobrescriba datos propios ni de otro crédito.",
       "requirements": ["RF-001", "RF-005", "RF-006", "RF-011", "RNF-004", "RNF-006", "RNF-010"],
       "dependsOn": ["US-015", "US-048", "US-052"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "PaymentRecord separa un identificador interno globalmente único de la referencia externa opcional, cuyo ámbito de comparación es el préstamo.",
         "Una migración transaccional desde el esquema v5 conserva IDs y datos existentes, deriva la referencia externa de pagos CSV sin reinterpretar importes y evita colisiones entre préstamos.",
@@ -793,7 +793,7 @@
       "story": "Como persona usuaria, quiero reimportar un CSV y agregar solo los pagos nuevos para mantener mi historial sin editar manualmente el archivo ni duplicar movimientos.",
       "requirements": ["RF-006", "RNF-002", "RNF-004", "RNF-006"],
       "dependsOn": ["US-053"],
-      "status": "planned",
+      "status": "ready",
       "acceptanceCriteria": [
         "Una política determinista clasifica cada fila como nueva, ya registrada, posible duplicado, conflicto o inválida según ADR-0008.",
         "Reimportar el mismo archivo produce cero pagos nuevos; un archivo mixto conserva los existentes y prepara únicamente sus filas nuevas.",

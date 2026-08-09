@@ -58,6 +58,7 @@ describe('PaymentTools', () => {
       interestAmount: Money.from('950.00', 'CRC'),
       principalAmount: Money.from('50.00', 'CRC'),
       source: 'csv_import',
+      sourcePaymentId: 'payment-001',
     });
     render(
       <PaymentTools

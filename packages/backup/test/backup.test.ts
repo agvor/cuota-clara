@@ -43,6 +43,63 @@ describe('backup', () => {
     expect(restored.aggregates[0]?.payments[0]?.principalAmount?.currency).toBe('CRC');
   });
 
+  test('versiona y conserva identidad interna y referencia externa de pagos CSV', () => {
+    const importedPayment = createPaymentRecord({
+      id: 'internal-payment-id',
+      sourcePaymentId: 'bank-payment-42',
+      date: '2026-02-01',
+      totalAmount: Money.from('100.00', 'CRC'),
+      principalAmount: Money.from('90.00', 'CRC'),
+      source: 'csv_import',
+      sourceReference: 'estado.csv:2',
+    });
+    const backup = createBackup([{ ...aggregate, payments: [importedPayment] }]);
+
+    expect(backup.schemaVersion).toBe(6);
+    expect(parseBackup(JSON.stringify(backup)).aggregates[0]?.payments[0]).toMatchObject({
+      id: 'internal-payment-id',
+      sourcePaymentId: 'bank-payment-42',
+      sourceReference: 'estado.csv:2',
+    });
+  });
+
+  test('deriva la referencia externa al restaurar pagos CSV de respaldos anteriores', () => {
+    const legacy = createBackup([
+      {
+        ...aggregate,
+        payments: [
+          createPaymentRecord({
+            id: 'legacy-csv-id',
+            sourcePaymentId: 'legacy-csv-id',
+            date: '2026-02-01',
+            totalAmount: Money.from('100.00', 'CRC'),
+            source: 'csv_import',
+          }),
+        ],
+      },
+    ]);
+    const legacyText = JSON.stringify({
+      ...legacy,
+      schemaVersion: 5,
+      aggregates: legacy.aggregates.map((item) => {
+        const value = item as { payments: readonly Record<string, unknown>[] };
+        return {
+          ...value,
+          payments: value.payments.map((payment) =>
+            Object.fromEntries(
+              Object.entries(payment).filter(([key]) => key !== 'sourcePaymentId'),
+            ),
+          ),
+        };
+      }),
+    });
+
+    expect(parseBackup(legacyText).aggregates[0]?.payments[0]).toMatchObject({
+      id: 'legacy-csv-id',
+      sourcePaymentId: 'legacy-csv-id',
+    });
+  });
+
   test('conserva un reset bancario y el ajuste de principal confirmado', () => {
     const backup = createBackup([
       {
@@ -105,7 +162,7 @@ describe('backup', () => {
       roundingPolicy: { scale: 2, mode: 'half_up' },
     });
     const v3 = createBackup([{ ...aggregate, loan: v3Loan }], '2026-07-29T00:00:00.000Z');
-    expect(v3.schemaVersion).toBe(5);
+    expect(v3.schemaVersion).toBe(6);
     expect(parseBackup(JSON.stringify(v3)).aggregates[0]?.loan.contract).toMatchObject({
       version: 3,
       paymentMode: 'automatic',

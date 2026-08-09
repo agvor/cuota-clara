@@ -38,6 +38,7 @@ describe('EstimateSummary', () => {
       principalAmount: Money.from('50.00', 'CRC'),
       insuranceAmount: Money.from('45.00', 'CRC'),
       source: 'csv_import',
+      sourcePaymentId: 'payment-001',
     });
     const bankReset = createBankReset({
       id: 'reset-001',

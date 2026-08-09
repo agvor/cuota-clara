@@ -26,6 +26,7 @@ describe('createDuplicateLoanAggregate', () => {
           totalAmount: Money.from('100', 'CRC'),
           principalAmount: Money.from('50', 'CRC'),
           source: 'csv_import',
+          sourcePaymentId: 'bank-payment-original',
         }),
       ],
       scenarios: [
@@ -63,7 +64,9 @@ describe('createDuplicateLoanAggregate', () => {
     );
 
     expect(duplicate.loan).toMatchObject({ id: 'loan-copy', name: 'Casa de prueba' });
-    expect(duplicate.payments).toMatchObject([{ id: 'payment-copy' }]);
+    expect(duplicate.payments).toMatchObject([
+      { id: 'payment-copy', sourcePaymentId: 'bank-payment-original' },
+    ]);
     expect(duplicate.scenarios).toMatchObject([
       {
         id: 'scenario-copy',

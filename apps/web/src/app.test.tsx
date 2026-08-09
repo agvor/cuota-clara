@@ -356,6 +356,7 @@ describe('App', () => {
           totalAmount: Money.from('100.00', 'CRC'),
           principalAmount: Money.from('50.00', 'CRC'),
           source: 'csv_import',
+          sourcePaymentId: 'payment-original',
         }),
       ],
       scenarios: [
