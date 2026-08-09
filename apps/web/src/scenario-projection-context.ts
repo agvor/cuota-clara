@@ -14,15 +14,16 @@ export function createScenarioProjectionContext(input: {
   loan: Loan;
   payments: readonly PaymentRecord[];
   bankReset?: BankReset;
+  bankFinalInstallmentDate?: string;
 }): ScenarioProjectionContext | undefined {
-  const { loan, payments, bankReset } = input;
+  const { loan, payments, bankReset, bankFinalInstallmentDate } = input;
   const cutoffDate = bankReset?.cutoffDate ?? latestPaymentDate(payments);
   if (!cutoffDate || !loan.contract) return undefined;
 
-  const estimate = estimateLoanContract(
-    loan,
-    bankReset ? { bankReset } : { historicalPayments: payments },
-  );
+  const estimate = estimateLoanContract(loan, {
+    ...(bankReset ? { bankReset } : { historicalPayments: payments }),
+    ...(bankFinalInstallmentDate ? { bankFinalInstallmentDate } : {}),
+  });
   const firstPeriod = estimate.periods[0];
   if (!firstPeriod) return undefined;
 

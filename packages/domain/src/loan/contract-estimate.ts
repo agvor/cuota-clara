@@ -49,6 +49,8 @@ export type LoanContractEstimate = Readonly<{
 
 export type LoanContractEstimateOptions = Readonly<{
   bankReset?: BankReset;
+  /** Fecha final informada por el banco, independiente del saldo conciliado. */
+  bankFinalInstallmentDate?: string;
   historicalPayments?: readonly PaymentRecord[];
 }>;
 
@@ -87,8 +89,10 @@ export function estimateLoanContract(
         })
       : undefined;
   const projectionStartDate = options.bankReset?.cutoffDate ?? historicalState?.cutoffDate;
-  const fullDates = options.bankReset
-    ? generateMonthlyDates(loan.startDate, { endDate: options.bankReset.bankFinalInstallmentDate })
+  const bankFinalInstallmentDate =
+    options.bankFinalInstallmentDate ?? options.bankReset?.bankFinalInstallmentDate;
+  const fullDates = bankFinalInstallmentDate
+    ? generateMonthlyDates(loan.startDate, { endDate: bankFinalInstallmentDate })
     : generateMonthlyDates(loan.startDate, contract.term);
   const dates = projectionStartDate
     ? fullDates.filter((date) => date > projectionStartDate)
@@ -131,7 +135,8 @@ export function estimateLoanContract(
       roundingPolicy: loan.roundingPolicy,
     }).interest;
     const amountDueBeforeInsurance = openingBalance.add(interest);
-    const isTermPreservingContract = contract.version === 3 || Boolean(options.bankReset);
+    const isTermPreservingContract =
+      contract.version === 3 || Boolean(options.bankReset) || Boolean(bankFinalInstallmentDate);
     const installment = isTermPreservingContract
       ? index + 1 === dates.length
         ? amountDueBeforeInsurance

@@ -6,8 +6,9 @@ import {
   createPaymentRecord,
   reconstructHistoricalState,
   Money,
+  type BankBalanceReconciliation,
+  type BankFinalDateReconciliation,
   type BankReset,
-  type HistoricalState,
   type Loan,
   type PaymentRecord,
 } from '@cuotaclara/domain';
@@ -17,25 +18,41 @@ import { formatMoney } from './money-format.js';
 type PaymentToolsProps = Readonly<{
   loan: Loan;
   payments: readonly PaymentRecord[];
+  balanceReconciliations?: readonly BankBalanceReconciliation[];
+  bankFinalDateReconciliation?: BankFinalDateReconciliation;
+  /** Compatibilidad temporal con la pantalla de reset v4. */
   bankReset?: BankReset;
   onSavePayment: (payment: PaymentRecord) => Promise<void>;
   onImportPayments: (payments: readonly PaymentRecord[]) => Promise<void>;
-  onSaveBankReset: (bankReset: BankReset | undefined) => Promise<void>;
+  onSaveBalanceReconciliation?: (reconciliation: BankBalanceReconciliation) => Promise<void>;
+  onDeleteBalanceReconciliation?: (reconciliationId: string) => Promise<void>;
+  onSaveBankFinalDateReconciliation?: (
+    reconciliation: BankFinalDateReconciliation,
+  ) => Promise<void>;
+  onDeleteBankFinalDateReconciliation?: () => Promise<void>;
+  onSaveBankReset?: (bankReset: BankReset | undefined) => Promise<void>;
 }>;
 
 export function PaymentTools({
   loan,
   payments,
+  balanceReconciliations = [],
+  bankFinalDateReconciliation,
   bankReset,
   onSavePayment,
   onImportPayments,
-  onSaveBankReset,
+  onSaveBalanceReconciliation = async () => undefined,
+  onDeleteBalanceReconciliation = async () => undefined,
+  onSaveBankFinalDateReconciliation = async () => undefined,
+  onDeleteBankFinalDateReconciliation = async () => undefined,
 }: PaymentToolsProps) {
   const [payment, setPayment] = useState<PaymentRecord | undefined>();
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [csvText, setCsvText] = useState<string>();
   const [error, setError] = useState<string>();
-  const [isResetOpen, setIsResetOpen] = useState(Boolean(bankReset));
+  const [isResetOpen, setIsResetOpen] = useState(
+    Boolean(balanceReconciliations.length || bankFinalDateReconciliation || bankReset),
+  );
   const preview = csvText
     ? previewPaymentCsv({
         csvText,
@@ -106,17 +123,29 @@ export function PaymentTools({
                   </button>
                 </li>
               ))}
-            {bankReset?.adjustment ? (
-              <li className="reconciliation-history-item">
-                <div>
-                  <time dateTime={bankReset.adjustment.date}>{bankReset.adjustment.date}</time>
-                  <strong>
-                    {formatMoney(bankReset.adjustment.principalAmount, loan.roundingPolicy)}
-                  </strong>
-                  <span>Ajuste de reconciliación al principal</span>
-                </div>
-              </li>
-            ) : null}
+            {balanceReconciliations.flatMap((reconciliation) =>
+              reconciliation.adjustment
+                ? [
+                    <li
+                      className="reconciliation-history-item"
+                      key={`adjustment-${reconciliation.id}`}
+                    >
+                      <div>
+                        <time dateTime={reconciliation.adjustment.date}>
+                          {reconciliation.adjustment.date}
+                        </time>
+                        <strong>
+                          {formatMoney(
+                            reconciliation.adjustment.principalAmount,
+                            loan.roundingPolicy,
+                          )}
+                        </strong>
+                        <span>Ajuste de reconciliación al principal</span>
+                      </div>
+                    </li>,
+                  ]
+                : [],
+            )}
           </ul>
         </section>
       ) : (
@@ -199,8 +228,8 @@ export function PaymentTools({
       <section className="payment-reconciliation" aria-labelledby="payment-reconciliation-title">
         <div className="section-heading-action">
           <div>
-            <h3 id="payment-reconciliation-title">Saldo y proyección del banco</h3>
-            <p>Compara el historial importado con el saldo principal informado por la entidad.</p>
+            <h3 id="payment-reconciliation-title">Conciliaciones del banco</h3>
+            <p>Registra saldos con su fecha reportada y, de forma independiente, la fecha final.</p>
           </div>
           <button
             type="button"
@@ -211,11 +240,28 @@ export function PaymentTools({
           </button>
         </div>
         {isResetOpen ? (
-          <BankResetForm
+          <BankReconciliationTools
             loan={loan}
             payments={payments}
-            {...(bankReset ? { bankReset } : {})}
-            onSave={onSaveBankReset}
+            balanceReconciliations={
+              balanceReconciliations.length
+                ? balanceReconciliations
+                : bankReset
+                  ? [
+                      {
+                        id: bankReset.id,
+                        reportedAt: bankReset.cutoffDate,
+                        reportedBalance: bankReset.reportedBalance,
+                        ...(bankReset.adjustment ? { adjustment: bankReset.adjustment } : {}),
+                      },
+                    ]
+                  : []
+            }
+            {...(bankFinalDateReconciliation ? { bankFinalDateReconciliation } : {})}
+            onSaveBalanceReconciliation={onSaveBalanceReconciliation}
+            onDeleteBalanceReconciliation={onDeleteBalanceReconciliation}
+            onSaveBankFinalDateReconciliation={onSaveBankFinalDateReconciliation}
+            onDeleteBankFinalDateReconciliation={onDeleteBankFinalDateReconciliation}
             onError={setError}
           />
         ) : null}
@@ -225,81 +271,157 @@ export function PaymentTools({
   );
 }
 
-function BankResetForm({
+function BankReconciliationTools({
   loan,
   payments,
-  bankReset,
-  onSave,
+  balanceReconciliations,
+  bankFinalDateReconciliation,
+  onSaveBalanceReconciliation,
+  onDeleteBalanceReconciliation,
+  onSaveBankFinalDateReconciliation,
+  onDeleteBankFinalDateReconciliation,
   onError,
 }: Readonly<{
   loan: Loan;
   payments: readonly PaymentRecord[];
-  bankReset?: BankReset;
-  onSave: (bankReset: BankReset | undefined) => Promise<void>;
+  balanceReconciliations: readonly BankBalanceReconciliation[];
+  bankFinalDateReconciliation?: BankFinalDateReconciliation;
+  onSaveBalanceReconciliation: (reconciliation: BankBalanceReconciliation) => Promise<void>;
+  onDeleteBalanceReconciliation: (reconciliationId: string) => Promise<void>;
+  onSaveBankFinalDateReconciliation: (reconciliation: BankFinalDateReconciliation) => Promise<void>;
+  onDeleteBankFinalDateReconciliation: () => Promise<void>;
   onError: (error: string | undefined) => void;
 }>) {
-  const [candidate, setCandidate] = useState<BankReset | undefined>(bankReset);
-  const [state, setState] = useState<HistoricalState | undefined>(() =>
-    bankReset
-      ? reconstructHistoricalState({
-          initialBalance: loan.initialBalance,
-          payments,
-          cutoffDate: bankReset.cutoffDate,
-          bankReset,
-        })
-      : undefined,
+  const [editingBalance, setEditingBalance] = useState<BankBalanceReconciliation>();
+  return (
+    <div className="bank-reset-form">
+      <BalanceReconciliationForm
+        key={editingBalance?.id ?? balanceReconciliations.map((item) => item.id).join(',')}
+        loan={loan}
+        payments={payments}
+        {...(editingBalance ? { existing: editingBalance } : {})}
+        onSave={onSaveBalanceReconciliation}
+        onDone={() => setEditingBalance(undefined)}
+        onError={onError}
+      />
+      {balanceReconciliations.length ? (
+        <ul className="payment-list" aria-label="Saldos conciliados">
+          {[...balanceReconciliations]
+            .sort((left, right) => right.reportedAt.localeCompare(left.reportedAt))
+            .map((item) => (
+              <li key={item.id}>
+                <div>
+                  <time dateTime={item.reportedAt}>{item.reportedAt}</time>
+                  <strong>{formatMoney(item.reportedBalance, loan.roundingPolicy)}</strong>
+                  <span>Saldo reportado por el banco</span>
+                </div>
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    className="secondary-action"
+                    onClick={() => setEditingBalance(item)}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-action"
+                    onClick={() => void onDeleteBalanceReconciliation(item.id)}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </li>
+            ))}
+        </ul>
+      ) : null}
+      <BankFinalDateForm
+        key={bankFinalDateReconciliation?.bankFinalInstallmentDate ?? 'empty'}
+        {...(bankFinalDateReconciliation
+          ? { value: bankFinalDateReconciliation.bankFinalInstallmentDate }
+          : {})}
+        onSave={onSaveBankFinalDateReconciliation}
+        onDelete={onDeleteBankFinalDateReconciliation}
+        onError={onError}
+      />
+    </div>
   );
-  const [acceptAdjustment, setAcceptAdjustment] = useState(Boolean(bankReset?.adjustment));
+}
 
+function BalanceReconciliationForm({
+  loan,
+  payments,
+  existing,
+  onSave,
+  onDone,
+  onError,
+}: Readonly<{
+  loan: Loan;
+  payments: readonly PaymentRecord[];
+  existing?: BankBalanceReconciliation;
+  onSave: (reconciliation: BankBalanceReconciliation) => Promise<void>;
+  onDone: () => void;
+  onError: (error: string | undefined) => void;
+}>) {
+  const [candidate, setCandidate] = useState<BankBalanceReconciliation>();
+  const [balanceBefore, setBalanceBefore] = useState<Money>();
+  const [acceptAdjustment, setAcceptAdjustment] = useState(false);
   function calculate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     try {
-      const next = createBankReset({
-        id: bankReset?.id ?? crypto.randomUUID(),
-        cutoffDate: String(form.get('cutoffDate')),
-        reportedBalance: Money.from(
-          String(form.get('reportedBalance')),
-          loan.initialBalance.currency,
-        ),
-        bankFinalInstallmentDate: String(form.get('bankFinalInstallmentDate')),
+      const reportedAt = String(form.get('reportedAt'));
+      const reportedBalance = Money.from(
+        String(form.get('reportedBalance')),
+        loan.initialBalance.currency,
+      );
+      createBankReset({
+        id: 'balance-validation',
+        cutoffDate: reportedAt,
+        reportedBalance,
+        bankFinalInstallmentDate: '9999-12-31',
       });
-      const nextState = reconstructHistoricalState({
+      const reconstructed = reconstructHistoricalState({
         initialBalance: loan.initialBalance,
-        payments,
-        cutoffDate: next.cutoffDate,
-        bankReset: next,
+        payments: payments.filter((payment) => payment.date <= reportedAt),
+        cutoffDate: reportedAt,
       });
-      setCandidate(next);
-      setState(nextState);
-      setAcceptAdjustment(Boolean(bankReset?.adjustment));
+      setCandidate({
+        id: existing?.id ?? crypto.randomUUID(),
+        reportedAt,
+        reportedBalance,
+        ...(existing?.adjustment ? { adjustment: existing.adjustment } : {}),
+      });
+      setBalanceBefore(reconstructed.balanceBeforeReconciliation);
+      setAcceptAdjustment(false);
       onError(undefined);
     } catch (cause) {
       onError(cause instanceof Error ? cause.message : 'No se pudo calcular la conciliación.');
     }
   }
-
-  async function save(): Promise<void> {
-    if (!candidate || !state) return;
-    try {
-      const adjustment =
-        acceptAdjustment && state.suggestedPrincipalAdjustment
-          ? {
-              id: bankReset?.adjustment?.id ?? crypto.randomUUID(),
-              date: candidate.cutoffDate,
-              principalAmount: state.suggestedPrincipalAdjustment,
-              reason: 'Diferencia de principal confirmada durante la reconciliación bancaria.',
-            }
-          : undefined;
-      await onSave(createBankReset({ ...candidate, ...(adjustment ? { adjustment } : {}) }));
-      onError(undefined);
-    } catch (cause) {
-      onError(cause instanceof Error ? cause.message : 'No se pudo guardar el reset bancario.');
-    }
+  async function save() {
+    if (!candidate || !balanceBefore) return;
+    const difference = balanceBefore.subtract(candidate.reportedBalance);
+    await onSave({
+      ...candidate,
+      ...(acceptAdjustment && difference.isPositive()
+        ? {
+            adjustment: {
+              id: existing?.adjustment?.id ?? crypto.randomUUID(),
+              date: candidate.reportedAt,
+              principalAmount: difference,
+              reason: 'Diferencia de principal confirmada durante la conciliación bancaria.',
+            },
+          }
+        : {}),
+    });
+    setCandidate(undefined);
+    setBalanceBefore(undefined);
+    onDone();
   }
-
   return (
-    <div className="bank-reset-form">
+    <div className="reconciliation-result">
+      <h4>{existing ? 'Editar saldo conciliado' : 'Conciliar saldo reportado'}</h4>
       <form className="payment-form" onSubmit={calculate}>
         <label>
           Saldo principal reportado por el banco
@@ -307,80 +429,98 @@ function BankResetForm({
             required
             name="reportedBalance"
             inputMode="decimal"
-            defaultValue={bankReset?.reportedBalance.toDecimalString() ?? ''}
+            defaultValue={existing?.reportedBalance.toDecimalString() ?? ''}
           />
         </label>
         <label>
-          Fecha de corte del saldo
-          <input
-            required
-            name="cutoffDate"
-            type="date"
-            defaultValue={bankReset?.cutoffDate ?? ''}
-          />
-        </label>
-        <label>
-          Fecha de última cuota proyectada por el banco
-          <input
-            required
-            name="bankFinalInstallmentDate"
-            type="date"
-            defaultValue={bankReset?.bankFinalInstallmentDate ?? ''}
-          />
+          Fecha en que el banco reportó ese saldo
+          <input required name="reportedAt" type="date" defaultValue={existing?.reportedAt ?? ''} />
         </label>
         <div className="form-actions">
           <button type="submit">Calcular discrepancia</button>
-          {bankReset ? (
-            <button type="button" onClick={() => void onSave(undefined)}>
-              Quitar reset
-            </button>
-          ) : null}
         </div>
       </form>
-      {state && candidate ? (
-        <div className="reconciliation-result" aria-live="polite">
+      {candidate && balanceBefore ? (
+        <div aria-live="polite">
           <table className="financial-table">
             <tbody>
               <tr>
-                <th scope="row">Principal acumulado del historial</th>
-                <td>{formatMoney(state.appliedPrincipal, loan.roundingPolicy)}</td>
+                <th scope="row">Saldo reconstruido al corte</th>
+                <td>{formatMoney(balanceBefore, loan.roundingPolicy)}</td>
               </tr>
               <tr>
-                <th scope="row">Interés acumulado del historial</th>
-                <td>{formatMoney(state.historicalInterest, loan.roundingPolicy)}</td>
-              </tr>
-              <tr>
-                <th scope="row">Saldo reconstruido</th>
-                <td>{formatMoney(state.balanceBeforeReconciliation, loan.roundingPolicy)}</td>
-              </tr>
-              <tr>
-                <th scope="row">Saldo principal reportado</th>
+                <th scope="row">Saldo reportado</th>
                 <td>{formatMoney(candidate.reportedBalance, loan.roundingPolicy)}</td>
               </tr>
             </tbody>
           </table>
-          {state.suggestedPrincipalAdjustment ? (
+          {balanceBefore.subtract(candidate.reportedBalance).isPositive() ? (
             <label className="reconciliation-choice">
               <input
                 type="checkbox"
                 checked={acceptAdjustment}
                 onChange={(event) => setAcceptAdjustment(event.target.checked)}
               />
-              Asumir {formatMoney(state.suggestedPrincipalAdjustment, loan.roundingPolicy)} como
-              ajuste de reconciliación al principal.
+              Asumir{' '}
+              {formatMoney(balanceBefore.subtract(candidate.reportedBalance), loan.roundingPolicy)}{' '}
+              como ajuste al principal.
             </label>
-          ) : state.balanceBeforeReconciliation.isLessThan(candidate.reportedBalance) ? (
-            <p role="status">
-              El saldo reportado es mayor. Se guardará como reset, pero no se creará un aporte.
-            </p>
-          ) : (
-            <p role="status">Los saldos coinciden; no se requiere ajuste.</p>
-          )}
+          ) : null}
           <button type="button" onClick={() => void save()}>
-            Guardar reset y recalcular proyección
+            Guardar saldo conciliado
           </button>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function BankFinalDateForm({
+  value,
+  onSave,
+  onDelete,
+  onError,
+}: Readonly<{
+  value?: string;
+  onSave: (reconciliation: BankFinalDateReconciliation) => Promise<void>;
+  onDelete: () => Promise<void>;
+  onError: (error: string | undefined) => void;
+}>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const bankFinalInstallmentDate = String(
+      new FormData(event.currentTarget).get('bankFinalInstallmentDate'),
+    );
+    try {
+      createBankReset({
+        id: 'final-date-validation',
+        cutoffDate: '1900-01-01',
+        reportedBalance: Money.from('0', 'CRC'),
+        bankFinalInstallmentDate,
+      });
+      await onSave({ bankFinalInstallmentDate });
+      onError(undefined);
+    } catch (cause) {
+      onError(cause instanceof Error ? cause.message : 'No se pudo guardar la fecha final.');
+    }
+  }
+  return (
+    <div className="reconciliation-result">
+      <h4>Fecha final reportada por el banco</h4>
+      <form className="payment-form" onSubmit={(event) => void submit(event)}>
+        <label>
+          Fecha de última cuota proyectada
+          <input required name="bankFinalInstallmentDate" type="date" defaultValue={value ?? ''} />
+        </label>
+        <div className="form-actions">
+          <button type="submit">{value ? 'Actualizar fecha final' : 'Guardar fecha final'}</button>
+          {value ? (
+            <button type="button" className="secondary-action" onClick={() => void onDelete()}>
+              Eliminar
+            </button>
+          ) : null}
+        </div>
+      </form>
     </div>
   );
 }

@@ -4,6 +4,8 @@ import {
   createPaymentRecord,
   Money,
   type BankReset,
+  type BankBalanceReconciliation,
+  type BankFinalDateReconciliation,
   type LoanContract,
   type LoanContractV2,
   type LoanContractV3,
@@ -11,7 +13,7 @@ import {
   type ProjectionScenarioSnapshot,
 } from '@cuotaclara/domain';
 
-const CURRENT_SCHEMA_VERSION = 4;
+const CURRENT_SCHEMA_VERSION = 5;
 
 type StoredMoney = Readonly<{ amount: string; currency: string }>;
 export type BackupDocument = Readonly<{
@@ -46,6 +48,16 @@ export function createBackup(
           },
           payments: Object.freeze(aggregate.payments.map((payment) => storePayment(payment))),
           ...(aggregate.bankReset ? { bankReset: storeBankReset(aggregate.bankReset) } : {}),
+          ...(aggregate.balanceReconciliations
+            ? {
+                balanceReconciliations: aggregate.balanceReconciliations.map(
+                  storeBalanceReconciliation,
+                ),
+              }
+            : {}),
+          ...(aggregate.bankFinalDateReconciliation
+            ? { bankFinalDateReconciliation: aggregate.bankFinalDateReconciliation }
+            : {}),
           scenarios: Object.freeze(structuredClone(aggregate.scenarios)),
         });
       }),
@@ -67,6 +79,7 @@ export function parseBackup(
     backup.schemaVersion !== 1 &&
     backup.schemaVersion !== 2 &&
     backup.schemaVersion !== 3 &&
+    backup.schemaVersion !== 4 &&
     backup.schemaVersion !== CURRENT_SCHEMA_VERSION
   )
     throw new BackupValidationError('la versión de esquema no es compatible.');
@@ -109,12 +122,29 @@ function parseAggregate(value: unknown): LoanAggregate {
     });
     const payments = recordValue.payments.map((payment) => parsePayment(payment));
     const scenarios = recordValue.scenarios.map((scenario) => parseScenario(scenario, loan.id));
+    const bankReset = recordValue.bankReset
+      ? parseBankReset(recordValue.bankReset, loan.initialBalance.currency)
+      : undefined;
+    const balanceReconciliations = Array.isArray(recordValue.balanceReconciliations)
+      ? recordValue.balanceReconciliations.map((item) =>
+          parseBalanceReconciliation(item, loan.initialBalance.currency),
+        )
+      : bankReset
+        ? [legacyResetToBalanceReconciliation(bankReset)]
+        : undefined;
+    const bankFinalDateReconciliation = recordValue.bankFinalDateReconciliation
+      ? parseBankFinalDateReconciliation(recordValue.bankFinalDateReconciliation)
+      : bankReset
+        ? { bankFinalInstallmentDate: bankReset.bankFinalInstallmentDate }
+        : undefined;
     return Object.freeze({
       loan,
       payments: Object.freeze(payments),
-      ...(recordValue.bankReset
-        ? { bankReset: parseBankReset(recordValue.bankReset, loan.initialBalance.currency) }
+      ...(bankReset ? { bankReset } : {}),
+      ...(balanceReconciliations
+        ? { balanceReconciliations: Object.freeze(balanceReconciliations) }
         : {}),
+      ...(bankFinalDateReconciliation ? { bankFinalDateReconciliation } : {}),
       scenarios: Object.freeze(scenarios),
     });
   } catch (cause) {
@@ -123,6 +153,68 @@ function parseAggregate(value: unknown): LoanAggregate {
       cause instanceof Error ? cause.message : 'un agregado no cumple el contrato.',
     );
   }
+}
+
+function storeBalanceReconciliation(reconciliation: BankBalanceReconciliation) {
+  return Object.freeze({
+    id: reconciliation.id,
+    reportedAt: reconciliation.reportedAt,
+    reportedBalance: storeMoney(reconciliation.reportedBalance),
+    ...(reconciliation.adjustment
+      ? {
+          adjustment: Object.freeze({
+            id: reconciliation.adjustment.id,
+            date: reconciliation.adjustment.date,
+            principalAmount: storeMoney(reconciliation.adjustment.principalAmount),
+            reason: reconciliation.adjustment.reason,
+          }),
+        }
+      : {}),
+  });
+}
+
+function parseBalanceReconciliation(value: unknown, currency: string): BankBalanceReconciliation {
+  const recordValue = record(value, 'saldo conciliado');
+  const reset = parseBankReset(
+    {
+      id: string(recordValue.id, 'saldo conciliado.id'),
+      cutoffDate: string(recordValue.reportedAt, 'saldo conciliado.fecha'),
+      reportedBalance: recordValue.reportedBalance,
+      bankFinalInstallmentDate: '9999-12-31',
+      ...(recordValue.adjustment ? { adjustment: recordValue.adjustment } : {}),
+    },
+    currency,
+  );
+  return Object.freeze({
+    id: reset.id,
+    reportedAt: reset.cutoffDate,
+    reportedBalance: reset.reportedBalance,
+    ...(reset.adjustment ? { adjustment: reset.adjustment } : {}),
+  });
+}
+
+function parseBankFinalDateReconciliation(value: unknown): BankFinalDateReconciliation {
+  const date = string(
+    record(value, 'fecha final conciliada').bankFinalInstallmentDate,
+    'fecha final conciliada.fecha',
+  );
+  // Valida formato ISO y que sea una fecha posterior a un corte neutro.
+  createBankReset({
+    id: 'final-date-validation',
+    cutoffDate: '1900-01-01',
+    reportedBalance: Money.from('0', 'CRC'),
+    bankFinalInstallmentDate: date,
+  });
+  return Object.freeze({ bankFinalInstallmentDate: date });
+}
+
+function legacyResetToBalanceReconciliation(reset: BankReset): BankBalanceReconciliation {
+  return Object.freeze({
+    id: reset.id,
+    reportedAt: reset.cutoffDate,
+    reportedBalance: reset.reportedBalance,
+    ...(reset.adjustment ? { adjustment: reset.adjustment } : {}),
+  });
 }
 
 function storeMoney(money: Money): StoredMoney {

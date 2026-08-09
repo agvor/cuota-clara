@@ -219,6 +219,24 @@ describe('estimateLoanContract', () => {
     expect(estimate.hasConfiguredPaymentDifference).toBe(false);
   });
 
+  test('respeta una fecha final bancaria sin requerir un saldo conciliado', () => {
+    const loan = createLoanV3({
+      id: 'loan-final-date-only',
+      name: 'Fecha bancaria',
+      startDate: '2026-01-15',
+      originalPrincipal: Money.from('1200000', 'CRC'),
+      monthlyTotalPayment: Money.from('100', 'CRC'),
+      monthlyInsurance: Money.from('0', 'CRC'),
+      term: { totalInstallments: 12 },
+      annualNominalRate: '0.085',
+      roundingPolicy,
+    });
+
+    const estimate = estimateLoanContract(loan, { bankFinalInstallmentDate: '2027-07-15' });
+    expect(estimate.finalInstallmentDate).toBe('2027-07-15');
+    expect(estimate.estimatedInstallments).toBe(18);
+  });
+
   test('recalcula la cuota desde un reset hasta la fecha final bancaria', () => {
     const loan = createLoanV3({
       id: 'loan-reset',

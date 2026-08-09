@@ -84,6 +84,8 @@ export {
   type LoanContractEstimateOptions,
 } from './loan/contract-estimate.js';
 export type {
+  BankBalanceReconciliation,
+  BankFinalDateReconciliation,
   LoanAggregate,
   LoanRepository,
   ProjectionScenarioSnapshot,

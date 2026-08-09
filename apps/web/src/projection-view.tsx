@@ -90,6 +90,7 @@ export function ProjectionView({
   loan,
   payments,
   bankReset,
+  bankFinalInstallmentDate,
   scenarios = [],
   chartConfiguration,
   onChartConfigurationChange,
@@ -97,6 +98,7 @@ export function ProjectionView({
   loan: Loan;
   payments: readonly PaymentRecord[];
   bankReset?: BankReset;
+  bankFinalInstallmentDate?: string;
   scenarios?: readonly ProjectionScenarioSnapshot[];
   chartConfiguration?: ChartConfiguration;
   onChartConfigurationChange?: (configuration: ChartConfiguration) => void;
@@ -109,10 +111,14 @@ export function ProjectionView({
   const result = useMemo(() => {
     try {
       const periods: readonly DisplayProjectionPeriod[] = loan.contract
-        ? estimateLoanContract(
-            loan,
-            bankReset ? { bankReset } : payments.length ? { historicalPayments: payments } : {},
-          ).periods.map((period) => ({
+        ? estimateLoanContract(loan, {
+            ...(bankReset
+              ? { bankReset }
+              : payments.length
+                ? { historicalPayments: payments }
+                : {}),
+            ...(bankFinalInstallmentDate ? { bankFinalInstallmentDate } : {}),
+          }).periods.map((period) => ({
             period: period.period,
             date: period.date,
             openingBalance: period.openingBalance,
@@ -140,7 +146,7 @@ export function ProjectionView({
         error: cause instanceof Error ? cause.message : 'No se pudo generar la proyección.',
       };
     }
-  }, [bankReset, loan, payments]);
+  }, [bankFinalInstallmentDate, bankReset, loan, payments]);
   if ('error' in result)
     return (
       <section className="projection-view">
@@ -156,11 +162,12 @@ export function ProjectionView({
         loan,
         payments,
         ...(bankReset ? { bankReset } : {}),
+        ...(bankFinalInstallmentDate ? { bankFinalInstallmentDate } : {}),
       });
     } catch {
       return undefined;
     }
-  }, [bankReset, loan, payments]);
+  }, [bankFinalInstallmentDate, bankReset, loan, payments]);
   const comparableScenarios = scenarios.filter(isComparableScenario);
   const historicalBalances = historicalClosingBalances(payments, loan);
   const selectedScenario = comparableScenarios.find(

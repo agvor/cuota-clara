@@ -1,4 +1,5 @@
-import type { BankReset, PaymentRecord } from '../history/historical-state.js';
+import type { BankReset, BankResetAdjustment, PaymentRecord } from '../history/historical-state.js';
+import type { Money } from '../money.js';
 import type { Loan } from '../loan/loan.js';
 
 export type ProjectionScenarioSnapshot = Readonly<{
@@ -9,10 +10,24 @@ export type ProjectionScenarioSnapshot = Readonly<{
   createdAt: string;
 }>;
 
+export type BankBalanceReconciliation = Readonly<{
+  id: string;
+  reportedAt: string;
+  reportedBalance: Money;
+  /** Ajuste opcional que documenta una diferencia positiva confirmada. */
+  adjustment?: BankResetAdjustment;
+}>;
+
+export type BankFinalDateReconciliation = Readonly<{
+  bankFinalInstallmentDate: string;
+}>;
+
 export type LoanAggregate = Readonly<{
   loan: Loan;
   payments: readonly PaymentRecord[];
   bankReset?: BankReset;
+  balanceReconciliations?: readonly BankBalanceReconciliation[];
+  bankFinalDateReconciliation?: BankFinalDateReconciliation;
   scenarios: readonly ProjectionScenarioSnapshot[];
 }>;
 

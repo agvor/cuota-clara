@@ -29,7 +29,7 @@ Un `ReconciliationAdjustment` guarda identificador, fecha de corte, saldo report
 
 ## Reset con saldo bancario
 
-El reset bancario se solicita después de previsualizar o importar pagos, no se deduce del PDF. Requiere tres datos proporcionados por la persona usuaria:
+La conciliación bancaria se solicita después de previsualizar o importar pagos, no se deduce del PDF. Los saldos y la fecha final se administran por separado:
 
 1. saldo **principal** reportado por la entidad;
 2. fecha de corte de ese saldo;
@@ -40,9 +40,11 @@ La aplicación calcula, a esa fecha, `saldo reconstruido = monto original − pr
 | Resultado de comparación | Tratamiento                                                                                                                                                                                           |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Saldo reportado menor    | Se ofrece crear un **ajuste de reconciliación** por la diferencia. Solo tras confirmación se guarda como registro histórico especial, con principal extraordinario y cero interés, seguro y comisión. |
-| Saldo igual              | Se guarda el reset sin ajuste.                                                                                                                                                                        |
-| Saldo reportado mayor    | Se presenta la discrepancia y no se inventa un pago ni ajuste. La persona debe revisar o conservar el reset con su motivo.                                                                            |
 
-Una proyección posterior usa el saldo reportado como saldo inicial y recalcula la cuota necesaria para terminar en la fecha final bancaria. Conserva el plan de tasas contractual, periodicidad, seguro y cargos que ya tenía el préstamo: el reset no reinicia la fase fija o variable. El resumen final muestra por separado y suma: capital histórico, interés histórico, ajuste de reconciliación y los importes proyectados desde el reset.
+Puede haber varios saldos conciliados, cada uno con importe y fecha reportada, y todos pueden editarse o eliminarse. El de fecha más reciente alimenta la proyección vigente; los anteriores siguen siendo evidencia del historial. La fecha final reportada por el banco es única, no tiene fecha de corte y puede actualizarse o eliminarse sin afectar los pagos reales.
+| Saldo igual | Se guarda el reset sin ajuste. |
+| Saldo reportado mayor | Se presenta la discrepancia y no se inventa un pago ni ajuste. La persona debe revisar o conservar el reset con su motivo. |
+
+Una proyección posterior usa el saldo conciliado activo como saldo inicial y la fecha final bancaria única como límite; recalcula la cuota necesaria para llegar a ese plazo. Conserva el plan de tasas contractual, periodicidad, seguro y cargos que ya tenía el préstamo: la conciliación no reinicia la fase fija o variable. Base y escenarios usan ese mismo punto. El resumen final muestra por separado y suma: capital histórico, interés histórico, ajuste de reconciliación y los importes proyectados desde el saldo activo.
 
 Esta entrega no interpreta atrasos, pagos parciales ni el orden bancario de cargos desconocidos; esas reglas requerirán casos de referencia adicionales.

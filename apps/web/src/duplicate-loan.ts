@@ -31,18 +31,36 @@ export function createDuplicateLoanAggregate(
       }))
     : [];
 
-  if (!options.includePayments || !source.bankReset) return { loan, payments, scenarios };
+  if (!options.includePayments) return { loan, payments, scenarios };
 
   return {
     loan,
     payments,
     scenarios,
-    bankReset: {
-      ...source.bankReset,
-      id: createId(),
-      ...(source.bankReset.adjustment
-        ? { adjustment: { ...source.bankReset.adjustment, id: createId() } }
-        : {}),
-    },
+    ...(source.bankReset
+      ? {
+          bankReset: {
+            ...source.bankReset,
+            id: createId(),
+            ...(source.bankReset.adjustment
+              ? { adjustment: { ...source.bankReset.adjustment, id: createId() } }
+              : {}),
+          },
+        }
+      : {}),
+    ...(source.balanceReconciliations
+      ? {
+          balanceReconciliations: source.balanceReconciliations.map((reconciliation) => ({
+            ...reconciliation,
+            id: createId(),
+            ...(reconciliation.adjustment
+              ? { adjustment: { ...reconciliation.adjustment, id: createId() } }
+              : {}),
+          })),
+        }
+      : {}),
+    ...(source.bankFinalDateReconciliation
+      ? { bankFinalDateReconciliation: { ...source.bankFinalDateReconciliation } }
+      : {}),
   };
 }

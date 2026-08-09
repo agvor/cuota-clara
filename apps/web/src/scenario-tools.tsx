@@ -29,6 +29,7 @@ export function ScenarioTools({
   scenarios,
   payments = [],
   bankReset,
+  bankFinalInstallmentDate,
   onSaveScenario,
   onDeleteScenario = async () => undefined,
 }: Readonly<{
@@ -36,6 +37,7 @@ export function ScenarioTools({
   scenarios: readonly ProjectionScenarioSnapshot[];
   payments?: readonly PaymentRecord[];
   bankReset?: BankReset;
+  bankFinalInstallmentDate?: string;
   onSaveScenario: (scenario: ProjectionScenarioSnapshot) => Promise<void>;
   onDeleteScenario?: (scenarioId: string) => Promise<void>;
 }>) {
@@ -50,11 +52,12 @@ export function ScenarioTools({
         loan,
         payments,
         ...(bankReset ? { bankReset } : {}),
+        ...(bankFinalInstallmentDate ? { bankFinalInstallmentDate } : {}),
       });
     } catch {
       return undefined;
     }
-  }, [bankReset, loan, payments]);
+  }, [bankFinalInstallmentDate, bankReset, loan, payments]);
   const comparable = scenarios.filter(isComparableScenario);
   const formKey = `${editingScenario?.id ?? 'new'}-${scenarioType}`;
 

@@ -10,7 +10,8 @@ import type {
   LoanAggregate,
   LoanRepository,
   PaymentRecord,
-  BankReset,
+  BankBalanceReconciliation,
+  BankFinalDateReconciliation,
   ProjectionScenarioSnapshot,
 } from '@cuotaclara/domain';
 
@@ -24,6 +25,7 @@ import { decimalRateToPercent } from './percentage.js';
 import { ProjectionView, type ChartConfiguration } from './projection-view.js';
 import { ScenarioTools } from './scenario-tools.js';
 import { createDuplicateLoanAggregate, type DuplicateLoanOptions } from './duplicate-loan.js';
+import { activeBalanceReconciliation, reconciledFinalDate } from './bank-reconciliations.js';
 import './styles.css';
 
 export type AppProps = Readonly<{
@@ -185,6 +187,12 @@ export function App({ repository }: AppProps) {
       loan,
       payments: existing?.payments ?? [],
       ...(existing?.bankReset ? { bankReset: existing.bankReset } : {}),
+      ...(existing?.balanceReconciliations
+        ? { balanceReconciliations: existing.balanceReconciliations }
+        : {}),
+      ...(existing?.bankFinalDateReconciliation
+        ? { bankFinalDateReconciliation: existing.bankFinalDateReconciliation }
+        : {}),
       scenarios,
     };
     await repository.saveAggregate(aggregate);
@@ -274,16 +282,66 @@ export function App({ repository }: AppProps) {
     setSelectedAggregate(aggregate);
   }
 
-  async function saveBankReset(bankReset: BankReset | undefined) {
+  async function saveBalanceReconciliation(reconciliation: BankBalanceReconciliation) {
     if (!selectedAggregate) return;
-    const aggregateWithoutReset = {
+    const existing = selectedAggregate.balanceReconciliations ?? [];
+    const aggregate: LoanAggregate = {
       loan: selectedAggregate.loan,
       payments: selectedAggregate.payments,
       scenarios: selectedAggregate.scenarios,
+      balanceReconciliations: existing.some((item) => item.id === reconciliation.id)
+        ? existing.map((item) => (item.id === reconciliation.id ? reconciliation : item))
+        : [...existing, reconciliation],
+      ...(selectedAggregate.bankFinalDateReconciliation
+        ? { bankFinalDateReconciliation: selectedAggregate.bankFinalDateReconciliation }
+        : {}),
     };
-    const aggregate: LoanAggregate = bankReset
-      ? { ...aggregateWithoutReset, bankReset }
-      : aggregateWithoutReset;
+    await repository.saveAggregate(aggregate);
+    setSelectedAggregate(aggregate);
+  }
+
+  async function deleteBalanceReconciliation(reconciliationId: string) {
+    if (!selectedAggregate) return;
+    const aggregate: LoanAggregate = {
+      loan: selectedAggregate.loan,
+      payments: selectedAggregate.payments,
+      scenarios: selectedAggregate.scenarios,
+      balanceReconciliations: (selectedAggregate.balanceReconciliations ?? []).filter(
+        (item) => item.id !== reconciliationId,
+      ),
+      ...(selectedAggregate.bankFinalDateReconciliation
+        ? { bankFinalDateReconciliation: selectedAggregate.bankFinalDateReconciliation }
+        : {}),
+    };
+    await repository.saveAggregate(aggregate);
+    setSelectedAggregate(aggregate);
+  }
+
+  async function saveBankFinalDateReconciliation(reconciliation: BankFinalDateReconciliation) {
+    if (!selectedAggregate) return;
+    const aggregate: LoanAggregate = {
+      loan: selectedAggregate.loan,
+      payments: selectedAggregate.payments,
+      scenarios: selectedAggregate.scenarios,
+      ...(selectedAggregate.balanceReconciliations
+        ? { balanceReconciliations: selectedAggregate.balanceReconciliations }
+        : {}),
+      bankFinalDateReconciliation: reconciliation,
+    };
+    await repository.saveAggregate(aggregate);
+    setSelectedAggregate(aggregate);
+  }
+
+  async function deleteBankFinalDateReconciliation() {
+    if (!selectedAggregate) return;
+    const aggregate: LoanAggregate = {
+      loan: selectedAggregate.loan,
+      payments: selectedAggregate.payments,
+      scenarios: selectedAggregate.scenarios,
+      ...(selectedAggregate.balanceReconciliations
+        ? { balanceReconciliations: selectedAggregate.balanceReconciliations }
+        : {}),
+    };
     await repository.saveAggregate(aggregate);
     setSelectedAggregate(aggregate);
   }
@@ -391,7 +449,10 @@ export function App({ repository }: AppProps) {
             onChartConfigurationChange={saveSelectedChartConfiguration}
             onSavePayment={savePayment}
             onImportPayments={importPayments}
-            onSaveBankReset={saveBankReset}
+            onSaveBalanceReconciliation={saveBalanceReconciliation}
+            onDeleteBalanceReconciliation={deleteBalanceReconciliation}
+            onSaveBankFinalDateReconciliation={saveBankFinalDateReconciliation}
+            onDeleteBankFinalDateReconciliation={deleteBankFinalDateReconciliation}
             onSaveScenario={saveScenario}
             onDeleteScenario={deleteScenario}
           />
@@ -544,7 +605,10 @@ function LoanWorkspace({
   onChartConfigurationChange,
   onSavePayment,
   onImportPayments,
-  onSaveBankReset,
+  onSaveBalanceReconciliation,
+  onDeleteBalanceReconciliation,
+  onSaveBankFinalDateReconciliation,
+  onDeleteBankFinalDateReconciliation,
   onSaveScenario,
   onDeleteScenario,
 }: Readonly<{
@@ -560,7 +624,10 @@ function LoanWorkspace({
   onChartConfigurationChange: (configuration: ChartConfiguration) => void;
   onSavePayment: (payment: PaymentRecord) => Promise<void>;
   onImportPayments: (payments: readonly PaymentRecord[]) => Promise<void>;
-  onSaveBankReset: (bankReset: BankReset | undefined) => Promise<void>;
+  onSaveBalanceReconciliation: (reconciliation: BankBalanceReconciliation) => Promise<void>;
+  onDeleteBalanceReconciliation: (reconciliationId: string) => Promise<void>;
+  onSaveBankFinalDateReconciliation: (reconciliation: BankFinalDateReconciliation) => Promise<void>;
+  onDeleteBankFinalDateReconciliation: () => Promise<void>;
   onSaveScenario: (scenario: ProjectionScenarioSnapshot) => Promise<void>;
   onDeleteScenario: (scenarioId: string) => Promise<void>;
 }>) {
@@ -637,10 +704,18 @@ function LoanWorkspace({
             <PaymentTools
               loan={loan}
               payments={aggregate.payments}
-              {...(aggregate.bankReset ? { bankReset: aggregate.bankReset } : {})}
+              {...(aggregate.balanceReconciliations
+                ? { balanceReconciliations: aggregate.balanceReconciliations }
+                : {})}
+              {...(aggregate.bankFinalDateReconciliation
+                ? { bankFinalDateReconciliation: aggregate.bankFinalDateReconciliation }
+                : {})}
               onSavePayment={onSavePayment}
               onImportPayments={onImportPayments}
-              onSaveBankReset={onSaveBankReset}
+              onSaveBalanceReconciliation={onSaveBalanceReconciliation}
+              onDeleteBalanceReconciliation={onDeleteBalanceReconciliation}
+              onSaveBankFinalDateReconciliation={onSaveBankFinalDateReconciliation}
+              onDeleteBankFinalDateReconciliation={onDeleteBankFinalDateReconciliation}
             />
           ) : (
             <p aria-live="polite">Cargando pagos…</p>
@@ -648,30 +723,44 @@ function LoanWorkspace({
         ) : null}
         {activeTab === 'scenarios' && aggregate?.loan.id === loan.id ? (
           <>
-            <ScenarioTools
-              loan={loan}
-              scenarios={aggregate.scenarios}
-              payments={aggregate.payments}
-              {...(aggregate.bankReset ? { bankReset: aggregate.bankReset } : {})}
-              onSaveScenario={onSaveScenario}
-              onDeleteScenario={onDeleteScenario}
-            />
+            {(() => {
+              const activeReset = activeBalanceReconciliation(aggregate);
+              const finalDate = reconciledFinalDate(aggregate);
+              return (
+                <ScenarioTools
+                  loan={loan}
+                  scenarios={aggregate.scenarios}
+                  payments={aggregate.payments}
+                  {...(activeReset ? { bankReset: activeReset } : {})}
+                  {...(finalDate ? { bankFinalInstallmentDate: finalDate } : {})}
+                  onSaveScenario={onSaveScenario}
+                  onDeleteScenario={onDeleteScenario}
+                />
+              );
+            })()}
             <TbpScenarios scenarios={aggregate.scenarios} />
           </>
         ) : null}
         {activeTab === 'scenarios' && aggregate?.loan.id !== loan.id ? (
           <p aria-live="polite">Cargando escenarios…</p>
         ) : null}
-        {activeTab === 'projection' && aggregate?.loan.id === loan.id ? (
-          <ProjectionView
-            loan={loan}
-            payments={aggregate.payments}
-            {...(aggregate.bankReset ? { bankReset: aggregate.bankReset } : {})}
-            scenarios={aggregate.scenarios}
-            {...(chartConfiguration ? { chartConfiguration } : {})}
-            onChartConfigurationChange={onChartConfigurationChange}
-          />
-        ) : null}
+        {activeTab === 'projection' && aggregate?.loan.id === loan.id
+          ? (() => {
+              const activeReset = activeBalanceReconciliation(aggregate);
+              const finalDate = reconciledFinalDate(aggregate);
+              return (
+                <ProjectionView
+                  loan={loan}
+                  payments={aggregate.payments}
+                  {...(activeReset ? { bankReset: activeReset } : {})}
+                  {...(finalDate ? { bankFinalInstallmentDate: finalDate } : {})}
+                  scenarios={aggregate.scenarios}
+                  {...(chartConfiguration ? { chartConfiguration } : {})}
+                  onChartConfigurationChange={onChartConfigurationChange}
+                />
+              );
+            })()
+          : null}
         {activeTab === 'projection' && aggregate?.loan.id !== loan.id ? (
           <p aria-live="polite">Cargando proyección…</p>
         ) : null}

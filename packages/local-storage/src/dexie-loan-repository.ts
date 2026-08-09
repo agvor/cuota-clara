@@ -5,6 +5,8 @@ import {
   createBankReset,
   createPaymentRecord,
   type BankReset,
+  type BankBalanceReconciliation,
+  type BankFinalDateReconciliation,
   type Loan,
   type LoanContract,
   type LoanContractV2,
@@ -39,6 +41,19 @@ type StoredLoan = Readonly<{
   roundingPolicy: RoundingPolicy;
   contract?: StoredLoanContract;
   bankReset?: StoredBankReset;
+  balanceReconciliations?: readonly StoredBankBalanceReconciliation[];
+  bankFinalDateReconciliation?: StoredBankFinalDateReconciliation;
+}>;
+
+type StoredBankBalanceReconciliation = Readonly<{
+  id: string;
+  reportedAt: string;
+  reportedBalance: StoredMoney;
+  adjustment?: StoredBankReset['adjustment'];
+}>;
+
+type StoredBankFinalDateReconciliation = Readonly<{
+  bankFinalInstallmentDate: string;
 }>;
 
 type StoredBankReset = Readonly<{
@@ -145,6 +160,13 @@ export class DexieLoanRepository implements LoanRepository {
       payments: 'id, loanId, [loanId+date]',
       scenarios: 'id, loanId',
     });
+    // v5 separa los saldos conciliados (varios) de la fecha final bancaria
+    // (única). Se conservan los resets v4 como formato heredado compatible.
+    this.database.version(5).stores({
+      loans: 'id',
+      payments: 'id, loanId, [loanId+date]',
+      scenarios: 'id, loanId',
+    });
   }
 
   async listLoans(): Promise<readonly Loan[]> {
@@ -161,20 +183,41 @@ export class DexieLoanRepository implements LoanRepository {
       this.scenarios().where('loanId').equals(loanId).toArray(),
     ]);
     const loan = deserializeLoan(storedLoan);
+    const legacyReset = storedLoan.bankReset
+      ? deserializeBankReset(storedLoan.bankReset, loan.initialBalance.currency)
+      : undefined;
+    const balanceReconciliations = storedLoan.balanceReconciliations
+      ? deserializeBalanceReconciliations(
+          storedLoan.balanceReconciliations,
+          loan.initialBalance.currency,
+        )
+      : legacyReset
+        ? [legacyResetToBalanceReconciliation(legacyReset)]
+        : undefined;
+    const bankFinalDateReconciliation = storedLoan.bankFinalDateReconciliation
+      ? deserializeBankFinalDateReconciliation(storedLoan.bankFinalDateReconciliation)
+      : legacyReset
+        ? { bankFinalInstallmentDate: legacyReset.bankFinalInstallmentDate }
+        : undefined;
     return Object.freeze({
       loan,
       payments: Object.freeze(payments.map((payment) => deserializePayment(payment, loanId))),
-      ...(storedLoan.bankReset
-        ? {
-            bankReset: deserializeBankReset(storedLoan.bankReset, loan.initialBalance.currency),
-          }
+      ...(legacyReset ? { bankReset: legacyReset } : {}),
+      ...(balanceReconciliations
+        ? { balanceReconciliations: Object.freeze(balanceReconciliations) }
         : {}),
+      ...(bankFinalDateReconciliation ? { bankFinalDateReconciliation } : {}),
       scenarios: Object.freeze(scenarios.map((scenario) => deserializeScenario(scenario, loanId))),
     });
   }
 
   async saveAggregate(aggregate: LoanAggregate): Promise<void> {
-    const storedLoan = serializeLoan(aggregate.loan, aggregate.bankReset);
+    const storedLoan = serializeLoan(
+      aggregate.loan,
+      aggregate.bankReset,
+      aggregate.balanceReconciliations,
+      aggregate.bankFinalDateReconciliation,
+    );
     const storedPayments = aggregate.payments.map((payment) =>
       serializePayment(payment, aggregate.loan.id, aggregate.loan.initialBalance.currency),
     );
@@ -245,7 +288,12 @@ function deserializeMoney(value: unknown, field: string): Money {
   return Money.from(readString(record, 'amount', field), readString(record, 'currency', field));
 }
 
-function serializeLoan(loan: Loan, bankReset?: BankReset): StoredLoan {
+function serializeLoan(
+  loan: Loan,
+  bankReset?: BankReset,
+  balanceReconciliations?: readonly BankBalanceReconciliation[],
+  bankFinalDateReconciliation?: BankFinalDateReconciliation,
+): StoredLoan {
   try {
     const validLoan = createLoan(loan);
     const { contract, ...legacyLoan } = validLoan;
@@ -257,10 +305,131 @@ function serializeLoan(loan: Loan, bankReset?: BankReset): StoredLoan {
       ...(bankReset
         ? { bankReset: serializeBankReset(bankReset, loan.initialBalance.currency) }
         : {}),
+      ...(balanceReconciliations
+        ? {
+            balanceReconciliations: serializeBalanceReconciliations(
+              balanceReconciliations,
+              loan.initialBalance.currency,
+            ),
+          }
+        : {}),
+      ...(bankFinalDateReconciliation
+        ? {
+            bankFinalDateReconciliation: serializeBankFinalDateReconciliation(
+              bankFinalDateReconciliation,
+            ),
+          }
+        : {}),
     });
   } catch (error) {
     throw corruption('loan', error);
   }
+}
+
+function serializeBalanceReconciliations(
+  reconciliations: readonly BankBalanceReconciliation[],
+  currency: string,
+): readonly StoredBankBalanceReconciliation[] {
+  const ids = new Set<string>();
+  return Object.freeze(
+    reconciliations.map((reconciliation) => {
+      if (!reconciliation.id.trim() || ids.has(reconciliation.id)) {
+        throw corruption(
+          'aggregate',
+          new Error('los saldos conciliados requieren identificadores únicos'),
+        );
+      }
+      ids.add(reconciliation.id);
+      const reset = createBankReset({
+        id: reconciliation.id,
+        cutoffDate: reconciliation.reportedAt,
+        reportedBalance: reconciliation.reportedBalance,
+        bankFinalInstallmentDate: '9999-12-31',
+        ...(reconciliation.adjustment ? { adjustment: reconciliation.adjustment } : {}),
+      });
+      if (reset.reportedBalance.currency !== currency) {
+        throw corruption(
+          'aggregate',
+          new Error(`el saldo conciliado debe usar la moneda ${currency}`),
+        );
+      }
+      return Object.freeze({
+        id: reset.id,
+        reportedAt: reset.cutoffDate,
+        reportedBalance: serializeMoney(reset.reportedBalance),
+        ...(reset.adjustment
+          ? {
+              adjustment: Object.freeze({
+                id: reset.adjustment.id,
+                date: reset.adjustment.date,
+                principalAmount: serializeMoney(reset.adjustment.principalAmount),
+                reason: reset.adjustment.reason,
+              }),
+            }
+          : {}),
+      });
+    }),
+  );
+}
+
+function serializeBankFinalDateReconciliation(
+  reconciliation: BankFinalDateReconciliation,
+): StoredBankFinalDateReconciliation {
+  // Reutiliza la validación ISO del reset sin darle semántica de saldo.
+  createBankReset({
+    id: 'final-date-validation',
+    cutoffDate: '1900-01-01',
+    reportedBalance: Money.from('0', 'CRC'),
+    bankFinalInstallmentDate: reconciliation.bankFinalInstallmentDate,
+  });
+  return Object.freeze({ bankFinalInstallmentDate: reconciliation.bankFinalInstallmentDate });
+}
+
+function deserializeBalanceReconciliations(
+  values: readonly StoredBankBalanceReconciliation[],
+  currency: string,
+): readonly BankBalanceReconciliation[] {
+  return Object.freeze(
+    values.map((value) => {
+      const reset = deserializeBankReset(
+        {
+          id: value.id,
+          cutoffDate: value.reportedAt,
+          reportedBalance: value.reportedBalance,
+          bankFinalInstallmentDate: '9999-12-31',
+          ...(value.adjustment ? { adjustment: value.adjustment } : {}),
+        },
+        currency,
+      );
+      return Object.freeze({
+        id: reset.id,
+        reportedAt: reset.cutoffDate,
+        reportedBalance: reset.reportedBalance,
+        ...(reset.adjustment ? { adjustment: reset.adjustment } : {}),
+      });
+    }),
+  );
+}
+
+function deserializeBankFinalDateReconciliation(
+  value: StoredBankFinalDateReconciliation,
+): BankFinalDateReconciliation {
+  const date = readString(
+    readRecord(value, 'aggregate.bankFinalDateReconciliation'),
+    'bankFinalInstallmentDate',
+    'aggregate.bankFinalDateReconciliation',
+  );
+  serializeBankFinalDateReconciliation({ bankFinalInstallmentDate: date });
+  return Object.freeze({ bankFinalInstallmentDate: date });
+}
+
+function legacyResetToBalanceReconciliation(reset: BankReset): BankBalanceReconciliation {
+  return Object.freeze({
+    id: reset.id,
+    reportedAt: reset.cutoffDate,
+    reportedBalance: reset.reportedBalance,
+    ...(reset.adjustment ? { adjustment: reset.adjustment } : {}),
+  });
 }
 
 function serializeBankReset(bankReset: BankReset, currency: string): StoredBankReset {

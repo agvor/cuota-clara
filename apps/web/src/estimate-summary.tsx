@@ -8,6 +8,7 @@ import {
 } from '@cuotaclara/domain';
 
 import { formatMoney } from './money-format.js';
+import { activeBalanceReconciliation } from './bank-reconciliations.js';
 
 export function EstimateSummary({
   loan,
@@ -21,15 +22,15 @@ export function EstimateSummary({
   heading?: string;
 }>) {
   const titleId = useId();
-  const historicalCutoffDate =
-    aggregate?.bankReset?.cutoffDate ?? latestPaymentDate(aggregate?.payments);
+  const activeReset = activeBalanceReconciliation(aggregate);
+  const historicalCutoffDate = activeReset?.cutoffDate ?? latestPaymentDate(aggregate?.payments);
   const historical =
     historicalCutoffDate && aggregate
       ? reconstructHistoricalState({
           initialBalance: loan.initialBalance,
-          payments: aggregate.payments,
+          payments: aggregate.payments.filter((payment) => payment.date <= historicalCutoffDate),
           cutoffDate: historicalCutoffDate,
-          ...(aggregate.bankReset ? { bankReset: aggregate.bankReset } : {}),
+          ...(activeReset ? { bankReset: activeReset } : {}),
         })
       : undefined;
   const zero = loan.initialBalance.subtract(loan.initialBalance);

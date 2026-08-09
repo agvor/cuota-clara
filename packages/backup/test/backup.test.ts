@@ -105,7 +105,7 @@ describe('backup', () => {
       roundingPolicy: { scale: 2, mode: 'half_up' },
     });
     const v3 = createBackup([{ ...aggregate, loan: v3Loan }], '2026-07-29T00:00:00.000Z');
-    expect(v3.schemaVersion).toBe(4);
+    expect(v3.schemaVersion).toBe(5);
     expect(parseBackup(JSON.stringify(v3)).aggregates[0]?.loan.contract).toMatchObject({
       version: 3,
       paymentMode: 'automatic',

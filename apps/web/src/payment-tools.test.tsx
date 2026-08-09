@@ -50,7 +50,7 @@ describe('PaymentTools', () => {
   });
 
   test('propone y guarda un ajuste de principal al conciliar un saldo bancario menor', async () => {
-    const onSaveBankReset = vi.fn().mockResolvedValue(undefined);
+    const onSaveBalanceReconciliation = vi.fn().mockResolvedValue(undefined);
     const payment = createPaymentRecord({
       id: 'csv-001',
       date: '2026-02-01',
@@ -65,7 +65,7 @@ describe('PaymentTools', () => {
         payments={[payment]}
         onSavePayment={vi.fn()}
         onImportPayments={vi.fn()}
-        onSaveBankReset={onSaveBankReset}
+        onSaveBalanceReconciliation={onSaveBalanceReconciliation}
       />,
     );
 
@@ -73,20 +73,17 @@ describe('PaymentTools', () => {
     fireEvent.change(screen.getByLabelText('Saldo principal reportado por el banco'), {
       target: { value: '99900.00' },
     });
-    fireEvent.change(screen.getByLabelText('Fecha de corte del saldo'), {
+    fireEvent.change(screen.getByLabelText('Fecha en que el banco reportó ese saldo'), {
       target: { value: '2026-02-01' },
-    });
-    fireEvent.change(screen.getByLabelText('Fecha de última cuota proyectada por el banco'), {
-      target: { value: '2036-01-01' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Calcular discrepancia' }));
 
-    expect(screen.getByText('₡50,00')).toBeInTheDocument();
+    expect(screen.getByText(/₡50/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('checkbox'));
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar reset y recalcular proyección' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar saldo conciliado' }));
 
-    await waitFor(() => expect(onSaveBankReset).toHaveBeenCalledTimes(1));
-    expect(onSaveBankReset).toHaveBeenCalledWith(
+    await waitFor(() => expect(onSaveBalanceReconciliation).toHaveBeenCalledTimes(1));
+    expect(onSaveBalanceReconciliation).toHaveBeenCalledWith(
       expect.objectContaining({
         reportedBalance: expect.objectContaining({ currency: 'CRC' }),
         adjustment: expect.objectContaining({ principalAmount: expect.objectContaining({}) }),
