@@ -44,6 +44,16 @@ Todo cambio que altere comportamiento, alcance, datos, interfaz, herramientas de
 
 Si se detecta una omisión posterior, no se reescribe la historia: se crea una historia retrospectiva con estado `completed`, criterios comprobables y dependencias reales, se actualiza la documentación afectada y se registra en el siguiente commit documental. Para auditar un intervalo usa `git log --reverse <base>..HEAD` y `git diff --name-status <base>..HEAD`, luego contrasta cada commit con requisitos, historias y documentos.
 
+## Mensajes de commit
+
+Todo commit debe seguir la convención y los criterios de separación definidos en [`docs/development.md`](docs/development.md#commits). Antes de confirmar:
+
+1. Usa un tipo permitido y un alcance que identifique el subsistema dominante cuando aporte información adicional al tipo.
+2. Redacta el resumen en español, como acción en infinitivo, sin mayúscula inicial ni punto final.
+3. Mantén el commit atómico: código, pruebas y documentación de una misma entrega van juntos; cambios independientes van en commits distintos.
+4. Añade referencias `US-*`, `RF-*` o `RNF-*` en el pie cuando el commit entregue o corrija trabajo trazable.
+5. Valida el mensaje con Commitlint antes de cerrar el cambio.
+
 ## Recursos para trabajo agentic
 
 - Usa [`.agents/prompts/`](.agents/prompts/README.md) para tareas repetibles.

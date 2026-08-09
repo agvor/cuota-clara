@@ -22,6 +22,7 @@ La documentación es parte del producto y se mantiene en el mismo cambio que el 
 | Respaldo y restauración                         | `backup.md`                                                                |
 | PWA, navegación y estado offline actual         | `pwa.md`                                                                   |
 | Preparación y ejecución local                   | `run.md`                                                                   |
+| Estándares de cambio y mensajes de commit       | `development.md`                                                           |
 | Límites y componentes                           | `architecture.md`                                                          |
 | Decisiones irreversibles                        | `adr/`                                                                     |
 | Estado de requisitos                            | `traceability.json` → `status.md`                                          |
