@@ -21,7 +21,9 @@ Los pagos posteriores a la fecha de corte o que exceden el saldo se rechazan.
 
 Si no existe un reset bancario y hay pagos con principal conocido, el último pago histórico define el corte automático de la proyección. El motor usa el saldo reconstruido como saldo de apertura y genera únicamente las cuotas contractuales posteriores a esa fecha. La visualización conserva cada pago histórico con su saldo de cierre para que la transición sea verificable.
 
-El gráfico usa la misma secuencia que la tabla: pagos históricos desde el inicio, ajuste de reconciliación si existe y periodos proyectados. Una línea vertical sutil marca el inicio de la proyección sin cambiar el color de las señales financieras.
+La tabla conserva la secuencia auditable de pagos históricos, ajustes de reconciliación y periodos proyectados. El gráfico deriva de ella una vista temporal: consolida por fecha ISO exacta los flujos de varios pagos históricos, muestra como apertura el saldo anterior al primer evento de la fecha y como cierre el saldo posterior a todos ellos. Pago total, principal ordinario y principal extraordinario se suman de manera independiente; el principal total se deriva de sus dos componentes y el extraordinario no vuelve a sumarse sobre ese total. Un movimiento registrado en otra fecha conserva su propio punto.
+
+Esta consolidación no modifica ni reemplaza los `PaymentRecord`, sus identidades, procedencias o notas. Un componente opcional ausente se conserva como desconocido salvo que el tipo de evento establezca explícitamente un cero. Los ajustes de reconciliación afectan el saldo y se muestran como principal trazable, pero no se suman a la cuota total pagada. Las fechas consolidadas y los periodos proyectados se ubican en el eje X según tiempo transcurrido; una línea vertical sutil marca el inicio de la proyección sin cambiar el color de las señales financieras. La decisión completa está en [`ADR-0009`](../adr/0009-historical-chart-temporal-aggregation.md).
 
 ## Posición vigente de lectura
 
