@@ -30,7 +30,7 @@ import { decimalRateToPercent } from './percentage.js';
 import { ProjectionView, type ChartConfiguration } from './projection-view.js';
 import { ScenarioTools } from './scenario-tools.js';
 import { createDuplicateLoanAggregate, type DuplicateLoanOptions } from './duplicate-loan.js';
-import { activeBalanceReconciliation, reconciledFinalDate } from './bank-reconciliations.js';
+import { resolveLoanProjectionContext } from './bank-reconciliations.js';
 import './styles.css';
 
 export type AppProps = Readonly<{
@@ -745,15 +745,18 @@ function LoanWorkspace({
         {activeTab === 'scenarios' && aggregate?.loan.id === loan.id ? (
           <>
             {(() => {
-              const activeReset = activeBalanceReconciliation(aggregate, aggregate.payments);
-              const finalDate = reconciledFinalDate(aggregate);
+              const projectionContext = resolveLoanProjectionContext(aggregate);
               return (
                 <ScenarioTools
                   loan={loan}
                   scenarios={aggregate.scenarios}
                   payments={aggregate.payments}
-                  {...(activeReset ? { bankReset: activeReset } : {})}
-                  {...(finalDate ? { bankFinalInstallmentDate: finalDate } : {})}
+                  {...(projectionContext.bankReset
+                    ? { bankReset: projectionContext.bankReset }
+                    : {})}
+                  {...(projectionContext.bankFinalInstallmentDate
+                    ? { bankFinalInstallmentDate: projectionContext.bankFinalInstallmentDate }
+                    : {})}
                   onSaveScenario={onSaveScenario}
                   onDeleteScenario={onDeleteScenario}
                 />
@@ -767,14 +770,17 @@ function LoanWorkspace({
         ) : null}
         {activeTab === 'projection' && aggregate?.loan.id === loan.id
           ? (() => {
-              const activeReset = activeBalanceReconciliation(aggregate, aggregate.payments);
-              const finalDate = reconciledFinalDate(aggregate);
+              const projectionContext = resolveLoanProjectionContext(aggregate);
               return (
                 <ProjectionView
                   loan={loan}
                   payments={aggregate.payments}
-                  {...(activeReset ? { bankReset: activeReset } : {})}
-                  {...(finalDate ? { bankFinalInstallmentDate: finalDate } : {})}
+                  {...(projectionContext.bankReset
+                    ? { bankReset: projectionContext.bankReset }
+                    : {})}
+                  {...(projectionContext.bankFinalInstallmentDate
+                    ? { bankFinalInstallmentDate: projectionContext.bankFinalInstallmentDate }
+                    : {})}
                   balanceReconciliations={aggregate.balanceReconciliations ?? []}
                   scenarios={aggregate.scenarios}
                   {...(chartConfiguration ? { chartConfiguration } : {})}
@@ -976,17 +982,13 @@ function ContractEstimateSummary({
       return {
         estimate: estimateLoanContract(
           loan,
-          aggregate?.bankReset
-            ? { bankReset: aggregate.bankReset }
-            : aggregate?.payments.length
-              ? { historicalPayments: aggregate.payments }
-              : {},
+          aggregate ? resolveLoanProjectionContext(aggregate) : {},
         ),
       };
     } catch (cause) {
       return { error: cause instanceof Error ? cause.message : 'No se pudo estimar el préstamo.' };
     }
-  }, [aggregate?.bankReset, aggregate?.payments, loan]);
+  }, [aggregate, loan]);
 
   if ('error' in result) return <p role="alert">{result.error}</p>;
   return (

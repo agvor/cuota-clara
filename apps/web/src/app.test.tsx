@@ -200,6 +200,81 @@ bank-2;01/03/2026;100,00;90,00`;
     ).not.toBeInTheDocument();
   });
 
+  test('usa la fecha final bancaria reconciliada en el resumen contractual', async () => {
+    const loan = createLoanV3({
+      id: 'loan-reconciled-summary',
+      name: 'Hipoteca reconciliada',
+      startDate: '2026-01-15',
+      originalPrincipal: Money.from('100000', 'CRC'),
+      monthlyTotalPayment: Money.from('1200', 'CRC'),
+      monthlyInsurance: Money.from('50', 'CRC'),
+      term: { endDate: '2036-01-15' },
+      annualNominalRate: '0.08',
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+    });
+    const aggregate = {
+      loan,
+      payments: [],
+      balanceReconciliations: [
+        {
+          id: 'balance-reconciled',
+          reportedAt: '2026-02-15',
+          reportedBalance: Money.from('90000', 'CRC'),
+        },
+      ],
+      bankFinalDateReconciliation: { bankFinalInstallmentDate: '2034-01-15' },
+      scenarios: [],
+    };
+    const repository = createRepository([loan]);
+    vi.mocked(repository.loadAggregate).mockResolvedValue(aggregate);
+    render(<App repository={repository} />);
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Abrir préstamo Hipoteca reconciliada' }),
+    );
+
+    const finalDateRow = await screen.findByRole('rowheader', {
+      name: 'Última cuota proyectada',
+    });
+    expect(finalDateRow.closest('tr')).toHaveTextContent('2034-01-15');
+    expect(finalDateRow.closest('tr')).not.toHaveTextContent('2036-01-15');
+  });
+
+  test('explica cuando un pago no permite reconstruir el saldo actual', async () => {
+    const loan = createLoanV3({
+      id: 'loan-unavailable-balance',
+      name: 'Hipoteca sin desglose',
+      startDate: '2026-01-15',
+      originalPrincipal: Money.from('100000', 'CRC'),
+      monthlyTotalPayment: Money.from('1200', 'CRC'),
+      monthlyInsurance: Money.from('50', 'CRC'),
+      term: { endDate: '2036-01-15' },
+      annualNominalRate: '0.08',
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+    });
+    const payment = createPaymentRecord({
+      id: 'payment-without-principal',
+      date: '2026-02-15',
+      totalAmount: Money.from('1200', 'CRC'),
+      source: 'manual',
+    });
+    const repository = createRepository([loan]);
+    vi.mocked(repository.loadAggregate).mockResolvedValue({
+      loan,
+      payments: [payment],
+      scenarios: [],
+    });
+    render(<App repository={repository} />);
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Abrir préstamo Hipoteca sin desglose' }),
+    );
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'no contiene principal para reconstruir el saldo',
+    );
+  });
+
   test('guarda contrato v3 con cuota total, estimación y escenario TBP en un agregado nuevo', async () => {
     const repository = createRepository([]);
     render(<App repository={repository} />);

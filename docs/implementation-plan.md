@@ -24,7 +24,7 @@ El orden no es una excusa para omitir dependencias: el campo `dependsOn` de cada
 
 El cierre de duplicados CSV se entregó en secuencia: US-053 estableció identidad interna, referencia externa, migración y respaldo; US-054 incorporó la clasificación y la revalidación defensiva; US-055 completó el resumen y la resolución accesible de conflictos. US-052 registró retrospectivamente las versiones de persistencia que ya existían pero no estaban reflejadas en su documento especializado. La política de identidad y duplicidad quedó implementada conforme a [`ADR-0008`](adr/0008-payment-import-identity-and-deduplication.md).
 
-La mejora de lectura del préstamo se entrega en dos pasos. US-056, siguiente ítem habilitado, unifica primero el saldo principal actual, su corte y la fecha final aplicable para eliminar contradicciones entre resumen, cartera y proyección. US-057 usa esa posición única para reducir la densidad del resumen mediante divulgación progresiva y para enriquecer las tarjetas sin ocultar el desglose financiero existente. Esta secuencia mantiene la corrección financiera separada de la reorganización visual y permite probarla antes del refactor de presentación.
+La mejora de lectura del préstamo se entrega en dos pasos. US-056 unificó el saldo principal actual, su corte y la fecha final aplicable para eliminar contradicciones entre resumen, cartera y proyección. US-057, siguiente ítem habilitado, usa esa posición única para reducir la densidad del resumen mediante divulgación progresiva y para enriquecer las tarjetas sin ocultar el desglose financiero existente. Esta secuencia mantiene la corrección financiera separada de la reorganización visual y permite probarla antes del refactor de presentación.
 
 ## Definition of Ready
 
