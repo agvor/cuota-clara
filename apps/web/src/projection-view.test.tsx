@@ -161,17 +161,24 @@ describe('ProjectionView', () => {
     fireEvent.click(screen.getByLabelText('Cuota total'));
     fireEvent.click(screen.getByLabelText('Interés'));
     fireEvent.click(screen.getByLabelText('Aporte total a principal'));
+    fireEvent.click(screen.getByLabelText('Aporte ordinario a principal'));
     fireEvent.click(screen.getByLabelText('Aporte extraordinario a principal'));
+    fireEvent.click(screen.getByLabelText('Otros (seguros y cargos)'));
     fireEvent.pointerEnter(screen.getByLabelText('Fecha 2026-02-01, historial'));
 
     expect(screen.getByText('Fecha 2026-02-01')).toBeVisible();
     expect(screen.getByRole('row', { name: /Cuota total.*₡130,00/ })).toBeVisible();
     expect(screen.getByRole('row', { name: /Interés.*₡10,00/ })).toBeVisible();
     expect(screen.getByRole('row', { name: /Aporte total a principal.*₡75,00/ })).toBeVisible();
+    expect(screen.getByRole('row', { name: /Aporte ordinario a principal.*₡50,00/ })).toBeVisible();
     expect(
       screen.getByRole('row', { name: /Aporte extraordinario a principal.*₡25,00/ }),
     ).toBeVisible();
+    expect(screen.getByRole('row', { name: /Otros \(seguros y cargos\).*₡45,00/ })).toBeVisible();
     expect(screen.getByRole('row', { name: /Saldo.*₡925,00/ })).toBeVisible();
+
+    fireEvent.pointerEnter(screen.getByLabelText(/Cuota \d+, 2026-03-01/));
+    expect(screen.getByRole('row', { name: /Otros \(seguros y cargos\).*₡5,00/ })).toBeVisible();
   });
 
   test('posiciona las observaciones por distancia temporal y conserva componentes desconocidos', () => {
@@ -203,8 +210,12 @@ describe('ProjectionView', () => {
     expect(februaryToApril / aprilToMay).toBeGreaterThan(1.5);
 
     fireEvent.click(screen.getByLabelText('Interés'));
+    fireEvent.click(screen.getByLabelText('Otros (seguros y cargos)'));
     fireEvent.pointerEnter(february);
     expect(screen.getByRole('row', { name: /Interés.*No disponible/ })).toBeVisible();
+    expect(
+      screen.getByRole('row', { name: /Otros \(seguros y cargos\).*No disponible/ }),
+    ).toBeVisible();
   });
 
   test('acota el gráfico hasta hoy más dos meses y permite restablecer el plazo', () => {
@@ -349,16 +360,28 @@ describe('ProjectionView', () => {
       container.querySelector('.chart-signal-line.balance.source-scenario-first'),
     ).toBeVisible();
     fireEvent.click(screen.getByLabelText('Cuota total'));
+    fireEvent.click(screen.getByLabelText('Aporte ordinario a principal'));
     fireEvent.click(screen.getByLabelText('Aporte extraordinario a principal'));
+    fireEvent.click(screen.getByLabelText('Otros (seguros y cargos)'));
+    expect(container.querySelector('.chart-signal-line.ordinary.source-base')).toBeVisible();
+    expect(container.querySelector('.chart-signal-line.other.source-scenario-first')).toBeVisible();
     fireEvent.pointerEnter(screen.getByLabelText(/Fecha 2026-02-01, historial/));
     expect(screen.getByText(/Incluye ajuste de reconciliación/)).toBeVisible();
     expect(screen.getByRole('row', { name: /Cuota total.*₡105,00.*₡105,00/ })).toBeVisible();
+    expect(
+      screen.getByRole('row', { name: /Aporte ordinario a principal.*₡50,00.*₡50,00/ }),
+    ).toBeVisible();
     expect(
       screen.getByRole('row', {
         name: /Aporte extraordinario a principal.*₡10,00.*₡10,00/,
       }),
     ).toBeVisible();
     expect(screen.getByRole('row', { name: /Saldo.*₡940,00.*₡940,00/ })).toBeVisible();
+
+    fireEvent.pointerEnter(screen.getByLabelText(/Cuota \d+, 2026-03-01/));
+    expect(
+      screen.getByRole('row', { name: /Otros \(seguros y cargos\).*₡5,00.*₡5,00/ }),
+    ).toBeVisible();
 
     fireEvent.change(screen.getByLabelText('Mostrar en la tabla'), {
       target: { value: scenario.id },
@@ -466,6 +489,7 @@ describe('ProjectionView', () => {
       }).length,
     ).toBeGreaterThan(0);
     fireEvent.click(screen.getByLabelText('Cuota total'));
+    fireEvent.click(screen.getByLabelText('Otros (seguros y cargos)'));
     fireEvent.click(screen.getByLabelText('Aporte extraordinario a principal'));
 
     expect(container.querySelector('.chart-signal-line.payment.source-base')).toBeVisible();
@@ -525,14 +549,17 @@ describe('ProjectionView', () => {
     );
 
     fireEvent.click(screen.getByLabelText('Cuota total'));
+    fireEvent.click(screen.getByLabelText('Otros (seguros y cargos)'));
     fireEvent.change(screen.getByLabelText('Escenario A'), {
       target: { value: scenario.id },
     });
     const firstPoint = screen.getAllByLabelText(/^Cuota \d+, \d{4}-\d{2}-\d{2}$/)[0];
     if (!firstPoint) throw new Error('Se esperaba al menos un punto de proyección.');
     fireEvent.pointerEnter(firstPoint);
+    expect(screen.getByRole('row', { name: /Otros \(seguros y cargos\).*₡0,00/ })).toBeVisible();
     fireEvent.click(screen.getByRole('img', { name: 'Evolución estimada del saldo' }));
     expect(configuration?.lockedPointKey).toBe('projection:2026-02-01');
+    expect(configuration?.selectedSeries?.other).toBe(true);
     firstRender.unmount();
 
     render(
@@ -546,6 +573,7 @@ describe('ProjectionView', () => {
     );
 
     expect(screen.getByLabelText('Cuota total')).toBeChecked();
+    expect(screen.getByLabelText('Otros (seguros y cargos)')).toBeChecked();
     expect(screen.getByLabelText('Escenario A')).toHaveValue(scenario.id);
     expect(
       screen.getByText('Punto fijado en la cuota 1. Haz clic en el gráfico para liberarlo.'),

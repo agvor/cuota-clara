@@ -28,7 +28,9 @@ const SERIES = [
   { id: 'payment', label: 'Cuota total' },
   { id: 'interest', label: 'Interés' },
   { id: 'principal', label: 'Aporte total a principal' },
+  { id: 'ordinary', label: 'Aporte ordinario a principal' },
   { id: 'extra', label: 'Aporte extraordinario a principal' },
+  { id: 'other', label: 'Otros (seguros y cargos)' },
 ] as const;
 
 type SortDirection = 'ascending' | 'descending';
@@ -55,6 +57,7 @@ type DisplayProjectionPeriod = Readonly<{
   principal: Loan['initialBalance'];
   ordinaryPrincipal: Loan['initialBalance'];
   extraordinaryPrincipal: Loan['initialBalance'];
+  other: Loan['initialBalance'];
   payment: Loan['initialBalance'];
   closingBalance: Loan['initialBalance'];
 }>;
@@ -85,6 +88,7 @@ type ChartObservation = Readonly<{
   principal?: Loan['initialBalance'];
   ordinaryPrincipal?: Loan['initialBalance'];
   extraordinaryPrincipal?: Loan['initialBalance'];
+  other?: Loan['initialBalance'];
   payment?: Loan['initialBalance'];
   closingBalance: Loan['initialBalance'];
   hasReconciliation?: boolean;
@@ -146,6 +150,7 @@ export function ProjectionView({
             principal: period.principal,
             ordinaryPrincipal: period.principal,
             extraordinaryPrincipal: zeroMoney(loan),
+            other: period.insurance,
             payment: period.totalDue,
             closingBalance: period.closingBalance,
           }))
@@ -157,6 +162,7 @@ export function ProjectionView({
             principal: period.principal,
             ordinaryPrincipal: period.principal.subtract(period.extraPayment),
             extraordinaryPrincipal: period.extraPayment,
+            other: period.fees,
             payment: period.payment,
             closingBalance: period.closingBalance,
           }));
@@ -538,7 +544,9 @@ function BalanceChart({
     payment: false,
     interest: false,
     principal: false,
+    ordinary: false,
     extra: false,
+    other: false,
     ...chartConfiguration?.selectedSeries,
   }));
   const [firstScenarioId, setFirstScenarioId] = useState(chartConfiguration?.firstScenarioId ?? '');
@@ -581,7 +589,9 @@ function BalanceChart({
     payment: visibleObservations.map((observation) => observation.payment),
     interest: visibleObservations.map((observation) => observation.interest),
     principal: visibleObservations.map((observation) => observation.principal),
+    ordinary: visibleObservations.map((observation) => observation.ordinaryPrincipal),
     extra: visibleObservations.map((observation) => observation.extraordinaryPrincipal),
+    other: visibleObservations.map((observation) => observation.other),
   };
   const sources: readonly ChartSource[] = [
     { id: 'base', label: 'Configuración base', sourceClass: 'base', values: baseValues },
@@ -1094,9 +1104,17 @@ function valuesFromProjectionPeriods(
       (period) => period.principal,
       (period) => period.principal,
     ),
+    ordinary: valuesFor(
+      (period) => period.ordinaryPrincipal,
+      (period) => period.ordinaryPrincipal,
+    ),
     extra: valuesFor(
       (period) => period.extraordinaryPrincipal,
       (period) => period.extraordinaryPrincipal,
+    ),
+    other: valuesFor(
+      (period) => period.other,
+      (period) => period.other,
     ),
   };
 }
@@ -1109,6 +1127,7 @@ function displayScenarioPeriods(
     interest: Loan['initialBalance'];
     principal: Loan['initialBalance'];
     extraPayment: Loan['initialBalance'];
+    fees: Loan['initialBalance'];
     payment: Loan['initialBalance'];
     closingBalance: Loan['initialBalance'];
   }>[],
@@ -1123,6 +1142,7 @@ function displayScenarioPeriods(
     principal: period.principal,
     ordinaryPrincipal: period.principal.subtract(period.extraPayment),
     extraordinaryPrincipal: period.extraPayment,
+    other: period.fees.add(insurance),
     payment: period.payment.add(insurance),
     closingBalance: period.closingBalance,
   }));
@@ -1257,8 +1277,10 @@ function historicalChartObservations(
     let interestTotal = zero;
     let ordinaryPrincipalTotal = zero;
     let extraordinaryPrincipalTotal = zero;
+    let otherTotal = zero;
     let interestIsKnown = true;
     let ordinaryPrincipalIsKnown = true;
+    let otherIsKnown = true;
     let hasReconciliation = false;
 
     for (const entry of dateEntries) {
@@ -1273,9 +1295,14 @@ function historicalChartObservations(
 
       const payment = entry.payment;
       paymentTotal = paymentTotal.add(payment.totalAmount);
-      if (payment.interestAmount) {
-        interestTotal = interestTotal.add(payment.interestAmount);
-      } else if (!isExtraPrincipalOnlyPayment(payment)) {
+      const knownInterest = payment.interestAmount
+        ? payment.interestAmount
+        : isExtraPrincipalOnlyPayment(payment)
+          ? zero
+          : undefined;
+      if (knownInterest) {
+        interestTotal = interestTotal.add(knownInterest);
+      } else {
         interestIsKnown = false;
       }
       if (payment.principalAmount) {
@@ -1285,6 +1312,16 @@ function historicalChartObservations(
       }
       const extraPrincipal = payment.extraPrincipalAmount ?? zero;
       extraordinaryPrincipalTotal = extraordinaryPrincipalTotal.add(extraPrincipal);
+      if (knownInterest && payment.principalAmount) {
+        const classifiedPayment = knownInterest.add(payment.principalAmount).add(extraPrincipal);
+        if (payment.totalAmount.isLessThan(classifiedPayment)) {
+          otherIsKnown = false;
+        } else {
+          otherTotal = otherTotal.add(payment.totalAmount.subtract(classifiedPayment));
+        }
+      } else {
+        otherIsKnown = false;
+      }
       if (payment.principalAmount) {
         const appliedPrincipal = payment.principalAmount.add(extraPrincipal);
         balance = balance.isLessThan(appliedPrincipal)
@@ -1306,6 +1343,7 @@ function historicalChartObservations(
           }
         : {}),
       extraordinaryPrincipal: extraordinaryPrincipalTotal,
+      ...(otherIsKnown ? { other: otherTotal } : {}),
       payment: paymentTotal,
       closingBalance: balance,
       ...(hasReconciliation ? { hasReconciliation: true } : {}),

@@ -835,9 +835,17 @@ h1 {
   stroke: #14b8a6;
 }
 
+.chart-signal-line.ordinary {
+  stroke: #0891b2;
+}
+
 .chart-signal-line.extra {
   stroke: #15803d;
   stroke-width: 3;
+}
+
+.chart-signal-line.other {
+  stroke: #be123c;
 }
 
 .chart-signal-line.source-base {
@@ -974,8 +982,16 @@ h1 {
   border-top-color: #14b8a6;
 }
 
+.legend.signal-ordinary::before {
+  border-top-color: #0891b2;
+}
+
 .legend.signal-extra::before {
   border-top-color: #15803d;
+}
+
+.legend.signal-other::before {
+  border-top-color: #be123c;
 }
 
 .legend.source-base::before,
@@ -1024,8 +1040,16 @@ h1 {
   border-top-color: #14b8a6;
 }
 
+.chart-point-table th.signal-ordinary::before {
+  border-top-color: #0891b2;
+}
+
 .chart-point-table th.signal-extra::before {
   border-top-color: #15803d;
+}
+
+.chart-point-table th.signal-other::before {
+  border-top-color: #be123c;
 }
 
 .chart-point-table th.source-base::after,

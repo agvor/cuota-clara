@@ -909,6 +909,23 @@
         "La base y los escenarios comparten las mismas observaciones históricas consolidadas y conservan sus periodos futuros propios sin sumar señales que ya contienen otros componentes.",
         "Pruebas de regresión cubren pagos ordinario y extraordinario en la misma fecha, fechas diferentes, desglose desconocido, ajuste de reconciliación, escala temporal, comparación de escenarios e interacción accesible por teclado."
       ]
+    },
+    {
+      "id": "US-061",
+      "epic": "E4 · Escenarios y resultados",
+      "title": "Mostrar principal ordinario y otros componentes",
+      "story": "Como persona usuaria, quiero activar por separado el aporte ordinario a principal y los otros componentes de la cuota para entender cómo se distribuye cada pago sin duplicar importes.",
+      "requirements": ["RF-004", "RF-007", "RF-009", "RF-010", "RNF-001", "RNF-002", "RNF-008"],
+      "dependsOn": ["US-060"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "El selector del gráfico añade Aporte ordinario a principal y Otros (seguros y cargos), con colores, detalle accesible y configuración persistente iguales a las señales existentes.",
+        "Aporte ordinario a principal muestra exclusivamente el principal no extraordinario; aporte total continúa siendo ordinario más extraordinario sin apilar ni duplicar señales.",
+        "Otros se calcula por pago como total menos interés, principal ordinario y principal extraordinario, por lo que incluye seguro, comisiones y componentes ordinarios no clasificados; nunca incluye ajustes de reconciliación.",
+        "Si el interés o el principal necesarios para obtener Otros no están disponibles, la observación histórica muestra No disponible en lugar de inferir un importe; varios pagos de una fecha suman solo cuando todos sus valores son determinables.",
+        "En contratos y escenarios proyectados, Otros contiene seguro más cargos explícitos; en proyecciones heredadas sin esos cargos muestra cero conocido.",
+        "Pruebas de regresión cubren historial consolidado, dato incompleto, contrato con seguro, escenarios, selección persistente y nombres accesibles de ambas señales."
+      ]
     }
   ]
 }

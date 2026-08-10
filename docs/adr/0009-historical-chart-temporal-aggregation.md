@@ -1,6 +1,6 @@
 # ADR-0009: Agregación temporal del historial en el gráfico
 
-- Estado: aceptado e implementado en US-060
+- Estado: aceptado e implementado en US-060, ampliado en US-061
 - Fecha: 2026-08-09
 
 ## Contexto
@@ -22,6 +22,7 @@ La tabla necesita conservar cada hecho auditable. El gráfico, en cambio, necesi
 7. La interacción y su configuración identificarán la observación mediante una clave temporal estable, no mediante el índice renumerado de la secuencia. La interfaz hablará de fecha o evento histórico y reservará “cuota” para un periodo contractual o proyectado.
 8. Base y escenarios compartirán exactamente las observaciones históricas consolidadas. Cada fuente aportará después sus propios periodos proyectados; fechas futuras ausentes en una alternativa no se presentarán como hechos históricos ni alterarán la base.
 9. Las señales existentes no se apilarán. `Aporte extraordinario a principal` es subconjunto de `Aporte total a principal` y, con desglose completo, ambos están contenidos en `Cuota total`; apilarlos produciría doble contabilización visual.
+10. El gráfico expondrá además `Aporte ordinario a principal` y `Otros (seguros y cargos)`. La primera señal excluirá el principal extraordinario. `Otros` será el pago total menos interés, principal ordinario y principal extraordinario de cada pago; incluirá seguro, comisiones y cualquier componente ordinario no clasificado, pero no ajustes de reconciliación. Si falta interés o principal, el valor permanecerá desconocido.
 
 ## Consecuencias
 
