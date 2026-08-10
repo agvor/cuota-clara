@@ -10,7 +10,7 @@
     { "id": "RF-007", "status": "in_progress", "milestone": "MVP local" },
     { "id": "RF-008", "status": "in_progress", "milestone": "Motor verificable" },
     { "id": "RF-009", "status": "in_progress", "milestone": "MVP local" },
-    { "id": "RF-010", "status": "in_progress", "milestone": "MVP local" },
+    { "id": "RF-010", "status": "completed", "milestone": "MVP local" },
     { "id": "RF-011", "status": "in_progress", "milestone": "MVP local" },
     { "id": "RF-012", "status": "in_progress", "milestone": "MVP local" },
     { "id": "RF-013", "status": "in_progress", "milestone": "MVP local" },

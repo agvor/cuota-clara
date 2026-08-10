@@ -1,6 +1,6 @@
 # ADR-0009: Agregación temporal del historial en el gráfico
 
-- Estado: aceptado, pendiente de implementación en US-060
+- Estado: aceptado e implementado en US-060
 - Fecha: 2026-08-09
 
 ## Contexto

@@ -2,14 +2,14 @@
 
 > Generado desde `docs/backlog.json` el 2026-08-09. No editar manualmente.
 
-**Siguiente ítem habilitado:** US-060 — Consolidar por fecha el historial del gráfico
+**Siguiente ítem habilitado:** ninguno; revisar dependencias o bloqueos.
 
 | Épica | Planeado | Listo | En curso | Bloqueado | Completado |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | E1 · Motor financiero verificable | 0 | 0 | 0 | 0 | 7 |
 | E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 11 |
 | E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 16 |
-| E4 · Escenarios y resultados | 0 | 1 | 0 | 0 | 12 |
+| E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 13 |
 | E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 2 |
 | E6 · Contrato financiero v2 | 1 | 0 | 0 | 0 | 4 |
 | E7 · Contrato y resultados legibles | 0 | 0 | 0 | 0 | 6 |
@@ -78,4 +78,4 @@
 | US-057 | E3 · PWA y gestión de préstamos | Simplificar el resumen y enriquecer las tarjetas de préstamo | Completado | US-056 |
 | US-058 | E3 · PWA y gestión de préstamos | Separar y administrar el registro de pagos | Completado | US-050, US-055, US-057 |
 | US-059 | E3 · PWA y gestión de préstamos | Mostrar la cuota mensual vigente en la cartera | Completado | US-056, US-057 |
-| US-060 | E4 · Escenarios y resultados | Consolidar por fecha el historial del gráfico | Listo | US-026, US-045, US-051 |
+| US-060 | E4 · Escenarios y resultados | Consolidar por fecha el historial del gráfico | Completado | US-026, US-045, US-051 |

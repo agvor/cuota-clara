@@ -42,6 +42,7 @@ export type ChartConfiguration = Readonly<{
   selectedSeries?: Readonly<Partial<Record<ChartSeriesId, boolean>>>;
   firstScenarioId?: string;
   secondScenarioId?: string;
+  lockedPointKey?: string;
   lockedPeriodNumber?: number;
   verticalScaleMode?: VerticalScaleMode;
 }>;
@@ -69,12 +70,27 @@ type AmortizationTableRow =
   | HistoricalTableRow
   | Readonly<{ kind: 'projection'; date: string; period: DisplayProjectionPeriod }>;
 type ChartPoint = Readonly<{
-  period: DisplayProjectionPeriod;
+  observation: ChartObservation;
   value: Loan['initialBalance'];
   x: number;
   y: number;
 }>;
-type ChartValues = Readonly<Record<ChartSeriesId, readonly Loan['initialBalance'][]>>;
+type ChartObservation = Readonly<{
+  key: string;
+  kind: 'history' | 'projection';
+  period?: number;
+  date: string;
+  openingBalance: Loan['initialBalance'];
+  interest?: Loan['initialBalance'];
+  principal?: Loan['initialBalance'];
+  ordinaryPrincipal?: Loan['initialBalance'];
+  extraordinaryPrincipal?: Loan['initialBalance'];
+  payment?: Loan['initialBalance'];
+  closingBalance: Loan['initialBalance'];
+  hasReconciliation?: boolean;
+}>;
+type ChartValue = Loan['initialBalance'] | undefined;
+type ChartValues = Readonly<Record<ChartSeriesId, readonly ChartValue[]>>;
 type ChartSource = Readonly<{
   id: string;
   label: string;
@@ -85,6 +101,7 @@ type ChartLine = Readonly<{
   source: ChartSource;
   series: (typeof SERIES)[number];
   points: readonly ChartPoint[];
+  path: string;
 }>;
 
 export function ProjectionView({
@@ -476,18 +493,18 @@ function BalanceChart({
   chartConfiguration?: ChartConfiguration;
   onChartConfigurationChange?: (configuration: ChartConfiguration) => void;
 }>) {
-  const historicalPeriods = historicalChartPeriods(
+  const historicalObservations = historicalChartObservations(
     payments,
     bankReset,
     balanceReconciliations,
     loan,
   );
-  const allPeriods = [...historicalPeriods, ...periods].map((period, index) => ({
-    ...period,
-    period: index + 1,
-  }));
-  const totalStartDate = allPeriods[0]?.date ?? '';
-  const totalEndDate = allPeriods.at(-1)?.date ?? '';
+  const projectionObservations = periods.map(toProjectionChartObservation);
+  const allObservations = [...historicalObservations, ...projectionObservations].sort(
+    (left, right) => left.date.localeCompare(right.date) || left.kind.localeCompare(right.kind),
+  );
+  const totalStartDate = allObservations[0]?.date ?? '';
+  const totalEndDate = allObservations.at(-1)?.date ?? '';
   const nearTermEndDate = clampDateToRange(localDatePlusMonths(2), totalStartDate, totalEndDate);
   const savedRangeStartDate = chartConfiguration?.rangeStartDate;
   const savedRangeEndDate = chartConfiguration?.rangeEndDate;
@@ -503,12 +520,19 @@ function BalanceChart({
       ? savedRangeEndDate
       : totalEndDate,
   );
-  const [hoveredPeriod, setHoveredPeriod] = useState<DisplayProjectionPeriod>();
-  const [lockedPeriod, setLockedPeriod] = useState<DisplayProjectionPeriod | undefined>(() =>
-    chartConfiguration?.lockedPeriodNumber
-      ? allPeriods.find((period) => period.period === chartConfiguration.lockedPeriodNumber)
-      : undefined,
-  );
+  const [hoveredObservation, setHoveredObservation] = useState<ChartObservation>();
+  const [lockedObservation, setLockedObservation] = useState<ChartObservation | undefined>(() => {
+    if (chartConfiguration?.lockedPointKey) {
+      return allObservations.find(
+        (observation) => observation.key === chartConfiguration.lockedPointKey,
+      );
+    }
+    return chartConfiguration?.lockedPeriodNumber
+      ? projectionObservations.find(
+          (observation) => observation.period === chartConfiguration.lockedPeriodNumber,
+        )
+      : undefined;
+  });
   const [selectedSeries, setSelectedSeries] = useState<SelectedSeries>(() => ({
     balance: true,
     payment: false,
@@ -524,11 +548,11 @@ function BalanceChart({
   const [verticalScaleMode, setVerticalScaleMode] = useState<VerticalScaleMode>(
     chartConfiguration?.verticalScaleMode ?? 'full',
   );
-  const visiblePeriods = allPeriods.filter(
-    (period) => period.date >= rangeStartDate && period.date <= rangeEndDate,
+  const visibleObservations = allObservations.filter(
+    (observation) => observation.date >= rangeStartDate && observation.date <= rangeEndDate,
   );
-  const startPeriod = visiblePeriods[0];
-  const endPeriod = visiblePeriods.at(-1);
+  const startObservation = visibleObservations[0];
+  const endObservation = visibleObservations.at(-1);
 
   const comparableScenarios = scenarios.filter(isComparableScenario);
   const scenarioSources: readonly ChartSource[] = [firstScenarioId, secondScenarioId]
@@ -544,8 +568,7 @@ function BalanceChart({
             sourceClass: index === 0 ? 'scenario-first' : 'scenario-second',
             values: valuesFromProjectionPeriods(
               displayScenarioPeriods(comparison.alternative.periods, loan),
-              visiblePeriods,
-              loan,
+              visibleObservations,
             ),
           } satisfies ChartSource,
         ];
@@ -554,11 +577,11 @@ function BalanceChart({
       }
     });
   const baseValues: ChartValues = {
-    balance: visiblePeriods.map((period) => period.closingBalance),
-    payment: visiblePeriods.map((period) => period.payment),
-    interest: visiblePeriods.map((period) => period.interest),
-    principal: visiblePeriods.map((period) => period.principal),
-    extra: visiblePeriods.map((period) => period.extraordinaryPrincipal),
+    balance: visibleObservations.map((observation) => observation.closingBalance),
+    payment: visibleObservations.map((observation) => observation.payment),
+    interest: visibleObservations.map((observation) => observation.interest),
+    principal: visibleObservations.map((observation) => observation.principal),
+    extra: visibleObservations.map((observation) => observation.extraordinaryPrincipal),
   };
   const sources: readonly ChartSource[] = [
     { id: 'base', label: 'Configuración base', sourceClass: 'base', values: baseValues },
@@ -566,7 +589,9 @@ function BalanceChart({
   ];
   const activeSeries = SERIES.filter((series) => selectedSeries[series.id]);
   const yAxisDomain = chartYAxisDomain(
-    sources.flatMap((source) => activeSeries.flatMap((series) => source.values[series.id])),
+    sources
+      .flatMap((source) => activeSeries.flatMap((series) => source.values[series.id]))
+      .filter((value): value is Loan['initialBalance'] => Boolean(value)),
     loan,
     verticalScaleMode,
   );
@@ -574,7 +599,8 @@ function BalanceChart({
     activeSeries.map((series) => ({
       source,
       series,
-      points: toChartPoints(visiblePeriods, source.values[series.id], yAxisDomain),
+      points: toChartPoints(visibleObservations, source.values[series.id], yAxisDomain),
+      path: toChartPath(visibleObservations, source.values[series.id], yAxisDomain),
     })),
   );
   const interactionPoints =
@@ -582,16 +608,20 @@ function BalanceChart({
       ?.points ??
     chartLines[0]?.points ??
     [];
-  const inspectedPeriod = lockedPeriod ?? hoveredPeriod;
+  const inspectedObservation = lockedObservation ?? hoveredObservation;
   const inspectedLines = chartLines.filter((line) =>
-    line.points.some((point) => point.period.period === inspectedPeriod?.period),
+    line.points.some((point) => point.observation.key === inspectedObservation?.key),
   );
   const horizontalTicks = [0, 0.25, 0.5, 0.75, 1];
   const temporalTicks = [0, 0.25, 0.5, 0.75, 1];
-  const firstProjectedPeriod = allPeriods[historicalPeriods.length];
-  const visibleProjectedIndex = firstProjectedPeriod
-    ? visiblePeriods.findIndex((period) => period.period === firstProjectedPeriod.period)
-    : -1;
+  const firstProjectedObservation = projectionObservations[0];
+  const lastHistoricalObservation = historicalObservations.at(-1);
+  const showHistoryDivider =
+    firstProjectedObservation && lastHistoricalObservation
+      ? firstProjectedObservation.date > lastHistoricalObservation.date &&
+        visibleObservations.includes(lastHistoricalObservation) &&
+        visibleObservations.includes(firstProjectedObservation)
+      : false;
 
   useEffect(() => {
     onChartConfigurationChange?.({
@@ -601,11 +631,11 @@ function BalanceChart({
       firstScenarioId,
       secondScenarioId,
       verticalScaleMode,
-      ...(lockedPeriod ? { lockedPeriodNumber: lockedPeriod.period } : {}),
+      ...(lockedObservation ? { lockedPointKey: lockedObservation.key } : {}),
     });
   }, [
     firstScenarioId,
-    lockedPeriod,
+    lockedObservation,
     onChartConfigurationChange,
     rangeEndDate,
     rangeStartDate,
@@ -614,10 +644,10 @@ function BalanceChart({
     verticalScaleMode,
   ]);
 
-  if (!startPeriod || !endPeriod) return null;
+  if (!startObservation || !endObservation) return null;
 
   function inspectClosestPoint(clientX: number, chartLeft: number, chartWidth: number) {
-    if (lockedPeriod) return;
+    if (lockedObservation) return;
     const firstPoint = interactionPoints[0];
     if (!firstPoint || chartWidth === 0) return;
     const x = ((clientX - chartLeft) / chartWidth) * 800;
@@ -625,7 +655,9 @@ function BalanceChart({
     for (const point of interactionPoints) {
       if (Math.abs(point.x - x) < Math.abs(closestPoint.x - x)) closestPoint = point;
     }
-    if (closestPoint.period.period !== hoveredPeriod?.period) setHoveredPeriod(closestPoint.period);
+    if (closestPoint.observation.key !== hoveredObservation?.key) {
+      setHoveredObservation(closestPoint.observation);
+    }
   }
 
   function toggleSeries(id: ChartSeriesId) {
@@ -636,8 +668,8 @@ function BalanceChart({
   }
 
   function togglePointLock() {
-    setLockedPeriod((current) =>
-      current ? undefined : (hoveredPeriod ?? interactionPoints[0]?.period),
+    setLockedObservation((current) =>
+      current ? undefined : (hoveredObservation ?? interactionPoints[0]?.observation),
     );
   }
 
@@ -645,29 +677,29 @@ function BalanceChart({
     setRangeStartDate(totalStartDate);
     setRangeEndDate(totalEndDate);
     setVerticalScaleMode('full');
-    setHoveredPeriod(undefined);
-    setLockedPeriod(undefined);
+    setHoveredObservation(undefined);
+    setLockedObservation(undefined);
   }
 
   function showThroughCurrentPlusTwoMonths() {
     setRangeStartDate(totalStartDate);
     setRangeEndDate(nearTermEndDate);
-    setHoveredPeriod(undefined);
-    setLockedPeriod(undefined);
+    setHoveredObservation(undefined);
+    setLockedObservation(undefined);
   }
 
   function setChartRangeStart(value: string) {
     setRangeStartDate(value);
     if (value > rangeEndDate) setRangeEndDate(value);
-    setHoveredPeriod(undefined);
-    setLockedPeriod(undefined);
+    setHoveredObservation(undefined);
+    setLockedObservation(undefined);
   }
 
   function setChartRangeEnd(value: string) {
     setRangeEndDate(value);
     if (value < rangeStartDate) setRangeStartDate(value);
-    setHoveredPeriod(undefined);
-    setLockedPeriod(undefined);
+    setHoveredObservation(undefined);
+    setLockedObservation(undefined);
   }
 
   return (
@@ -721,12 +753,14 @@ function BalanceChart({
           </button>
         </div>
         <p>
-          Desplaza el cursor para inspeccionar una cuota; haz clic para fijar o liberar el punto.
+          Desplaza el cursor para inspeccionar una fecha o cuota; haz clic para fijar o liberar el
+          punto.
         </p>
       </div>
       <p className="chart-range-status" aria-live="polite">
-        Mostrando {visiblePeriods.length} {visiblePeriods.length === 1 ? 'periodo' : 'periodos'}:{' '}
-        {startPeriod.date} a {endPeriod.date}.{' '}
+        Mostrando {visibleObservations.length}{' '}
+        {visibleObservations.length === 1 ? 'observación' : 'observaciones'}:{' '}
+        {startObservation.date} a {endObservation.date}.{' '}
         {verticalScaleMode === 'range'
           ? 'El eje Y está ajustado a los datos visibles.'
           : 'El eje Y parte de cero.'}
@@ -802,7 +836,7 @@ function BalanceChart({
           togglePointLock();
         }}
         onPointerLeave={() => {
-          if (!lockedPeriod) setHoveredPeriod(undefined);
+          if (!lockedObservation) setHoveredObservation(undefined);
         }}
         onPointerMove={(event) => {
           const bounds = event.currentTarget.getBoundingClientRect();
@@ -811,9 +845,9 @@ function BalanceChart({
       >
         <title id="balance-chart-title">Evolución estimada del saldo</title>
         <desc id="balance-chart-description">
-          Cada señal seleccionada se muestra desde {startPeriod.date} hasta {endPeriod.date}. El eje
-          vertical usa la moneda del préstamo y el horizontal representa las fechas de los pagos y
-          cuotas.
+          Cada señal seleccionada se muestra desde {startObservation.date} hasta{' '}
+          {endObservation.date}. El eje vertical usa la moneda del préstamo y el horizontal
+          representa proporcionalmente las fechas de los pagos y cuotas.
         </desc>
         {horizontalTicks.map((fraction) => {
           const y = CHART.bottom - fraction * (CHART.bottom - CHART.top);
@@ -828,10 +862,8 @@ function BalanceChart({
           );
         })}
         {temporalTicks.map((fraction) => {
-          const index = Math.round(fraction * Math.max(visiblePeriods.length - 1, 0));
-          const period = visiblePeriods[index];
+          const date = dateAtFraction(startObservation.date, endObservation.date, fraction);
           const x = CHART.left + fraction * (CHART.right - CHART.left);
-          if (!period) return null;
           return (
             <g key={`vertical-${fraction}`}>
               <line
@@ -842,7 +874,7 @@ function BalanceChart({
                 y2={CHART.bottom}
               />
               <text className="chart-label" x={x} y={CHART.bottom + 25} textAnchor="middle">
-                {formatChartDate(period.date)}
+                {formatChartDate(date)}
               </text>
             </g>
           );
@@ -854,19 +886,19 @@ function BalanceChart({
           y1={CHART.bottom}
           y2={CHART.bottom}
         />
-        {visibleProjectedIndex > 0 ? (
+        {showHistoryDivider && firstProjectedObservation ? (
           <line
             className="chart-history-divider"
-            x1={
-              CHART.left +
-              (visibleProjectedIndex / Math.max(visiblePeriods.length - 1, 1)) *
-                (CHART.right - CHART.left)
-            }
-            x2={
-              CHART.left +
-              (visibleProjectedIndex / Math.max(visiblePeriods.length - 1, 1)) *
-                (CHART.right - CHART.left)
-            }
+            x1={chartXForDate(
+              firstProjectedObservation.date,
+              startObservation.date,
+              endObservation.date,
+            )}
+            x2={chartXForDate(
+              firstProjectedObservation.date,
+              startObservation.date,
+              endObservation.date,
+            )}
             y1={CHART.top}
             y2={CHART.bottom}
           />
@@ -879,38 +911,38 @@ function BalanceChart({
           y2={CHART.bottom}
         />
         {chartLines.map((line) => (
-          <polyline
+          <path
             className={`chart-signal-line ${line.series.id} source-${line.source.sourceClass}`}
+            d={line.path}
             key={`${line.source.id}-${line.series.id}`}
-            points={line.points.map((point) => `${point.x},${point.y}`).join(' ')}
           />
         ))}
         {interactionPoints.map((point) => (
           <circle
-            aria-label={`Cuota ${point.period.period}, ${point.period.date}`}
+            aria-label={chartObservationAriaLabel(point.observation)}
             className="chart-point-target"
             cx={point.x}
             cy={point.y}
-            key={point.period.period}
+            key={point.observation.key}
             r="8"
             tabIndex={0}
             onFocus={() => {
-              if (!lockedPeriod) setHoveredPeriod(point.period);
+              if (!lockedObservation) setHoveredObservation(point.observation);
             }}
             onPointerEnter={() => {
-              if (!lockedPeriod) setHoveredPeriod(point.period);
+              if (!lockedObservation) setHoveredObservation(point.observation);
             }}
           />
         ))}
         {inspectedLines.flatMap((line) =>
           line.points
-            .filter((point) => point.period.period === inspectedPeriod?.period)
+            .filter((point) => point.observation.key === inspectedObservation?.key)
             .map((point) => (
               <circle
                 className={`chart-point-highlight ${line.series.id} source-${line.source.sourceClass}`}
                 cx={point.x}
                 cy={point.y}
-                key={`highlight-${line.source.id}-${line.series.id}-${point.period.period}`}
+                key={`highlight-${line.source.id}-${line.series.id}-${point.observation.key}`}
                 r="5"
               />
             )),
@@ -943,17 +975,17 @@ function BalanceChart({
         </p>
       </figcaption>
       <p className="chart-lock-status" aria-live="polite">
-        {lockedPeriod
-          ? `Punto fijado en cuota ${lockedPeriod.period}. Haz clic en el gráfico para liberarlo.`
+        {lockedObservation
+          ? `Punto fijado en ${chartObservationShortLabel(lockedObservation)}. Haz clic en el gráfico para liberarlo.`
           : 'Punto móvil: haz clic en el gráfico para fijarlo.'}
       </p>
       <ChartPointDetails
         loan={loan}
-        period={inspectedPeriod}
-        visiblePeriods={visiblePeriods}
+        observation={inspectedObservation}
+        visibleObservations={visibleObservations}
         sources={sources}
         activeSeries={activeSeries}
-        isLocked={Boolean(lockedPeriod)}
+        isLocked={Boolean(lockedObservation)}
       />
     </figure>
   );
@@ -961,34 +993,36 @@ function BalanceChart({
 
 function ChartPointDetails({
   loan,
-  period,
-  visiblePeriods,
+  observation,
+  visibleObservations,
   sources,
   activeSeries,
   isLocked,
 }: Readonly<{
   loan: Loan;
-  period: DisplayProjectionPeriod | undefined;
-  visiblePeriods: readonly DisplayProjectionPeriod[];
+  observation: ChartObservation | undefined;
+  visibleObservations: readonly ChartObservation[];
   sources: readonly ChartSource[];
   activeSeries: readonly (typeof SERIES)[number][];
   isLocked: boolean;
 }>) {
-  if (!period)
+  if (!observation)
     return (
       <p className="chart-point-details" aria-live="polite">
-        Selecciona un punto para ver el detalle de la cuota.
+        Selecciona un punto para ver el detalle de la fecha o cuota.
       </p>
     );
   return (
     <div className="chart-point-details" aria-live="polite">
       <strong>
-        Cuota {period.period} · {period.date}
+        {chartObservationDetailLabel(observation)}
         {isLocked ? ' · Punto fijado' : ''}
       </strong>
       <div className="table-scroll chart-point-table-scroll">
         <table className="financial-table financial-table-chart chart-point-table">
-          <caption>Comparación de señales activas en la cuota {period.period}</caption>
+          <caption>
+            Comparación de señales activas en {chartObservationShortLabel(observation)}
+          </caption>
           <thead>
             <tr>
               <th scope="col">Señal</th>
@@ -1001,7 +1035,9 @@ function ChartPointDetails({
           </thead>
           <tbody>
             {activeSeries.map((series) => {
-              const periodIndex = visiblePeriods.findIndex((item) => item.period === period.period);
+              const observationIndex = visibleObservations.findIndex(
+                (item) => item.key === observation.key,
+              );
               return (
                 <tr key={series.id}>
                   <th className={`signal-${series.id}`} scope="row">
@@ -1009,8 +1045,8 @@ function ChartPointDetails({
                   </th>
                   {sources.map((source) => (
                     <td key={source.id}>
-                      {formatMoney(
-                        source.values[series.id][periodIndex] ?? zeroMoney(loan),
+                      {formatChartValue(
+                        source.values[series.id][observationIndex],
                         loan.roundingPolicy,
                       )}
                     </td>
@@ -1027,22 +1063,19 @@ function ChartPointDetails({
 
 function valuesFromProjectionPeriods(
   projectionPeriods: readonly DisplayProjectionPeriod[],
-  visiblePeriods: readonly DisplayProjectionPeriod[],
-  loan: Loan,
+  visibleObservations: readonly ChartObservation[],
 ): ChartValues {
-  const projectionStartDate = projectionPeriods[0]?.date;
   const valuesFor = (
     select: (period: (typeof projectionPeriods)[number]) => Loan['initialBalance'],
-    selectHistorical: (period: DisplayProjectionPeriod) => Loan['initialBalance'],
-  ): readonly Loan['initialBalance'][] =>
-    visiblePeriods.map((visiblePeriod) => {
+    selectHistorical: (observation: ChartObservation) => ChartValue,
+  ): readonly ChartValue[] =>
+    visibleObservations.map((visibleObservation) => {
+      if (visibleObservation.kind === 'history') return selectHistorical(visibleObservation);
       const projectionPeriod = projectionPeriods.find(
-        (period) => period.date === visiblePeriod.date,
+        (period) => period.date === visibleObservation.date,
       );
       if (projectionPeriod) return select(projectionPeriod);
-      return projectionStartDate && visiblePeriod.date < projectionStartDate
-        ? selectHistorical(visiblePeriod)
-        : zeroMoney(loan);
+      return undefined;
     });
   return {
     balance: valuesFor(
@@ -1095,24 +1128,34 @@ function displayScenarioPeriods(
   }));
 }
 
+function toProjectionChartObservation(period: DisplayProjectionPeriod): ChartObservation {
+  return {
+    key: `projection:${period.date}`,
+    kind: 'projection',
+    ...period,
+  };
+}
+
 function toChartPoints(
-  periods: readonly DisplayProjectionPeriod[],
-  values: readonly Loan['initialBalance'][],
+  observations: readonly ChartObservation[],
+  values: readonly ChartValue[],
   yAxisDomain: Readonly<{
     minimum: Loan['initialBalance'];
     span: Loan['initialBalance'];
   }>,
 ): readonly ChartPoint[] {
-  const denominator = Math.max(periods.length - 1, 1);
   const spanAsNumber = Math.max(Number(yAxisDomain.span.toDecimalString()), 1);
   const minimumAsNumber = Number(yAxisDomain.minimum.toDecimalString());
-  return periods.flatMap((period, index) => {
+  const startDate = observations[0]?.date;
+  const endDate = observations.at(-1)?.date;
+  if (!startDate || !endDate) return [];
+  return observations.flatMap((observation, index) => {
     const value = values[index];
     if (!value) return [];
     return {
-      period,
+      observation,
       value,
-      x: CHART.left + (index / denominator) * (CHART.right - CHART.left),
+      x: chartXForDate(observation.date, startDate, endDate),
       y:
         CHART.top +
         (1 -
@@ -1123,6 +1166,33 @@ function toChartPoints(
           (CHART.bottom - CHART.top),
     };
   });
+}
+
+function toChartPath(
+  observations: readonly ChartObservation[],
+  values: readonly ChartValue[],
+  yAxisDomain: Readonly<{
+    minimum: Loan['initialBalance'];
+    span: Loan['initialBalance'];
+  }>,
+): string {
+  const pointsByKey = new Map(
+    toChartPoints(observations, values, yAxisDomain).map((point) => [point.observation.key, point]),
+  );
+  let continuesLine = false;
+  return observations
+    .map((observation) => {
+      const point = pointsByKey.get(observation.key);
+      if (!point) {
+        continuesLine = false;
+        return '';
+      }
+      const command = continuesLine ? 'L' : 'M';
+      continuesLine = true;
+      return `${command} ${point.x} ${point.y}`;
+    })
+    .filter(Boolean)
+    .join(' ');
 }
 
 function zeroMoney(loan: Loan): Loan['initialBalance'] {
@@ -1161,12 +1231,12 @@ function chartYAxisDomain(
   return { minimum: paddedMinimum, span: paddedMaximum.subtract(paddedMinimum) };
 }
 
-function historicalChartPeriods(
+function historicalChartObservations(
   payments: readonly PaymentRecord[],
   bankReset: BankReset | undefined,
   balanceReconciliations: readonly BankBalanceReconciliation[],
   loan: Loan,
-): readonly DisplayProjectionPeriod[] {
+): readonly ChartObservation[] {
   const zero = zeroMoney(loan);
   let balance = loan.initialBalance;
   const entries = [
@@ -1175,41 +1245,82 @@ function historicalChartPeriods(
       ...reconciliation,
     })),
   ].sort((left, right) => left.date.localeCompare(right.date));
-  return entries.map((entry, index) => {
-    if (entry.kind === 'reconciliation') {
-      const period = {
-        period: index + 1,
-        date: entry.date,
-        openingBalance: balance,
-        interest: zero,
-        principal: entry.adjustment.principalAmount,
-        ordinaryPrincipal: zero,
-        extraordinaryPrincipal: entry.adjustment.principalAmount,
-        payment: entry.adjustment.principalAmount,
-        closingBalance: entry.reportedBalance,
-      } satisfies DisplayProjectionPeriod;
-      balance = entry.reportedBalance;
-      return period;
+  const entriesByDate = new Map<string, (typeof entries)[number][]>();
+  for (const entry of entries) {
+    const dateEntries = entriesByDate.get(entry.date) ?? [];
+    dateEntries.push(entry);
+    entriesByDate.set(entry.date, dateEntries);
+  }
+  return [...entriesByDate].map(([date, dateEntries]) => {
+    const openingBalance = balance;
+    let paymentTotal = zero;
+    let interestTotal = zero;
+    let ordinaryPrincipalTotal = zero;
+    let extraordinaryPrincipalTotal = zero;
+    let interestIsKnown = true;
+    let ordinaryPrincipalIsKnown = true;
+    let hasReconciliation = false;
+
+    for (const entry of dateEntries) {
+      if (entry.kind === 'reconciliation') {
+        hasReconciliation = true;
+        extraordinaryPrincipalTotal = extraordinaryPrincipalTotal.add(
+          entry.adjustment.principalAmount,
+        );
+        balance = entry.reportedBalance;
+        continue;
+      }
+
+      const payment = entry.payment;
+      paymentTotal = paymentTotal.add(payment.totalAmount);
+      if (payment.interestAmount) {
+        interestTotal = interestTotal.add(payment.interestAmount);
+      } else if (!isExtraPrincipalOnlyPayment(payment)) {
+        interestIsKnown = false;
+      }
+      if (payment.principalAmount) {
+        ordinaryPrincipalTotal = ordinaryPrincipalTotal.add(payment.principalAmount);
+      } else {
+        ordinaryPrincipalIsKnown = false;
+      }
+      const extraPrincipal = payment.extraPrincipalAmount ?? zero;
+      extraordinaryPrincipalTotal = extraordinaryPrincipalTotal.add(extraPrincipal);
+      if (payment.principalAmount) {
+        const appliedPrincipal = payment.principalAmount.add(extraPrincipal);
+        balance = balance.isLessThan(appliedPrincipal)
+          ? balance
+          : balance.subtract(appliedPrincipal);
+      }
     }
-    const payment = entry.payment;
-    const ordinaryPrincipal = payment.principalAmount ?? zero;
-    const extraordinaryPrincipal = payment.extraPrincipalAmount ?? zero;
-    const principal = ordinaryPrincipal.add(extraordinaryPrincipal);
-    const closingBalance = balance.isLessThan(principal) ? balance : balance.subtract(principal);
-    const period = {
-      period: index + 1,
-      date: payment.date,
-      openingBalance: balance,
-      interest: payment.interestAmount ?? zero,
-      principal,
-      ordinaryPrincipal,
-      extraordinaryPrincipal,
-      payment: payment.totalAmount,
-      closingBalance,
-    } satisfies DisplayProjectionPeriod;
-    balance = closingBalance;
-    return period;
+
+    return {
+      key: `history:${date}`,
+      kind: 'history',
+      date,
+      openingBalance,
+      ...(interestIsKnown ? { interest: interestTotal } : {}),
+      ...(ordinaryPrincipalIsKnown
+        ? {
+            principal: ordinaryPrincipalTotal.add(extraordinaryPrincipalTotal),
+            ordinaryPrincipal: ordinaryPrincipalTotal,
+          }
+        : {}),
+      extraordinaryPrincipal: extraordinaryPrincipalTotal,
+      payment: paymentTotal,
+      closingBalance: balance,
+      ...(hasReconciliation ? { hasReconciliation: true } : {}),
+    } satisfies ChartObservation;
   });
+}
+
+function isExtraPrincipalOnlyPayment(payment: PaymentRecord): boolean {
+  return Boolean(
+    payment.principalAmount?.isZero() &&
+    payment.extraPrincipalAmount?.isPositive() &&
+    (!payment.insuranceAmount || payment.insuranceAmount.isZero()) &&
+    (!payment.feeAmount || payment.feeAmount.isZero()) &&
+    payment.totalAmount.toDecimalString() === payment.extraPrincipalAmount.toDecimalString(),
+  );
 }
 
 function reconciliationRows(
@@ -1298,6 +1409,52 @@ function compareScenario(
     });
   }
   throw new Error('El escenario no se puede comparar.');
+}
+
+function formatChartValue(value: ChartValue, roundingPolicy: Parameters<typeof formatMoney>[1]) {
+  return value ? (
+    formatMoney(value, roundingPolicy)
+  ) : (
+    <span aria-label="No disponible" title="Componente no informado">
+      —
+    </span>
+  );
+}
+
+function chartObservationAriaLabel(observation: ChartObservation): string {
+  return observation.kind === 'history'
+    ? `Fecha ${observation.date}, historial${observation.hasReconciliation ? ', incluye ajuste de reconciliación' : ''}`
+    : `Cuota ${observation.period ?? ''}, ${observation.date}`;
+}
+
+function chartObservationDetailLabel(observation: ChartObservation): string {
+  return observation.kind === 'history'
+    ? `Fecha ${observation.date}${observation.hasReconciliation ? ' · Incluye ajuste de reconciliación' : ''}`
+    : `Cuota ${observation.period ?? ''} · ${observation.date}`;
+}
+
+function chartObservationShortLabel(observation: ChartObservation): string {
+  return observation.kind === 'history'
+    ? `la fecha ${observation.date}`
+    : `la cuota ${observation.period ?? ''}`;
+}
+
+function chartXForDate(date: string, startDate: string, endDate: string): number {
+  const start = isoDateTimestamp(startDate);
+  const end = isoDateTimestamp(endDate);
+  if (end <= start) return CHART.left;
+  const fraction = (isoDateTimestamp(date) - start) / (end - start);
+  return CHART.left + Math.max(0, Math.min(fraction, 1)) * (CHART.right - CHART.left);
+}
+
+function dateAtFraction(startDate: string, endDate: string, fraction: number): string {
+  const start = isoDateTimestamp(startDate);
+  const end = isoDateTimestamp(endDate);
+  return new Date(start + (end - start) * fraction).toISOString().slice(0, 10);
+}
+
+function isoDateTimestamp(date: string): number {
+  return Date.parse(`${date}T00:00:00Z`);
 }
 
 function formatChartDate(date: string): string {

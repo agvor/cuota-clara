@@ -39,11 +39,11 @@ describe('ProjectionView', () => {
     expect(screen.getByRole('img', { name: 'Evolución estimada del saldo' })).toBeVisible();
     expect(screen.getByLabelText('Desde')).toHaveValue('2026-02-01');
     expect(screen.getByLabelText('Hasta')).toHaveValue('2026-12-01');
-    expect(screen.getByText(/Mostrando 11 periodos: 2026-02-01 a 2026-12-01/)).toBeVisible();
+    expect(screen.getByText(/Mostrando 11 observaciones: 2026-02-01 a 2026-12-01/)).toBeVisible();
     expect(screen.getByRole('button', { name: 'Restablecer todo el plazo' })).toBeDisabled();
     fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-04-01' } });
     fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '2026-09-01' } });
-    expect(screen.getByText(/Mostrando 6 periodos: 2026-04-01 a 2026-09-01/)).toBeVisible();
+    expect(screen.getByText(/Mostrando 6 observaciones: 2026-04-01 a 2026-09-01/)).toBeVisible();
     expect(screen.getByRole('img', { name: 'Evolución estimada del saldo' })).toHaveAttribute(
       'data-y-axis-scale',
       'full',
@@ -121,6 +121,92 @@ describe('ProjectionView', () => {
     );
   });
 
+  test('consolida pagos históricos de la misma fecha sin perder sus registros auditables', () => {
+    const contractLoan = createLoanV3({
+      id: 'loan-same-date-history',
+      name: 'Préstamo con varios pagos diarios',
+      startDate: '2026-01-01',
+      originalPrincipal: Money.from('1000.00', 'CRC'),
+      monthlyTotalPayment: Money.from('105.00', 'CRC'),
+      monthlyInsurance: Money.from('5.00', 'CRC'),
+      term: { totalInstallments: 12 },
+      annualNominalRate: '0.12',
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+    });
+    const payments = [
+      createPaymentRecord({
+        id: 'same-date-ordinary',
+        date: '2026-02-01',
+        totalAmount: Money.from('105.00', 'CRC'),
+        interestAmount: Money.from('10.00', 'CRC'),
+        principalAmount: Money.from('50.00', 'CRC'),
+        source: 'csv_import',
+        sourcePaymentId: 'same-date-ordinary',
+      }),
+      createPaymentRecord({
+        id: 'same-date-extra',
+        date: '2026-02-01',
+        totalAmount: Money.from('25.00', 'CRC'),
+        principalAmount: Money.from('0.00', 'CRC'),
+        extraPrincipalAmount: Money.from('25.00', 'CRC'),
+        source: 'csv_import',
+        sourcePaymentId: 'same-date-extra',
+      }),
+    ];
+
+    render(<ProjectionView loan={contractLoan} payments={payments} />);
+
+    expect(screen.getAllByRole('cell', { name: 'Histórico' })).toHaveLength(2);
+    expect(screen.getAllByLabelText('Fecha 2026-02-01, historial')).toHaveLength(1);
+    fireEvent.click(screen.getByLabelText('Cuota total'));
+    fireEvent.click(screen.getByLabelText('Interés'));
+    fireEvent.click(screen.getByLabelText('Aporte total a principal'));
+    fireEvent.click(screen.getByLabelText('Aporte extraordinario a principal'));
+    fireEvent.pointerEnter(screen.getByLabelText('Fecha 2026-02-01, historial'));
+
+    expect(screen.getByText('Fecha 2026-02-01')).toBeVisible();
+    expect(screen.getByRole('row', { name: /Cuota total.*₡130,00/ })).toBeVisible();
+    expect(screen.getByRole('row', { name: /Interés.*₡10,00/ })).toBeVisible();
+    expect(screen.getByRole('row', { name: /Aporte total a principal.*₡75,00/ })).toBeVisible();
+    expect(
+      screen.getByRole('row', { name: /Aporte extraordinario a principal.*₡25,00/ }),
+    ).toBeVisible();
+    expect(screen.getByRole('row', { name: /Saldo.*₡925,00/ })).toBeVisible();
+  });
+
+  test('posiciona las observaciones por distancia temporal y conserva componentes desconocidos', () => {
+    const payments = [
+      createPaymentRecord({
+        id: 'temporal-february',
+        date: '2026-02-01',
+        totalAmount: Money.from('100.00', 'CRC'),
+        principalAmount: Money.from('50.00', 'CRC'),
+        source: 'manual',
+      }),
+      createPaymentRecord({
+        id: 'temporal-april',
+        date: '2026-04-01',
+        totalAmount: Money.from('100.00', 'CRC'),
+        interestAmount: Money.from('10.00', 'CRC'),
+        principalAmount: Money.from('50.00', 'CRC'),
+        source: 'manual',
+      }),
+    ];
+
+    render(<ProjectionView loan={loan} payments={payments} />);
+
+    const february = screen.getByLabelText('Fecha 2026-02-01, historial');
+    const april = screen.getByLabelText('Fecha 2026-04-01, historial');
+    const may = screen.getByLabelText(/Cuota \d+, 2026-05-01/);
+    const februaryToApril = Number(april.getAttribute('cx')) - Number(february.getAttribute('cx'));
+    const aprilToMay = Number(may.getAttribute('cx')) - Number(april.getAttribute('cx'));
+    expect(februaryToApril / aprilToMay).toBeGreaterThan(1.5);
+
+    fireEvent.click(screen.getByLabelText('Interés'));
+    fireEvent.pointerEnter(february);
+    expect(screen.getByRole('row', { name: /Interés.*No disponible/ })).toBeVisible();
+  });
+
   test('acota el gráfico hasta hoy más dos meses y permite restablecer el plazo', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 7, 9, 12));
@@ -129,11 +215,11 @@ describe('ProjectionView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Mostrar hasta hoy + 2 meses' }));
     expect(screen.getByLabelText('Desde')).toHaveValue('2026-02-01');
     expect(screen.getByLabelText('Hasta')).toHaveValue('2026-10-09');
-    expect(screen.getByText(/Mostrando 9 periodos: 2026-02-01 a 2026-10-01/)).toBeVisible();
+    expect(screen.getByText(/Mostrando 9 observaciones: 2026-02-01 a 2026-10-01/)).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: 'Restablecer todo el plazo' }));
     expect(screen.getByLabelText('Hasta')).toHaveValue('2026-12-01');
-    expect(screen.getByText(/Mostrando 11 periodos: 2026-02-01 a 2026-12-01/)).toBeVisible();
+    expect(screen.getByText(/Mostrando 11 observaciones: 2026-02-01 a 2026-12-01/)).toBeVisible();
   });
 
   test('ordena los registros históricos y el ajuste de reconciliación por fecha', () => {
@@ -262,6 +348,17 @@ describe('ProjectionView', () => {
     expect(
       container.querySelector('.chart-signal-line.balance.source-scenario-first'),
     ).toBeVisible();
+    fireEvent.click(screen.getByLabelText('Cuota total'));
+    fireEvent.click(screen.getByLabelText('Aporte extraordinario a principal'));
+    fireEvent.pointerEnter(screen.getByLabelText(/Fecha 2026-02-01, historial/));
+    expect(screen.getByText(/Incluye ajuste de reconciliación/)).toBeVisible();
+    expect(screen.getByRole('row', { name: /Cuota total.*₡105,00.*₡105,00/ })).toBeVisible();
+    expect(
+      screen.getByRole('row', {
+        name: /Aporte extraordinario a principal.*₡10,00.*₡10,00/,
+      }),
+    ).toBeVisible();
+    expect(screen.getByRole('row', { name: /Saldo.*₡940,00.*₡940,00/ })).toBeVisible();
 
     fireEvent.change(screen.getByLabelText('Mostrar en la tabla'), {
       target: { value: scenario.id },
@@ -389,8 +486,17 @@ describe('ProjectionView', () => {
       screen.getByRole('row', { name: /Aporte extraordinario a principal.*₡20,00/ }),
     ).toBeVisible();
     fireEvent.click(screen.getByRole('img', { name: 'Evolución estimada del saldo' }));
-    expect(screen.getByText(/Punto fijado en cuota/)).toBeVisible();
+    expect(screen.getByText(/Punto fijado en la cuota/)).toBeVisible();
     fireEvent.click(screen.getByRole('img', { name: 'Evolución estimada del saldo' }));
+    expect(screen.getByText('Punto móvil: haz clic en el gráfico para fijarlo.')).toBeVisible();
+    fireEvent.focus(firstPoint);
+    fireEvent.keyDown(screen.getByRole('img', { name: 'Evolución estimada del saldo' }), {
+      key: 'Enter',
+    });
+    expect(screen.getByText(/Punto fijado en la cuota/)).toBeVisible();
+    fireEvent.keyDown(screen.getByRole('img', { name: 'Evolución estimada del saldo' }), {
+      key: ' ',
+    });
     expect(screen.getByText('Punto móvil: haz clic en el gráfico para fijarlo.')).toBeVisible();
     expect(
       screen.queryByRole('heading', { name: 'Resumen de escenarios comparados' }),
@@ -426,7 +532,7 @@ describe('ProjectionView', () => {
     if (!firstPoint) throw new Error('Se esperaba al menos un punto de proyección.');
     fireEvent.pointerEnter(firstPoint);
     fireEvent.click(screen.getByRole('img', { name: 'Evolución estimada del saldo' }));
-    expect(configuration?.lockedPeriodNumber).toBe(1);
+    expect(configuration?.lockedPointKey).toBe('projection:2026-02-01');
     firstRender.unmount();
 
     render(
@@ -442,7 +548,7 @@ describe('ProjectionView', () => {
     expect(screen.getByLabelText('Cuota total')).toBeChecked();
     expect(screen.getByLabelText('Escenario A')).toHaveValue(scenario.id);
     expect(
-      screen.getByText('Punto fijado en cuota 1. Haz clic en el gráfico para liberarlo.'),
+      screen.getByText('Punto fijado en la cuota 1. Haz clic en el gráfico para liberarlo.'),
     ).toBeVisible();
   });
 });
