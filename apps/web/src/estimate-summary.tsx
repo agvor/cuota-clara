@@ -8,7 +8,11 @@ import {
 } from '@cuotaclara/domain';
 
 import { formatMoney } from './money-format.js';
-import { activeBalanceReconciliation } from './bank-reconciliations.js';
+import {
+  activeBalanceReconciliation,
+  reconciledFinalDate,
+  resolveLoanPosition,
+} from './bank-reconciliations.js';
 
 export function EstimateSummary({
   loan,
@@ -77,187 +81,237 @@ export function EstimateSummary({
   const totalPaid = historical
     ? (historicalTotal ?? zero).add(reconciliationPrincipal).add(estimate.estimatedTotal)
     : estimate.estimatedTotal;
+  const position = aggregate
+    ? resolveLoanPosition(aggregate)
+    : {
+        status: 'available' as const,
+        currentBalance: loan.initialBalance,
+        cutoffDate: loan.startDate,
+        source: 'initial_balance' as const,
+      };
+  const bankFinalDate = reconciledFinalDate(aggregate);
+  const currentPayment = projectedPayment ?? estimate.configuredTotalPayment;
   return (
     <section className="estimate-summary" aria-labelledby={titleId}>
       <h3 id={titleId}>{heading}</h3>
-      <div className="table-scroll table-scroll-summary">
-        <table className="financial-table" aria-labelledby={titleId}>
-          <tbody>
-            <tr className="summary-group-row">
-              <th scope="colgroup" colSpan={2}>
-                Proyección pendiente
-              </th>
-            </tr>
-            {historical ? (
-              <tr>
-                <th scope="row">Saldo inicial de la proyección</th>
-                <td>{formatMoney(historical.currentBalance, loan.roundingPolicy)}</td>
-              </tr>
-            ) : null}
-            <tr>
-              <th scope="row">Última cuota proyectada</th>
-              <td>
-                <time dateTime={estimate.finalInstallmentDate}>
-                  {estimate.finalInstallmentDate}
-                </time>
-              </td>
-            </tr>
-            <tr>
-              <th scope="row">
-                {historical ? 'Cuotas restantes proyectadas' : 'Cuotas estimadas'}
-              </th>
-              <td>{estimate.estimatedInstallments}</td>
-            </tr>
-            {showConfiguredPayment && estimate.configuredTotalPayment ? (
-              <tr>
-                <th scope="row">Cuota mensual acordada</th>
-                <td>{formatMoney(estimate.configuredTotalPayment, loan.roundingPolicy)}</td>
-              </tr>
-            ) : null}
-            {showProjectedPayment && projectedPayment ? (
-              <tr>
-                <th scope="row">{projectedPaymentLabel}</th>
-                <td>{formatMoney(projectedPayment, loan.roundingPolicy)}</td>
-              </tr>
-            ) : null}
-            {estimate.hasConfiguredPaymentDifference && estimate.initialPaymentDifference ? (
-              <tr>
-                <th scope="row">Diferencia frente a la cuota acordada</th>
-                <td>{formatMoney(estimate.initialPaymentDifference, loan.roundingPolicy)}</td>
-              </tr>
-            ) : null}
-            <tr>
-              <th scope="row">
-                {historical ? 'Principal restante proyectado' : 'Principal estimado'}
-              </th>
-              <td>{formatMoney(estimate.estimatedPrincipal, loan.roundingPolicy)}</td>
-            </tr>
-            <tr>
-              <th scope="row">{historical ? 'Interés futuro estimado' : 'Interés estimado'}</th>
-              <td>{formatMoney(estimate.estimatedInterest, loan.roundingPolicy)}</td>
-            </tr>
-            <tr>
-              <th scope="row">{historical ? 'Seguro futuro estimado' : 'Seguro estimado'}</th>
-              <td>{formatMoney(estimate.estimatedInsurance, loan.roundingPolicy)}</td>
-            </tr>
-            <tr>
-              <th scope="row">{historical ? 'Costo futuro proyectado' : 'Total proyectado'}</th>
-              <td>{formatMoney(estimate.estimatedTotal, loan.roundingPolicy)}</td>
-            </tr>
-          </tbody>
-          {hasHistoricalPayments ? (
-            <tbody>
-              <tr className="summary-group-row">
-                <th scope="colgroup" colSpan={2}>
-                  Actividad registrada
-                </th>
-              </tr>
-              <tr>
-                <th scope="row">Pagos registrados</th>
-                <td>{formatMoney(historicalTotal ?? zero, loan.roundingPolicy)}</td>
-              </tr>
-              <tr>
-                <th scope="row">Principal registrado</th>
-                <td>{formatMoney(historicalPrincipal, loan.roundingPolicy)}</td>
-              </tr>
-              <tr>
-                <th scope="row">Interés registrado</th>
-                <td>{formatMoney(historicalInterest, loan.roundingPolicy)}</td>
-              </tr>
-              {historicalInsurance.isPositive() ? (
-                <tr>
-                  <th scope="row">Seguro registrado</th>
-                  <td>{formatMoney(historicalInsurance, loan.roundingPolicy)}</td>
-                </tr>
-              ) : null}
-              {historicalFees.isPositive() ? (
-                <tr>
-                  <th scope="row">Comisiones y cargos registrados</th>
-                  <td>{formatMoney(historicalFees, loan.roundingPolicy)}</td>
-                </tr>
-              ) : null}
-              {!historicalUnclassified.isZero() ? (
-                <tr>
-                  <th scope="row">Otros importes registrados</th>
-                  <td>{formatMoney(historicalUnclassified, loan.roundingPolicy)}</td>
-                </tr>
-              ) : null}
-            </tbody>
+      <dl className="summary-highlights">
+        <div className="summary-highlight summary-highlight-primary">
+          <dt>Saldo principal actual</dt>
+          <dd>
+            {position.status === 'available'
+              ? formatMoney(position.currentBalance, loan.roundingPolicy)
+              : 'No disponible'}
+          </dd>
+          {position.status === 'unavailable' ? (
+            <dd className="summary-highlight-note">{position.reason}</dd>
           ) : null}
-          {hasReconciliation ? (
-            <tbody>
-              <tr className="summary-group-row">
-                <th scope="colgroup" colSpan={2}>
-                  Conciliación del saldo
-                </th>
-              </tr>
-              <tr>
-                <th scope="row">Aporte extraordinario asumido</th>
-                <td>{formatMoney(reconciliationPrincipal, loan.roundingPolicy)}</td>
-              </tr>
-            </tbody>
+        </div>
+        <div className="summary-highlight">
+          <dt>Fecha del saldo</dt>
+          <dd>
+            {position.status === 'available' ? (
+              <time dateTime={position.cutoffDate}>{position.cutoffDate}</time>
+            ) : (
+              'No disponible'
+            )}
+          </dd>
+          {position.status === 'available' ? (
+            <dd className="summary-highlight-note">{positionSourceLabel(position.source)}</dd>
           ) : null}
-          {hasRecordedActivity ? (
-            <tbody>
-              <tr className="summary-group-row summary-total-group-row">
-                <th scope="colgroup" colSpan={2}>
-                  Totales pagados y proyectados
-                </th>
-              </tr>
-              <tr>
-                <th scope="row">Principal pagado y proyectado</th>
-                <td>{formatMoney(totalPrincipal, loan.roundingPolicy)}</td>
-              </tr>
-              <tr>
-                <th scope="row">Interés pagado y proyectado</th>
-                <td>{formatMoney(totalInterest, loan.roundingPolicy)}</td>
-              </tr>
-              <tr>
-                <th scope="row">Seguro pagado y proyectado</th>
-                <td>{formatMoney(totalInsurance, loan.roundingPolicy)}</td>
-              </tr>
-              {!totalOtherPaid.isZero() ? (
+        </div>
+        <div className="summary-highlight">
+          <dt>Cuota mensual vigente</dt>
+          <dd>
+            {currentPayment ? formatMoney(currentPayment, loan.roundingPolicy) : 'No disponible'}
+          </dd>
+          <dd className="summary-highlight-note">Según los supuestos actuales</dd>
+        </div>
+        <div className="summary-highlight">
+          <dt>Fecha final vigente</dt>
+          <dd>
+            <time dateTime={estimate.finalInstallmentDate}>{estimate.finalInstallmentDate}</time>
+          </dd>
+          <dd className="summary-highlight-note">
+            {bankFinalDate ? 'Informada por el banco' : 'Proyección contractual'}
+          </dd>
+        </div>
+        <div className="summary-highlight">
+          <dt>Cuotas restantes</dt>
+          <dd>{estimate.estimatedInstallments}</dd>
+          <dd className="summary-highlight-note">Cuotas proyectadas</dd>
+        </div>
+      </dl>
+
+      <div className="summary-disclosures">
+        <details className="summary-disclosure">
+          <summary>Proyección pendiente</summary>
+          <div className="table-scroll table-scroll-summary">
+            <table className="financial-table" aria-label="Desglose de la proyección pendiente">
+              <tbody>
+                {showConfiguredPayment && estimate.configuredTotalPayment ? (
+                  <tr>
+                    <th scope="row">Cuota mensual acordada</th>
+                    <td>{formatMoney(estimate.configuredTotalPayment, loan.roundingPolicy)}</td>
+                  </tr>
+                ) : null}
+                {showProjectedPayment && projectedPayment ? (
+                  <tr>
+                    <th scope="row">{projectedPaymentLabel}</th>
+                    <td>{formatMoney(projectedPayment, loan.roundingPolicy)}</td>
+                  </tr>
+                ) : null}
+                {estimate.hasConfiguredPaymentDifference && estimate.initialPaymentDifference ? (
+                  <tr>
+                    <th scope="row">Diferencia frente a la cuota acordada</th>
+                    <td>{formatMoney(estimate.initialPaymentDifference, loan.roundingPolicy)}</td>
+                  </tr>
+                ) : null}
                 <tr>
-                  <th scope="row">Otros importes pagados</th>
-                  <td>{formatMoney(totalOtherPaid, loan.roundingPolicy)}</td>
+                  <th scope="row">
+                    {historical ? 'Principal restante proyectado' : 'Principal estimado'}
+                  </th>
+                  <td>{formatMoney(estimate.estimatedPrincipal, loan.roundingPolicy)}</td>
                 </tr>
-              ) : null}
-              <tr className="summary-total-row">
-                <th scope="row">Total pagado y proyectado</th>
-                <td>{formatMoney(totalPaid, loan.roundingPolicy)}</td>
-              </tr>
-            </tbody>
+                <tr>
+                  <th scope="row">{historical ? 'Interés futuro estimado' : 'Interés estimado'}</th>
+                  <td>{formatMoney(estimate.estimatedInterest, loan.roundingPolicy)}</td>
+                </tr>
+                <tr>
+                  <th scope="row">{historical ? 'Seguro futuro estimado' : 'Seguro estimado'}</th>
+                  <td>{formatMoney(estimate.estimatedInsurance, loan.roundingPolicy)}</td>
+                </tr>
+                <tr>
+                  <th scope="row">{historical ? 'Costo futuro proyectado' : 'Total proyectado'}</th>
+                  <td>{formatMoney(estimate.estimatedTotal, loan.roundingPolicy)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          {estimate.hasAdjustedFinalInstallment ? (
+            <p>
+              La cuota final proyectada es{' '}
+              {formatMoney(estimate.finalInstallment, loan.roundingPolicy)}, incluido seguro de{' '}
+              {formatMoney(estimate.finalInsurance, loan.roundingPolicy)}.
+            </p>
           ) : null}
-          {estimate.status === 'remaining_balance' ? (
-            <tbody>
-              <tr className="summary-group-row">
-                <th scope="colgroup" colSpan={2}>
-                  Saldo pendiente
-                </th>
-              </tr>
-              <tr>
-                <th scope="row">Saldo pendiente al plazo</th>
-                <td>{formatMoney(estimate.remainingPrincipal, loan.roundingPolicy)}</td>
-              </tr>
-            </tbody>
+          {estimate.hasConfiguredPaymentDifference ? (
+            <p className="payment-difference" role="status">
+              Con los supuestos actuales, la cuota proyectada se recalcula para conservar el plazo
+              contractual. Compárala con la cuota acordada; el banco puede usar convenciones, cargos
+              o revisiones de tasa distintas.
+            </p>
           ) : null}
-        </table>
+        </details>
+
+        {hasHistoricalPayments ? (
+          <details className="summary-disclosure">
+            <summary>Actividad registrada</summary>
+            <div className="table-scroll table-scroll-summary">
+              <table className="financial-table" aria-label="Desglose de la actividad registrada">
+                <tbody>
+                  <tr>
+                    <th scope="row">Pagos registrados</th>
+                    <td>{formatMoney(historicalTotal ?? zero, loan.roundingPolicy)}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Principal registrado</th>
+                    <td>{formatMoney(historicalPrincipal, loan.roundingPolicy)}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Interés registrado</th>
+                    <td>{formatMoney(historicalInterest, loan.roundingPolicy)}</td>
+                  </tr>
+                  {historicalInsurance.isPositive() ? (
+                    <tr>
+                      <th scope="row">Seguro registrado</th>
+                      <td>{formatMoney(historicalInsurance, loan.roundingPolicy)}</td>
+                    </tr>
+                  ) : null}
+                  {historicalFees.isPositive() ? (
+                    <tr>
+                      <th scope="row">Comisiones y cargos registrados</th>
+                      <td>{formatMoney(historicalFees, loan.roundingPolicy)}</td>
+                    </tr>
+                  ) : null}
+                  {!historicalUnclassified.isZero() ? (
+                    <tr>
+                      <th scope="row">Otros importes registrados</th>
+                      <td>{formatMoney(historicalUnclassified, loan.roundingPolicy)}</td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        ) : null}
+
+        {hasReconciliation ? (
+          <details className="summary-disclosure">
+            <summary>Conciliación del saldo</summary>
+            <div className="table-scroll table-scroll-summary">
+              <table className="financial-table" aria-label="Desglose de la conciliación">
+                <tbody>
+                  <tr>
+                    <th scope="row">Aporte extraordinario asumido</th>
+                    <td>{formatMoney(reconciliationPrincipal, loan.roundingPolicy)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        ) : null}
+
+        {hasRecordedActivity ? (
+          <details className="summary-disclosure summary-disclosure-total">
+            <summary>Totales pagados y proyectados</summary>
+            <div className="table-scroll table-scroll-summary">
+              <table className="financial-table" aria-label="Totales pagados y proyectados">
+                <tbody>
+                  <tr>
+                    <th scope="row">Principal pagado y proyectado</th>
+                    <td>{formatMoney(totalPrincipal, loan.roundingPolicy)}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Interés pagado y proyectado</th>
+                    <td>{formatMoney(totalInterest, loan.roundingPolicy)}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Seguro pagado y proyectado</th>
+                    <td>{formatMoney(totalInsurance, loan.roundingPolicy)}</td>
+                  </tr>
+                  {!totalOtherPaid.isZero() ? (
+                    <tr>
+                      <th scope="row">Otros importes pagados</th>
+                      <td>{formatMoney(totalOtherPaid, loan.roundingPolicy)}</td>
+                    </tr>
+                  ) : null}
+                  <tr className="summary-total-row">
+                    <th scope="row">Total pagado y proyectado</th>
+                    <td>{formatMoney(totalPaid, loan.roundingPolicy)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        ) : null}
       </div>
-      {estimate.hasAdjustedFinalInstallment ? (
-        <p>
-          La cuota final proyectada es {formatMoney(estimate.finalInstallment, loan.roundingPolicy)}
-          , incluido seguro de {formatMoney(estimate.finalInsurance, loan.roundingPolicy)}.
-        </p>
-      ) : null}
-      {estimate.hasConfiguredPaymentDifference ? (
-        <p className="payment-difference" role="status">
-          Con los supuestos actuales, la cuota proyectada se recalcula para conservar el plazo
-          contractual. Compárala con la cuota acordada; el banco puede usar convenciones, cargos o
-          revisiones de tasa distintas.
+
+      {estimate.status === 'remaining_balance' ? (
+        <p className="remaining-balance" role="status">
+          Saldo pendiente al plazo:{' '}
+          <strong>{formatMoney(estimate.remainingPrincipal, loan.roundingPolicy)}</strong>
         </p>
       ) : null}
     </section>
   );
+}
+
+function positionSourceLabel(
+  source: 'bank_reconciliation' | 'historical_payments' | 'initial_balance',
+) {
+  if (source === 'bank_reconciliation') return 'Saldo bancario conciliado';
+  if (source === 'historical_payments') return 'Reconstruido desde pagos';
+  return 'Sin actividad registrada';
 }
 
 function latestPaymentDate(

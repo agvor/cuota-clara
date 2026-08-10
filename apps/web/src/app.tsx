@@ -30,7 +30,11 @@ import { decimalRateToPercent } from './percentage.js';
 import { ProjectionView, type ChartConfiguration } from './projection-view.js';
 import { ScenarioTools } from './scenario-tools.js';
 import { createDuplicateLoanAggregate, type DuplicateLoanOptions } from './duplicate-loan.js';
-import { resolveLoanProjectionContext } from './bank-reconciliations.js';
+import {
+  reconciledFinalDate,
+  resolveLoanPosition,
+  resolveLoanProjectionContext,
+} from './bank-reconciliations.js';
 import './styles.css';
 
 export type AppProps = Readonly<{
@@ -39,8 +43,10 @@ export type AppProps = Readonly<{
 
 type LoadState =
   | Readonly<{ status: 'loading' }>
-  | Readonly<{ status: 'ready'; loans: readonly Loan[] }>
+  | Readonly<{ status: 'ready'; items: readonly LoanPortfolioItem[] }>
   | Readonly<{ status: 'error' }>;
+
+type LoanPortfolioItem = Readonly<{ loan: Loan; aggregate?: LoanAggregate }>;
 
 type AppView = 'loans' | 'backup';
 type LoanTab = 'summary' | 'payments' | 'scenarios' | 'projection' | 'settings';
@@ -96,8 +102,7 @@ export function App({ repository }: AppProps) {
   );
 
   async function reloadLoans() {
-    const loans = await repository.listLoans();
-    setState({ status: 'ready', loans });
+    setState({ status: 'ready', items: await loadLoanPortfolio(repository) });
   }
 
   async function refreshLocalData() {
@@ -132,10 +137,11 @@ export function App({ repository }: AppProps) {
 
   useEffect(() => {
     let active = true;
-    void repository
-      .listLoans()
-      .then((loans) => {
-        if (active) setState({ status: 'ready', loans });
+    void loadLoanPortfolio(repository)
+      .then((items) => {
+        if (active) {
+          setState({ status: 'ready', items });
+        }
       })
       .catch(() => {
         if (active) setState({ status: 'error' });
@@ -453,11 +459,13 @@ export function App({ repository }: AppProps) {
           </section>
         ) : selectedLoanId && state.status === 'ready' ? (
           <LoanWorkspace
-            loan={state.loans.find((loan) => loan.id === selectedLoanId)}
+            loan={state.items.find((item) => item.loan.id === selectedLoanId)?.loan}
             activeTab={activeLoanTab}
             onChangeTab={changeLoanTab}
             onBack={showLoanLibrary}
-            onEdit={() => setFormLoan(state.loans.find((loan) => loan.id === selectedLoanId))}
+            onEdit={() =>
+              setFormLoan(state.items.find((item) => item.loan.id === selectedLoanId)?.loan)
+            }
             onDuplicate={requestDuplicate}
             onDelete={deleteLoan}
             aggregate={selectedAggregate}
@@ -500,6 +508,17 @@ export function App({ repository }: AppProps) {
   );
 }
 
+async function loadLoanPortfolio(
+  repository: LoanRepository,
+): Promise<readonly LoanPortfolioItem[]> {
+  const loans = await repository.listLoans();
+  const aggregates = await Promise.all(loans.map((loan) => repository.loadAggregate(loan.id)));
+  return loans.map((loan, index) => ({
+    loan,
+    ...(aggregates[index] ? { aggregate: aggregates[index] } : {}),
+  }));
+}
+
 function EmptyLoans() {
   return (
     <div className="empty-state">
@@ -536,56 +555,126 @@ function LoanLibrary({
       {state.status === 'error' ? (
         <p role="alert">No fue posible leer los préstamos locales. Intenta recargar la página.</p>
       ) : null}
-      {state.status === 'ready' && state.loans.length === 0 ? <EmptyLoans /> : null}
-      {state.status === 'ready' && state.loans.length > 0 ? (
+      {state.status === 'ready' && state.items.length === 0 ? <EmptyLoans /> : null}
+      {state.status === 'ready' && state.items.length > 0 ? (
         <ul className="loan-list" aria-label="Préstamos guardados">
-          {state.loans.map((loan) => (
-            <li key={loan.id}>
-              <article
-                className="loan-card loan-card-selectable"
-                role="button"
-                tabIndex={0}
-                aria-label={`Abrir préstamo ${loan.name}`}
-                onClick={() => onOpen(loan.id)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    onOpen(loan.id);
-                  }
-                }}
-              >
-                <h2>{loan.name}</h2>
-                <dl>
-                  <div>
-                    <dt>Saldo inicial</dt>
-                    <dd>{formatMoney(loan.initialBalance, loan.roundingPolicy)}</dd>
-                  </div>
-                  <div>
-                    <dt>Cuota mensual</dt>
-                    <dd>
-                      {formatMoney(
-                        loan.contract?.version === 3
-                          ? loan.contract.monthlyTotalPayment
-                          : loan.ordinaryPayment,
-                        loan.roundingPolicy,
-                      )}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Tasa nominal anual</dt>
-                    <dd>{decimalRateToPercent(loan.annualNominalRate)}%</dd>
-                  </div>
-                </dl>
-                {!loan.contract ? (
-                  <p className="inherited-notice">Préstamo heredado: falta plazo y seguro</p>
-                ) : null}
-              </article>
+          {state.items.map((item) => (
+            <li key={item.loan.id}>
+              <LoanCard item={item} onOpen={onOpen} />
             </li>
           ))}
         </ul>
       ) : null}
     </section>
   );
+}
+
+function LoanCard({
+  item,
+  onOpen,
+}: Readonly<{ item: LoanPortfolioItem; onOpen: (loanId: string) => void }>) {
+  const { loan, aggregate } = item;
+  const position = aggregate
+    ? resolveLoanPosition(aggregate)
+    : {
+        status: 'available' as const,
+        currentBalance: loan.initialBalance,
+        cutoffDate: loan.startDate,
+        source: 'initial_balance' as const,
+      };
+  const finalDate = loan.contract ? loanCardFinalDate(loan, aggregate) : undefined;
+  const monthlyPayment =
+    loan.contract?.version === 3
+      ? loan.contract.monthlyTotalPayment
+      : loan.contract?.version === 2
+        ? loan.contract.monthlyInstallment.add(loan.contract.monthlyInsurance)
+        : loan.ordinaryPayment;
+  return (
+    <article
+      className="loan-card loan-card-selectable"
+      role="button"
+      tabIndex={0}
+      aria-label={`Abrir préstamo ${loan.name}`}
+      onClick={() => onOpen(loan.id)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onOpen(loan.id);
+        }
+      }}
+    >
+      <h2>{loan.name}</h2>
+      <dl className="loan-card-metrics">
+        <div className="loan-card-primary-metric">
+          <dt>Saldo actual</dt>
+          <dd>
+            {position.status === 'available'
+              ? formatMoney(position.currentBalance, loan.roundingPolicy)
+              : 'No disponible'}
+          </dd>
+          {position.status === 'available' ? (
+            <dd className="loan-card-meta">
+              <small>
+                Al corte de <time dateTime={position.cutoffDate}>{position.cutoffDate}</time>
+              </small>
+            </dd>
+          ) : (
+            <dd className="loan-card-meta">
+              <small>{position.reason}</small>
+            </dd>
+          )}
+        </div>
+        <div>
+          <dt>Fecha final</dt>
+          <dd>
+            {finalDate ? <time dateTime={finalDate.date}>{finalDate.date}</time> : 'No disponible'}
+          </dd>
+          <dd className="loan-card-meta">
+            <small>
+              {finalDate?.source === 'bank'
+                ? 'Informada por el banco'
+                : finalDate
+                  ? 'Proyección contractual'
+                  : 'Completa el contrato'}
+            </small>
+          </dd>
+        </div>
+        <div>
+          <dt>Cuota mensual</dt>
+          <dd>{formatMoney(monthlyPayment, loan.roundingPolicy)}</dd>
+        </div>
+      </dl>
+      {!loan.contract ? (
+        <p className="inherited-notice">
+          Préstamo heredado: abre Configuración para completar plazo y seguro
+        </p>
+      ) : null}
+    </article>
+  );
+}
+
+function loanCardFinalDate(
+  loan: Loan,
+  aggregate: LoanAggregate | undefined,
+): Readonly<{ date: string; source: 'bank' | 'contract' }> | undefined {
+  const bankFinalDate = reconciledFinalDate(aggregate);
+  if (bankFinalDate) return { date: bankFinalDate, source: 'bank' };
+  try {
+    const estimate = estimateLoanContract(
+      loan,
+      aggregate ? resolveLoanProjectionContext(aggregate) : {},
+    );
+    return { date: estimate.finalInstallmentDate, source: 'contract' };
+  } catch {
+    try {
+      return {
+        date: estimateLoanContract(loan).finalInstallmentDate,
+        source: 'contract',
+      };
+    } catch {
+      return undefined;
+    }
+  }
 }
 
 function LoanEditor({
@@ -814,9 +903,10 @@ function LoanSummary({
           para habilitar su estimación contractual.
         </p>
       ) : null}
+      {loan.contract ? <ContractEstimateSummary loan={loan} aggregate={aggregate} /> : null}
       {loan.contract ? (
-        <section className="contract-terms" aria-labelledby="contract-terms-title">
-          <h3 id="contract-terms-title">Condiciones acordadas</h3>
+        <details className="contract-terms summary-disclosure">
+          <summary>Condiciones acordadas</summary>
           <dl className="contract-summary">
             <div>
               <dt>Monto original</dt>
@@ -846,9 +936,8 @@ function LoanSummary({
               </dd>
             </div>
           </dl>
-        </section>
+        </details>
       ) : null}
-      {loan.contract ? <ContractEstimateSummary loan={loan} aggregate={aggregate} /> : null}
     </section>
   );
 }

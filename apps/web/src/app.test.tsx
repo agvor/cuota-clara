@@ -2,7 +2,7 @@
 
 import '@testing-library/jest-dom/vitest';
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import {
@@ -131,6 +131,7 @@ describe('App', () => {
     const repository = createRepository([loan]);
     vi.mocked(repository.loadAggregate)
       .mockResolvedValueOnce({ loan, payments: [], scenarios: [] })
+      .mockResolvedValueOnce({ loan, payments: [], scenarios: [] })
       .mockResolvedValueOnce({ loan, payments: [paymentStoredAfterPreview], scenarios: [] });
     render(<App repository={repository} />);
 
@@ -181,12 +182,14 @@ bank-2;01/03/2026;100,00;90,00`;
     expect(
       await screen.findByRole('heading', { name: 'Resumen financiero estimado' }),
     ).toBeVisible();
-    expect(screen.getByRole('rowheader', { name: 'Última cuota proyectada' })).toBeVisible();
+    expect(screen.getByText('Fecha final vigente')).toBeVisible();
+    expect(screen.getByText('Cuotas restantes')).toBeVisible();
+    fireEvent.click(screen.getByText('Proyección pendiente'));
     expect(screen.getByRole('rowheader', { name: 'Principal estimado' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Interés estimado' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Total proyectado' })).toBeVisible();
+    fireEvent.click(screen.getByText('Condiciones acordadas'));
     expect(screen.getByText('Cuota mensual acordada')).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Condiciones acordadas' })).toBeVisible();
     expect(screen.getByText('2056-01-15')).toBeVisible();
     expect(
       screen.queryByRole('img', { name: 'Evolución estimada del saldo' }),
@@ -233,11 +236,54 @@ bank-2;01/03/2026;100,00;90,00`;
       await screen.findByRole('button', { name: 'Abrir préstamo Hipoteca reconciliada' }),
     );
 
-    const finalDateRow = await screen.findByRole('rowheader', {
-      name: 'Última cuota proyectada',
+    const finalDateHighlight = (await screen.findByText('Fecha final vigente')).closest('div');
+    expect(finalDateHighlight).toHaveTextContent('2034-01-15');
+    expect(finalDateHighlight).not.toHaveTextContent('2036-01-15');
+  });
+
+  test('muestra saldo actual, fecha final y cuota en la tarjeta del préstamo', async () => {
+    const loan = createLoanV3({
+      id: 'loan-portfolio-position',
+      name: 'Hipoteca vigente',
+      startDate: '2026-01-15',
+      originalPrincipal: Money.from('100000', 'CRC'),
+      monthlyTotalPayment: Money.from('1200', 'CRC'),
+      monthlyInsurance: Money.from('50', 'CRC'),
+      term: { endDate: '2036-01-15' },
+      annualNominalRate: '0.08',
+      roundingPolicy: { scale: 2, mode: 'half_up' },
     });
-    expect(finalDateRow.closest('tr')).toHaveTextContent('2034-01-15');
-    expect(finalDateRow.closest('tr')).not.toHaveTextContent('2036-01-15');
+    const aggregate = {
+      loan,
+      payments: [],
+      balanceReconciliations: [
+        {
+          id: 'portfolio-balance',
+          reportedAt: '2026-02-15',
+          reportedBalance: Money.from('90000', 'CRC'),
+        },
+      ],
+      bankFinalDateReconciliation: { bankFinalInstallmentDate: '2034-01-15' },
+      scenarios: [],
+    };
+    const repository = createRepository([loan]);
+    vi.mocked(repository.loadAggregate).mockResolvedValue(aggregate);
+    render(<App repository={repository} />);
+
+    const card = await screen.findByRole('button', { name: 'Abrir préstamo Hipoteca vigente' });
+    expect(within(card).getByText('Saldo actual')).toBeVisible();
+    expect(within(card).getByText('Fecha final')).toBeVisible();
+    expect(within(card).getByText('Cuota mensual')).toBeVisible();
+    expect(within(card).getByText('2034-01-15')).toBeVisible();
+    expect(
+      within(card).getByText((content) => content.replaceAll('\u00a0', ' ') === '₡90 000,00'),
+    ).toBeVisible();
+    card.focus();
+    fireEvent.keyDown(card, { key: ' ' });
+    expect(await screen.findByRole('tab', { name: 'Resumen' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
   });
 
   test('explica cuando un pago no permite reconstruir el saldo actual', async () => {
@@ -351,6 +397,7 @@ bank-2;01/03/2026;100,00;90,00`;
 
     expect(await screen.findByText('2056-01-15')).toBeVisible();
     expect(screen.getByText('360')).toBeVisible();
+    fireEvent.click(screen.getByText('Proyección pendiente'));
     expect(screen.getByRole('rowheader', { name: 'Cuota mensual acordada' })).toBeVisible();
     expect(
       screen.getByRole('rowheader', { name: 'Cuota mensual inicial proyectada' }),
@@ -384,6 +431,7 @@ bank-2;01/03/2026;100,00;90,00`;
     fireEvent.click(screen.getByLabelText('Cuota automática'));
 
     expect(screen.queryByLabelText('Cuota mensual total, incluido seguro')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('Proyección pendiente'));
     expect(
       await screen.findByRole('rowheader', { name: 'Cuota mensual automática' }),
     ).toBeVisible();
@@ -413,7 +461,9 @@ bank-2;01/03/2026;100,00;90,00`;
     render(<App repository={createRepository([legacyLoan])} />);
 
     await screen.findByRole('heading', { name: 'Préstamo anterior' });
-    expect(screen.getByText('Préstamo heredado: falta plazo y seguro')).toBeVisible();
+    expect(
+      screen.getByText('Préstamo heredado: abre Configuración para completar plazo y seguro'),
+    ).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Abrir préstamo Préstamo anterior' }));
     expect(screen.getByText(/Este préstamo es heredado/)).toBeVisible();
   });

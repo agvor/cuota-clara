@@ -2,7 +2,7 @@
 
 import '@testing-library/jest-dom/vitest';
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
 
 import {
@@ -62,12 +62,23 @@ describe('EstimateSummary', () => {
       />,
     );
 
-    expect(screen.getByRole('columnheader', { name: 'Proyección pendiente' })).toBeVisible();
-    expect(screen.getByRole('columnheader', { name: 'Actividad registrada' })).toBeVisible();
-    expect(screen.getByRole('columnheader', { name: 'Conciliación del saldo' })).toBeVisible();
-    expect(
-      screen.getByRole('columnheader', { name: 'Totales pagados y proyectados' }),
-    ).toBeVisible();
+    expect(screen.getByText('Saldo principal actual')).toBeVisible();
+    expect(screen.getByText('Fecha del saldo')).toBeVisible();
+    expect(screen.getByText('Cuota mensual vigente')).toBeVisible();
+    expect(screen.getByText('Fecha final vigente')).toBeVisible();
+    expect(screen.getByText('Cuotas restantes')).toBeVisible();
+    expect(screen.getByText('Informada por el banco')).toBeVisible();
+
+    const projectionDetails = screen.getByText('Proyección pendiente').closest('details');
+    const activityDetails = screen.getByText('Actividad registrada').closest('details');
+    const totalsDetails = screen.getByText('Totales pagados y proyectados').closest('details');
+    expect(projectionDetails).not.toHaveAttribute('open');
+    expect(activityDetails).not.toHaveAttribute('open');
+    expect(totalsDetails).not.toHaveAttribute('open');
+    fireEvent.click(screen.getByText('Proyección pendiente'));
+    fireEvent.click(screen.getByText('Actividad registrada'));
+    fireEvent.click(screen.getByText('Totales pagados y proyectados'));
+
     expect(screen.getByRole('rowheader', { name: 'Principal restante proyectado' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Interés futuro estimado' })).toBeVisible();
     expect(
@@ -76,12 +87,14 @@ describe('EstimateSummary', () => {
     expect(screen.getByRole('rowheader', { name: 'Principal registrado' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Interés registrado' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Seguro registrado' })).toBeVisible();
-    expect(screen.getByRole('rowheader', { name: 'Aporte extraordinario asumido' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Total pagado y proyectado' })).toBeVisible();
     expect(screen.getByRole('rowheader', { name: 'Seguro pagado y proyectado' })).toBeVisible();
     expect(screen.queryByRole('rowheader', { name: 'Principal total' })).not.toBeInTheDocument();
     expect(
       screen.queryByRole('rowheader', { name: 'Interés histórico CSV' }),
     ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Conciliación del saldo'));
+    expect(screen.getByRole('rowheader', { name: 'Aporte extraordinario asumido' })).toBeVisible();
   });
 });

@@ -2,13 +2,13 @@
 
 > Generado desde `docs/backlog.json` el 2026-08-09. No editar manualmente.
 
-**Siguiente ítem habilitado:** US-057 — Simplificar el resumen y enriquecer las tarjetas de préstamo
+**Siguiente ítem habilitado:** ninguno; revisar dependencias o bloqueos.
 
 | Épica | Planeado | Listo | En curso | Bloqueado | Completado |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | E1 · Motor financiero verificable | 0 | 0 | 0 | 0 | 7 |
 | E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 11 |
-| E3 · PWA y gestión de préstamos | 0 | 1 | 0 | 0 | 13 |
+| E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 14 |
 | E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 12 |
 | E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 2 |
 | E6 · Contrato financiero v2 | 1 | 0 | 0 | 0 | 4 |
@@ -75,4 +75,4 @@
 | US-054 | E2 · Importación y datos locales | Clasificar y mezclar importaciones de forma idempotente | Completado | US-053 |
 | US-055 | E2 · Importación y datos locales | Resolver duplicados y conflictos desde la previsualización | Completado | US-054 |
 | US-056 | E3 · PWA y gestión de préstamos | Unificar la posición vigente y la fecha final reconciliada | Completado | US-051 |
-| US-057 | E3 · PWA y gestión de préstamos | Simplificar el resumen y enriquecer las tarjetas de préstamo | Listo | US-056 |
+| US-057 | E3 · PWA y gestión de préstamos | Simplificar el resumen y enriquecer las tarjetas de préstamo | Completado | US-056 |

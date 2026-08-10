@@ -850,7 +850,7 @@
       "story": "Como persona usuaria, quiero reconocer primero mi posición actual y consultar el detalle cuando lo necesite para entender y elegir un préstamo con menos carga visual.",
       "requirements": ["RF-001", "RF-013", "RF-015", "RNF-008", "RNF-009"],
       "dependsOn": ["US-056"],
-      "status": "ready",
+      "status": "completed",
       "acceptanceCriteria": [
         "El resumen prioriza en un bloque adaptable el saldo principal actual con su corte, la cuota vigente, la fecha final aplicable con su procedencia y las cuotas restantes.",
         "Principal, interés, seguro, actividad registrada, conciliación, totales y condiciones acordadas permanecen disponibles en secciones de desglose con nombres y estructura semántica accesibles.",
