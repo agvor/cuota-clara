@@ -26,6 +26,7 @@ import { BackupTools } from './backup-tools.js';
 import { LoanManagementTools } from './loan-management-tools.js';
 import { EstimateSummary } from './estimate-summary.js';
 import { formatMoney } from './money-format.js';
+import { PaymentHistoryPage } from './payment-history.js';
 import { PaymentTools } from './payment-tools.js';
 import { decimalRateToPercent } from './percentage.js';
 import { ProjectionView, type ChartConfiguration } from './projection-view.js';
@@ -51,7 +52,13 @@ type LoanPortfolioItem = Readonly<{ loan: Loan; aggregate?: LoanAggregate }>;
 
 type AppView = 'loans' | 'backup';
 type LoanTab = 'summary' | 'payments' | 'scenarios' | 'projection' | 'settings';
-type AppRoute = Readonly<{ view: 'loans' | 'backup'; loanId?: string; tab?: LoanTab }>;
+type PaymentPage = 'tools' | 'history';
+type AppRoute = Readonly<{
+  view: 'loans' | 'backup';
+  loanId?: string;
+  tab?: LoanTab;
+  paymentPage?: PaymentPage;
+}>;
 
 const LOAN_TABS: readonly Readonly<{ id: LoanTab; label: string }>[] = [
   { id: 'summary', label: 'Resumen' },
@@ -64,15 +71,33 @@ const LOAN_TABS: readonly Readonly<{ id: LoanTab; label: string }>[] = [
 function parseRoute(hash: string): AppRoute | undefined {
   if (hash === '#/prestamos' || hash === '') return { view: 'loans' };
   if (hash === '#/datos') return { view: 'backup' };
+  const paymentHistoryMatch = /^#\/prestamos\/([^/]+)\/payments\/history$/.exec(hash);
+  if (paymentHistoryMatch?.[1]) {
+    return {
+      view: 'loans',
+      loanId: decodeURIComponent(paymentHistoryMatch[1]),
+      tab: 'payments',
+      paymentPage: 'history',
+    };
+  }
   const match = /^#\/prestamos\/([^/]+)\/(summary|payments|scenarios|projection|settings)$/.exec(
     hash,
   );
   if (!match?.[1] || !match[2]) return undefined;
-  return { view: 'loans', loanId: decodeURIComponent(match[1]), tab: match[2] as LoanTab };
+  return {
+    view: 'loans',
+    loanId: decodeURIComponent(match[1]),
+    tab: match[2] as LoanTab,
+    paymentPage: 'tools',
+  };
 }
 
 function routeForLoan(loanId: string, tab: LoanTab): string {
   return `#/prestamos/${encodeURIComponent(loanId)}/${tab}`;
+}
+
+function routeForPaymentHistory(loanId: string): string {
+  return `${routeForLoan(loanId, 'payments')}/history`;
 }
 
 export function App({ repository }: AppProps) {
@@ -80,6 +105,7 @@ export function App({ repository }: AppProps) {
   const [appView, setAppView] = useState<AppView>('loans');
   const [selectedLoanId, setSelectedLoanId] = useState<string>();
   const [activeLoanTab, setActiveLoanTab] = useState<LoanTab>('summary');
+  const [paymentPage, setPaymentPage] = useState<PaymentPage>('tools');
   const [formLoan, setFormLoan] = useState<Loan | null | undefined>(undefined);
   const [selectedAggregate, setSelectedAggregate] = useState<LoanAggregate>();
   const [duplicateSource, setDuplicateSource] = useState<LoanAggregate>();
@@ -111,6 +137,20 @@ export function App({ repository }: AppProps) {
     setDataRevision((current) => current + 1);
   }
 
+  function updateActiveAggregate(aggregate: LoanAggregate) {
+    setSelectedAggregate(aggregate);
+    setState((current) =>
+      current.status === 'ready'
+        ? {
+            status: 'ready',
+            items: current.items.map((item) =>
+              item.loan.id === aggregate.loan.id ? { ...item, aggregate } : item,
+            ),
+          }
+        : current,
+    );
+  }
+
   function writeRoute(route: string) {
     if (window.location.hash === route) return;
     window.history.pushState(null, '', route);
@@ -120,6 +160,7 @@ export function App({ repository }: AppProps) {
     setAppView('loans');
     setSelectedLoanId(undefined);
     setSelectedAggregate(undefined);
+    setPaymentPage('tools');
     writeRoute('#/prestamos');
   }
 
@@ -127,13 +168,27 @@ export function App({ repository }: AppProps) {
     setAppView('backup');
     setSelectedLoanId(undefined);
     setSelectedAggregate(undefined);
+    setPaymentPage('tools');
     writeRoute('#/datos');
   }
 
   function changeLoanTab(tab: LoanTab) {
     if (!selectedLoanId) return;
     setActiveLoanTab(tab);
+    setPaymentPage('tools');
     writeRoute(routeForLoan(selectedLoanId, tab));
+  }
+
+  function showPaymentHistory() {
+    if (!selectedLoanId) return;
+    setPaymentPage('history');
+    writeRoute(routeForPaymentHistory(selectedLoanId));
+  }
+
+  function showPaymentTools() {
+    if (!selectedLoanId) return;
+    setPaymentPage('tools');
+    writeRoute(routeForLoan(selectedLoanId, 'payments'));
   }
 
   useEffect(() => {
@@ -162,6 +217,7 @@ export function App({ repository }: AppProps) {
           setAppView('backup');
           setSelectedLoanId(undefined);
           setSelectedAggregate(undefined);
+          setPaymentPage('tools');
         }
         return;
       }
@@ -170,6 +226,7 @@ export function App({ repository }: AppProps) {
           setAppView('loans');
           setSelectedLoanId(undefined);
           setSelectedAggregate(undefined);
+          setPaymentPage('tools');
         }
         return;
       }
@@ -177,6 +234,7 @@ export function App({ repository }: AppProps) {
         setAppView('loans');
         setSelectedLoanId(route.loanId);
         setActiveLoanTab(route.tab);
+        setPaymentPage(route.paymentPage ?? 'tools');
         setSelectedAggregate(undefined);
       }
       const aggregate = await repository.loadAggregate(route.loanId);
@@ -212,6 +270,7 @@ export function App({ repository }: AppProps) {
     setSelectedLoanId(loan.id);
     setSelectedAggregate(aggregate);
     setActiveLoanTab('summary');
+    setPaymentPage('tools');
     setAppView('loans');
     writeRoute(routeForLoan(loan.id, 'summary'));
     setFormLoan(undefined);
@@ -240,6 +299,7 @@ export function App({ repository }: AppProps) {
       setSelectedLoanId(aggregate.loan.id);
       setSelectedAggregate(aggregate);
       setActiveLoanTab('summary');
+      setPaymentPage('tools');
       setAppView('loans');
       setDuplicateSource(undefined);
       setActionError(undefined);
@@ -261,6 +321,7 @@ export function App({ repository }: AppProps) {
     setSelectedLoanId(undefined);
     setSelectedAggregate(undefined);
     setActiveLoanTab('summary');
+    setPaymentPage('tools');
     writeRoute('#/prestamos');
   }
 
@@ -268,6 +329,7 @@ export function App({ repository }: AppProps) {
     setSelectedLoanId(loanId);
     setSelectedAggregate(undefined);
     setActiveLoanTab(tab);
+    setPaymentPage('tools');
     setAppView('loans');
     writeRoute(routeForLoan(loanId, tab));
     setSelectedAggregate(await repository.loadAggregate(loanId));
@@ -275,13 +337,28 @@ export function App({ repository }: AppProps) {
 
   async function savePayment(payment: PaymentRecord) {
     if (!selectedAggregate) return;
-    const existing = selectedAggregate.payments.find((record) => record.id === payment.id);
+    const currentAggregate = await repository.loadAggregate(selectedAggregate.loan.id);
+    if (!currentAggregate) throw new Error('No se encontró el préstamo al guardar el pago.');
+    const existing = currentAggregate.payments.find((record) => record.id === payment.id);
     const payments = existing
-      ? selectedAggregate.payments.map((record) => (record.id === payment.id ? payment : record))
-      : [...selectedAggregate.payments, payment];
-    const aggregate = { ...selectedAggregate, payments };
+      ? currentAggregate.payments.map((record) => (record.id === payment.id ? payment : record))
+      : [...currentAggregate.payments, payment];
+    const aggregate = { ...currentAggregate, payments };
     await repository.saveAggregate(aggregate);
-    setSelectedAggregate(aggregate);
+    updateActiveAggregate(aggregate);
+  }
+
+  async function deletePayments(paymentIds: readonly string[]) {
+    if (!selectedAggregate || paymentIds.length === 0) return;
+    const currentAggregate = await repository.loadAggregate(selectedAggregate.loan.id);
+    if (!currentAggregate) throw new Error('No se encontró el préstamo al eliminar los pagos.');
+    const ids = new Set(paymentIds);
+    const aggregate = {
+      ...currentAggregate,
+      payments: currentAggregate.payments.filter((payment) => !ids.has(payment.id)),
+    };
+    await repository.saveAggregate(aggregate);
+    updateActiveAggregate(aggregate);
   }
 
   async function importPayments(
@@ -462,7 +539,10 @@ export function App({ repository }: AppProps) {
           <LoanWorkspace
             loan={state.items.find((item) => item.loan.id === selectedLoanId)?.loan}
             activeTab={activeLoanTab}
+            paymentPage={paymentPage}
             onChangeTab={changeLoanTab}
+            onOpenPaymentHistory={showPaymentHistory}
+            onBackToPaymentTools={showPaymentTools}
             onBack={showLoanLibrary}
             onEdit={() =>
               setFormLoan(state.items.find((item) => item.loan.id === selectedLoanId)?.loan)
@@ -475,6 +555,7 @@ export function App({ repository }: AppProps) {
               : {})}
             onChartConfigurationChange={saveSelectedChartConfiguration}
             onSavePayment={savePayment}
+            onDeletePayments={deletePayments}
             onImportPayments={importPayments}
             onSaveBalanceReconciliation={saveBalanceReconciliation}
             onDeleteBalanceReconciliation={deleteBalanceReconciliation}
@@ -741,7 +822,10 @@ function LoanEditor({
 function LoanWorkspace({
   loan,
   activeTab,
+  paymentPage,
   onChangeTab,
+  onOpenPaymentHistory,
+  onBackToPaymentTools,
   onBack,
   onEdit,
   onDuplicate,
@@ -750,6 +834,7 @@ function LoanWorkspace({
   chartConfiguration,
   onChartConfigurationChange,
   onSavePayment,
+  onDeletePayments,
   onImportPayments,
   onSaveBalanceReconciliation,
   onDeleteBalanceReconciliation,
@@ -760,7 +845,10 @@ function LoanWorkspace({
 }: Readonly<{
   loan: Loan | undefined;
   activeTab: LoanTab;
+  paymentPage: PaymentPage;
   onChangeTab: (tab: LoanTab) => void;
+  onOpenPaymentHistory: () => void;
+  onBackToPaymentTools: () => void;
   onBack: () => void;
   onEdit: () => void;
   onDuplicate: (loan: Loan) => Promise<void>;
@@ -769,6 +857,7 @@ function LoanWorkspace({
   chartConfiguration?: ChartConfiguration;
   onChartConfigurationChange: (configuration: ChartConfiguration) => void;
   onSavePayment: (payment: PaymentRecord) => Promise<void>;
+  onDeletePayments: (paymentIds: readonly string[]) => Promise<void>;
   onImportPayments: (
     payments: readonly PaymentRecord[],
     decisions: PaymentImportDecisions,
@@ -850,22 +939,36 @@ function LoanWorkspace({
         {activeTab === 'summary' ? <LoanSummary loan={loan} aggregate={aggregate} /> : null}
         {activeTab === 'payments' ? (
           aggregate?.loan.id === loan.id ? (
-            <PaymentTools
-              loan={loan}
-              payments={aggregate.payments}
-              {...(aggregate.balanceReconciliations
-                ? { balanceReconciliations: aggregate.balanceReconciliations }
-                : {})}
-              {...(aggregate.bankFinalDateReconciliation
-                ? { bankFinalDateReconciliation: aggregate.bankFinalDateReconciliation }
-                : {})}
-              onSavePayment={onSavePayment}
-              onImportPayments={onImportPayments}
-              onSaveBalanceReconciliation={onSaveBalanceReconciliation}
-              onDeleteBalanceReconciliation={onDeleteBalanceReconciliation}
-              onSaveBankFinalDateReconciliation={onSaveBankFinalDateReconciliation}
-              onDeleteBankFinalDateReconciliation={onDeleteBankFinalDateReconciliation}
-            />
+            paymentPage === 'history' ? (
+              <PaymentHistoryPage
+                loan={loan}
+                payments={aggregate.payments}
+                {...(aggregate.balanceReconciliations
+                  ? { balanceReconciliations: aggregate.balanceReconciliations }
+                  : {})}
+                onBack={onBackToPaymentTools}
+                onSavePayment={onSavePayment}
+                onDeletePayments={onDeletePayments}
+              />
+            ) : (
+              <PaymentTools
+                loan={loan}
+                payments={aggregate.payments}
+                {...(aggregate.balanceReconciliations
+                  ? { balanceReconciliations: aggregate.balanceReconciliations }
+                  : {})}
+                {...(aggregate.bankFinalDateReconciliation
+                  ? { bankFinalDateReconciliation: aggregate.bankFinalDateReconciliation }
+                  : {})}
+                onSavePayment={onSavePayment}
+                onOpenHistory={onOpenPaymentHistory}
+                onImportPayments={onImportPayments}
+                onSaveBalanceReconciliation={onSaveBalanceReconciliation}
+                onDeleteBalanceReconciliation={onDeleteBalanceReconciliation}
+                onSaveBankFinalDateReconciliation={onSaveBankFinalDateReconciliation}
+                onDeleteBankFinalDateReconciliation={onDeleteBankFinalDateReconciliation}
+              />
+            )
           ) : (
             <p aria-live="polite">Cargando pagos…</p>
           )

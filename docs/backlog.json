@@ -866,7 +866,7 @@
       "story": "Como persona usuaria, quiero abrir el registro de pagos en una página propia y gestionar varios movimientos juntos para mantener mi historial sin desplazar ni sobrecargar las demás tareas del préstamo.",
       "requirements": ["RF-001", "RF-005", "RF-007", "RNF-004", "RNF-006", "RNF-008", "RNF-009"],
       "dependsOn": ["US-050", "US-055", "US-057"],
-      "status": "in_progress",
+      "status": "completed",
       "acceptanceCriteria": [
         "La tarea Pagos conserva registro manual, importación y conciliación en paneles compactos, no inserta la lista completa en su flujo y ofrece una acción Ver pagos registrados con el conteo vigente.",
         "La acción abre una ruta local propia del préstamo que admite acceso directo, recarga y navegación Atrás/Adelante; desde ella se puede volver a Pagos sin perder el contexto del crédito.",

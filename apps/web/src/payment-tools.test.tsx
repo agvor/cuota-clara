@@ -42,6 +42,24 @@ async function loadCsv(csv: string): Promise<void> {
 }
 
 describe('PaymentTools', () => {
+  test('resume el historial y lo abre sin insertar la lista en la tarea de pagos', () => {
+    const existing = importedPayment('stored-1', 'p-001');
+    const onOpenHistory = vi.fn();
+    render(
+      <PaymentTools
+        loan={loan}
+        payments={[existing]}
+        onSavePayment={vi.fn()}
+        onImportPayments={vi.fn()}
+        onOpenHistory={onOpenHistory}
+      />,
+    );
+
+    expect(screen.queryByRole('list', { name: 'Pagos registrados' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver 1 pago registrado' }));
+    expect(onOpenHistory).toHaveBeenCalledOnce();
+  });
+
   test('importa las filas nuevas de un archivo mixto y anuncia las omitidas', async () => {
     const existing = importedPayment('stored-1', 'p-001');
     const onImportPayments = vi.fn(async (incoming, decisions) =>

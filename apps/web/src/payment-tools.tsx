@@ -29,6 +29,7 @@ type PaymentToolsProps = Readonly<{
   /** Compatibilidad temporal con la pantalla de reset v4. */
   bankReset?: BankReset;
   onSavePayment: (payment: PaymentRecord) => Promise<void>;
+  onOpenHistory?: () => void;
   onImportPayments: (
     payments: readonly PaymentRecord[],
     decisions: PaymentImportDecisions,
@@ -49,6 +50,7 @@ export function PaymentTools({
   bankFinalDateReconciliation,
   bankReset,
   onSavePayment,
+  onOpenHistory = () => undefined,
   onImportPayments,
   onSaveBalanceReconciliation = async () => undefined,
   onDeleteBalanceReconciliation = async () => undefined,
@@ -152,63 +154,21 @@ export function PaymentTools({
           }}
         />
       ) : null}
-      {payments.length ? (
-        <section className="payment-history" aria-labelledby="payment-history-title">
-          <div className="section-heading-action">
-            <div>
-              <h3 id="payment-history-title">Registro de pagos</h3>
-              <p>{payments.length} pago(s) guardado(s).</p>
-            </div>
-          </div>
-          <ul className="payment-list" aria-label="Pagos registrados">
-            {[...payments]
-              .sort((left, right) => right.date.localeCompare(left.date))
-              .map((record) => (
-                <li key={record.id}>
-                  <div>
-                    <time dateTime={record.date}>{record.date}</time>
-                    <strong>{formatMoney(record.totalAmount, loan.roundingPolicy)}</strong>
-                  </div>
-                  <button
-                    type="button"
-                    className="secondary-action"
-                    onClick={() => setPayment(record)}
-                  >
-                    Corregir
-                  </button>
-                </li>
-              ))}
-            {balanceReconciliations.flatMap((reconciliation) =>
-              reconciliation.adjustment
-                ? [
-                    <li
-                      className="reconciliation-history-item"
-                      key={`adjustment-${reconciliation.id}`}
-                    >
-                      <div>
-                        <time dateTime={reconciliation.adjustment.date}>
-                          {reconciliation.adjustment.date}
-                        </time>
-                        <strong>
-                          {formatMoney(
-                            reconciliation.adjustment.principalAmount,
-                            loan.roundingPolicy,
-                          )}
-                        </strong>
-                        <span>Ajuste de reconciliación al principal</span>
-                      </div>
-                    </li>,
-                  ]
-                : [],
-            )}
-          </ul>
-        </section>
-      ) : (
-        <section className="payment-history payment-history-empty" aria-label="Pagos registrados">
-          <h3>Registro de pagos</h3>
-          <p>No hay pagos registrados.</p>
-        </section>
-      )}
+      <section className="payment-history-summary" aria-labelledby="payment-history-title">
+        <div>
+          <h3 id="payment-history-title">Registro de pagos</h3>
+          <p>
+            {payments.length
+              ? `${payments.length} ${payments.length === 1 ? 'pago guardado' : 'pagos guardados'}.`
+              : 'No hay pagos registrados.'}
+          </p>
+        </div>
+        <button type="button" className="secondary-action" onClick={onOpenHistory}>
+          {payments.length === 0
+            ? 'Ver pagos registrados'
+            : `Ver ${payments.length} ${payments.length === 1 ? 'pago registrado' : 'pagos registrados'}`}
+        </button>
+      </section>
       <section className="payment-import" aria-labelledby="payment-import-title">
         <div className="section-heading-action">
           <div>
@@ -833,7 +793,7 @@ function createEmptyPayment(loan: Loan): PaymentRecord {
   });
 }
 
-function PaymentForm({
+export function PaymentForm({
   loan,
   payment,
   onCancel,
@@ -858,7 +818,13 @@ function PaymentForm({
           loan.initialBalance.currency,
         ),
         source: payment.source,
+        ...(payment.sourcePaymentId ? { sourcePaymentId: payment.sourcePaymentId } : {}),
         ...(payment.sourceReference ? { sourceReference: payment.sourceReference } : {}),
+        ...(payment.extraPrincipalAmount
+          ? { extraPrincipalAmount: payment.extraPrincipalAmount }
+          : {}),
+        ...(payment.insuranceAmount ? { insuranceAmount: payment.insuranceAmount } : {}),
+        ...(payment.feeAmount ? { feeAmount: payment.feeAmount } : {}),
         ...(String(form.get('interestAmount') ?? '')
           ? {
               interestAmount: Money.from(

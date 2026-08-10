@@ -8,7 +8,7 @@
 | --- | ---: | ---: | ---: | ---: | ---: |
 | E1 · Motor financiero verificable | 0 | 0 | 0 | 0 | 7 |
 | E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 11 |
-| E3 · PWA y gestión de préstamos | 0 | 0 | 1 | 0 | 15 |
+| E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 16 |
 | E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 12 |
 | E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 2 |
 | E6 · Contrato financiero v2 | 1 | 0 | 0 | 0 | 4 |
@@ -76,5 +76,5 @@
 | US-055 | E2 · Importación y datos locales | Resolver duplicados y conflictos desde la previsualización | Completado | US-054 |
 | US-056 | E3 · PWA y gestión de préstamos | Unificar la posición vigente y la fecha final reconciliada | Completado | US-051 |
 | US-057 | E3 · PWA y gestión de préstamos | Simplificar el resumen y enriquecer las tarjetas de préstamo | Completado | US-056 |
-| US-058 | E3 · PWA y gestión de préstamos | Separar y administrar el registro de pagos | En curso | US-050, US-055, US-057 |
+| US-058 | E3 · PWA y gestión de préstamos | Separar y administrar el registro de pagos | Completado | US-050, US-055, US-057 |
 | US-059 | E3 · PWA y gestión de préstamos | Mostrar la cuota mensual vigente en la cartera | Completado | US-056, US-057 |

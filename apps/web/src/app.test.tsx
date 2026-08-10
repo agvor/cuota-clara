@@ -98,6 +98,17 @@ describe('App', () => {
     expect(screen.getByRole('tab', { name: 'Pagos' })).toHaveAttribute('aria-selected', 'true');
     expect(window.location.hash).toBe('#/prestamos/loan-workspace/payments');
     expect(await screen.findByRole('heading', { name: 'Pagos históricos' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver pagos registrados' }));
+    expect(window.location.hash).toBe('#/prestamos/loan-workspace/payments/history');
+    expect(screen.getByRole('heading', { name: 'Pagos registrados' })).toBeVisible();
+    window.history.pushState(null, '', '#/prestamos/loan-workspace/payments');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    expect(await screen.findByRole('heading', { name: 'Pagos históricos' })).toBeVisible();
+    window.history.pushState(null, '', '#/prestamos/loan-workspace/payments/history');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    expect(await screen.findByRole('heading', { name: 'Pagos registrados' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: '← Volver a Pagos' }));
+    expect(window.location.hash).toBe('#/prestamos/loan-workspace/payments');
     fireEvent.click(screen.getByRole('tab', { name: 'Escenarios' }));
     expect(screen.getByRole('heading', { name: 'Configuración de escenarios' })).toBeVisible();
     fireEvent.click(screen.getByRole('tab', { name: 'Proyección' }));
@@ -107,6 +118,60 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: '← Todos los préstamos' }));
     expect(screen.getByRole('heading', { name: 'Tus préstamos' })).toBeVisible();
     expect(window.location.hash).toBe('#/prestamos');
+  });
+
+  test('elimina pagos seleccionados en un guardado y conserva las conciliaciones', async () => {
+    const loan = createLoan({
+      id: 'loan-payment-management',
+      name: 'Préstamo con historial',
+      startDate: '2026-01-01',
+      initialBalance: Money.from('1000.00', 'CRC'),
+      ordinaryPayment: Money.from('100.00', 'CRC'),
+      annualNominalRate: '0.12',
+      periodsPerYear: 12,
+      roundingPolicy: { scale: 2, mode: 'half_up' },
+    });
+    const first = createPaymentRecord({
+      id: 'payment-1',
+      date: '2026-02-01',
+      totalAmount: Money.from('100.00', 'CRC'),
+      principalAmount: Money.from('90.00', 'CRC'),
+      source: 'manual',
+    });
+    const second = createPaymentRecord({
+      id: 'payment-2',
+      date: '2026-03-01',
+      totalAmount: Money.from('100.00', 'CRC'),
+      principalAmount: Money.from('90.00', 'CRC'),
+      source: 'manual',
+    });
+    const reconciliation = {
+      id: 'balance-1',
+      reportedAt: '2026-03-01',
+      reportedBalance: Money.from('800.00', 'CRC'),
+    };
+    const aggregate = {
+      loan,
+      payments: [first, second],
+      scenarios: [],
+      balanceReconciliations: [reconciliation],
+    };
+    const repository = createRepository([loan]);
+    vi.mocked(repository.loadAggregate).mockResolvedValue(aggregate);
+    vi.mocked(repository.saveAggregate).mockResolvedValue(undefined);
+    window.history.replaceState(null, '', '#/prestamos/loan-payment-management/payments/history');
+    render(<App repository={repository} />);
+
+    expect(await screen.findByRole('heading', { name: 'Pagos registrados' })).toBeVisible();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar pago del 2026-02-01' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar 1 pago seleccionado' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar 1 pago' }));
+
+    await waitFor(() => expect(repository.saveAggregate).toHaveBeenCalledOnce());
+    expect(repository.saveAggregate).toHaveBeenCalledWith({
+      ...aggregate,
+      payments: [second],
+    });
   });
 
   test('revalida la importación contra el agregado vigente antes de guardar', async () => {
