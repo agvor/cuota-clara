@@ -23,6 +23,18 @@ Si no existe un reset bancario y hay pagos con principal conocido, el último pa
 
 El gráfico usa la misma secuencia que la tabla: pagos históricos desde el inicio, ajuste de reconciliación si existe y periodos proyectados. Una línea vertical sutil marca el inicio de la proyección sin cambiar el color de las señales financieras.
 
+## Posición vigente de lectura
+
+El resumen y la cartera presentan una misma posición vigente, derivada sin modificar el agregado. El **saldo principal actual** se resuelve con esta precedencia:
+
+1. el saldo bancario conciliado más reciente, menos el principal ordinario y extraordinario de pagos posteriores a su fecha reportada;
+2. sin saldo conciliado, el saldo reconstruido a la fecha del último pago cuyo principal sea conocido;
+3. sin actividad registrada, el saldo inicial del préstamo.
+
+El valor se acompaña de la fecha de la evidencia que lo sustenta. Si un pago necesario no contiene principal, la aplicación no infiere el saldo a partir de la cuota total: comunica que el valor no está disponible y conserva el historial para revisión.
+
+La **fecha final vigente** usa la fecha final bancaria cuando existe y, en su ausencia, la fecha contractual o la calculada por la proyección compatible. Su procedencia se presenta de forma explícita. Saldo conciliado y fecha final bancaria continúan siendo referencias independientes, aunque el motor necesita un límite final aplicable para construir una proyección posterior al reset.
+
 ## Reconciliación
 
 Un `ReconciliationAdjustment` guarda identificador, fecha de corte, saldo reportado y motivo. El motor muestra la diferencia entre el saldo calculado y el reportado, y usa el reportado como saldo actual. No modifica ninguno de los pagos originales ni oculta la diferencia.

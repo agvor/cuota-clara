@@ -64,7 +64,9 @@ Préstamo + pagos históricos + fecha de corte + reset bancario opcional + escen
 
 ## Presentación de resultados planificada
 
-La PWA separará el resumen inmediato del detalle de amortización. El resumen consume una estimación ya calculada y muestra los importes clave; la solicitud explícita de la persona usuaria inicia el cálculo/visualización de tabla y gráfico. Ese límite evita trabajo visual innecesario y permite que los ejes, rango y accesibilidad del gráfico evolucionen sin acoplarlos al dominio. El formato monetario será un servicio de presentación común: el dominio entrega `Money` y la PWA decide locale y símbolos sin alterar el valor decimal.
+La PWA separa el resumen inmediato del detalle de amortización. Una resolución pura de aplicación deriva del agregado la posición vigente de lectura —saldo principal actual, fecha de corte y procedencia— y las opciones comunes de proyección —reset activo y fecha final bancaria o contractual aplicable—. Resumen, cartera, escenarios, tabla y gráfico consumen esa misma resolución para no duplicar precedencias ni presentar resultados contradictorios; el agregado y los pagos no se modifican.
+
+El resumen muestra primero saldo actual, corte, cuota vigente, fecha final aplicable y cuotas restantes. Los importes históricos, proyectados y totales permanecen disponibles mediante desglose progresivo, mientras la tabla y el gráfico viven en la tarea de Proyección. Ese límite evita trabajo visual innecesario y permite que los ejes, rango y accesibilidad del gráfico evolucionen sin acoplarlos al dominio. El formato monetario es un servicio de presentación común: el dominio entrega `Money` y la PWA decide locale y símbolos sin alterar el valor decimal.
 
 ## Reglas de diseño
 

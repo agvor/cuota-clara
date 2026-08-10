@@ -14,7 +14,7 @@ Un ítem solo se marca `blocked` cuando describe la decisión o evidencia extern
 | ----------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | E1 · Motor financiero verificable   | Cálculo fijo, estado histórico, pagos extra y transición a tasa variable manual. | US-001 a US-007                                                    |
 | E2 · Importación y datos locales    | CSV previsualizado, validado, idempotente y almacenamiento local abstraído.      | US-008, US-008a, US-009, US-042 a US-044 y US-051 a US-055         |
-| E3 · PWA y gestión de préstamos     | Aplicación instalable, CRUD, captura/importación de pagos y espacio de trabajo.  | US-010 a US-012, US-035 a US-041, US-048 y US-050                  |
+| E3 · PWA y gestión de préstamos     | Aplicación instalable, CRUD, captura/importación de pagos y espacio de trabajo.  | US-010 a US-012, US-035 a US-041, US-048, US-050 y US-056 a US-057 |
 | E4 · Escenarios y resultados        | Comparación, tabla de amortización y gráfico de señales.                         | US-013, US-014, US-027 a US-028, US-030 a US-034 y US-045 a US-047 |
 | E5 · Respaldo y publicación         | Recuperación de datos y operación offline completa.                              | US-015 a US-016 y US-049                                           |
 | E6 · Contrato financiero v2         | Plazo, seguro, estimación y regla variable TBP+margen migrables.                 | US-017 a US-020                                                    |
@@ -23,6 +23,8 @@ Un ítem solo se marca `blocked` cuando describe la decisión o evidencia extern
 El orden no es una excusa para omitir dependencias: el campo `dependsOn` de cada historia es autoritativo. US-017 solo depende del respaldo: la terminación de la experiencia PWA offline (US-016) no bloquea una migración de dominio/persistencia. Las decisiones ya adoptadas y las pendientes están en [`domain/loan-contract-v2.md`](domain/loan-contract-v2.md). Las historias avanzadas —fuentes de tasa de referencia, sincronización y premium— se crearán como nuevos ítems después de validar el MVP.
 
 El cierre de duplicados CSV se entregó en secuencia: US-053 estableció identidad interna, referencia externa, migración y respaldo; US-054 incorporó la clasificación y la revalidación defensiva; US-055 completó el resumen y la resolución accesible de conflictos. US-052 registró retrospectivamente las versiones de persistencia que ya existían pero no estaban reflejadas en su documento especializado. La política de identidad y duplicidad quedó implementada conforme a [`ADR-0008`](adr/0008-payment-import-identity-and-deduplication.md).
+
+La mejora de lectura del préstamo se entrega en dos pasos. US-056, siguiente ítem habilitado, unifica primero el saldo principal actual, su corte y la fecha final aplicable para eliminar contradicciones entre resumen, cartera y proyección. US-057 usa esa posición única para reducir la densidad del resumen mediante divulgación progresiva y para enriquecer las tarjetas sin ocultar el desglose financiero existente. Esta secuencia mantiene la corrección financiera separada de la reorganización visual y permite probarla antes del refactor de presentación.
 
 ## Definition of Ready
 
