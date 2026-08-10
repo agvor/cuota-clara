@@ -273,11 +273,18 @@ bank-2;01/03/2026;100,00;90,00`;
     const card = await screen.findByRole('button', { name: 'Abrir préstamo Hipoteca vigente' });
     expect(within(card).getByText('Saldo actual')).toBeVisible();
     expect(within(card).getByText('Fecha final')).toBeVisible();
-    expect(within(card).getByText('Cuota mensual')).toBeVisible();
+    expect(within(card).getByText('Cuota mensual actual')).toBeVisible();
+    expect(within(card).getByText('Recalculada al corte')).toBeVisible();
     expect(within(card).getByText('2034-01-15')).toBeVisible();
     expect(
       within(card).getByText((content) => content.replaceAll('\u00a0', ' ') === '₡90 000,00'),
     ).toBeVisible();
+    expect(
+      within(card).getByText((content) => content.replaceAll('\u00a0', ' ') === '₡1 331,88'),
+    ).toBeVisible();
+    expect(
+      within(card).queryByText((content) => content.replaceAll('\u00a0', ' ') === '₡1 200,00'),
+    ).not.toBeInTheDocument();
     card.focus();
     fireEvent.keyDown(card, { key: ' ' });
     expect(await screen.findByRole('tab', { name: 'Resumen' })).toHaveAttribute(
@@ -312,9 +319,14 @@ bank-2;01/03/2026;100,00;90,00`;
     });
     render(<App repository={repository} />);
 
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Abrir préstamo Hipoteca sin desglose' }),
-    );
+    const card = await screen.findByRole('button', {
+      name: 'Abrir préstamo Hipoteca sin desglose',
+    });
+    await waitFor(() => {
+      expect(within(card).getByText('Cuota mensual actual')).toBeVisible();
+      expect(within(card).getByText('Revisa los datos del préstamo')).toBeVisible();
+    });
+    fireEvent.click(card);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'no contiene principal para reconstruir el saldo',
@@ -461,10 +473,14 @@ bank-2;01/03/2026;100,00;90,00`;
     render(<App repository={createRepository([legacyLoan])} />);
 
     await screen.findByRole('heading', { name: 'Préstamo anterior' });
+    const card = screen.getByRole('button', { name: 'Abrir préstamo Préstamo anterior' });
+    expect(within(card).getByText('Cuota registrada')).toBeVisible();
+    expect(within(card).getByText('Contrato heredado')).toBeVisible();
+    expect(within(card).queryByText('Cuota mensual actual')).not.toBeInTheDocument();
     expect(
       screen.getByText('Préstamo heredado: abre Configuración para completar plazo y seguro'),
     ).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir préstamo Préstamo anterior' }));
+    fireEvent.click(card);
     expect(screen.getByText(/Este préstamo es heredado/)).toBeVisible();
   });
 

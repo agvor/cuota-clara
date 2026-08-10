@@ -17,6 +17,7 @@ import type {
   PaymentRecord,
   BankBalanceReconciliation,
   BankFinalDateReconciliation,
+  Money,
   ProjectionScenarioSnapshot,
 } from '@cuotaclara/domain';
 
@@ -582,13 +583,7 @@ function LoanCard({
         cutoffDate: loan.startDate,
         source: 'initial_balance' as const,
       };
-  const finalDate = loan.contract ? loanCardFinalDate(loan, aggregate) : undefined;
-  const monthlyPayment =
-    loan.contract?.version === 3
-      ? loan.contract.monthlyTotalPayment
-      : loan.contract?.version === 2
-        ? loan.contract.monthlyInstallment.add(loan.contract.monthlyInsurance)
-        : loan.ordinaryPayment;
+  const projection = loan.contract ? loanCardProjection(loan, aggregate) : undefined;
   return (
     <article
       className="loan-card loan-card-selectable"
@@ -627,21 +622,42 @@ function LoanCard({
         <div>
           <dt>Fecha final</dt>
           <dd>
-            {finalDate ? <time dateTime={finalDate.date}>{finalDate.date}</time> : 'No disponible'}
+            {projection?.finalDate ? (
+              <time dateTime={projection.finalDate.date}>{projection.finalDate.date}</time>
+            ) : (
+              'No disponible'
+            )}
           </dd>
           <dd className="loan-card-meta">
             <small>
-              {finalDate?.source === 'bank'
+              {projection?.finalDate?.source === 'bank'
                 ? 'Informada por el banco'
-                : finalDate
+                : projection?.finalDate
                   ? 'Proyección contractual'
                   : 'Completa el contrato'}
             </small>
           </dd>
         </div>
         <div>
-          <dt>Cuota mensual</dt>
-          <dd>{formatMoney(monthlyPayment, loan.roundingPolicy)}</dd>
+          <dt>{loan.contract ? 'Cuota mensual actual' : 'Cuota registrada'}</dt>
+          <dd>
+            {loan.contract
+              ? projection?.monthlyPayment
+                ? formatMoney(projection.monthlyPayment, loan.roundingPolicy)
+                : 'No disponible'
+              : formatMoney(loan.ordinaryPayment, loan.roundingPolicy)}
+          </dd>
+          <dd className="loan-card-meta">
+            <small>
+              {loan.contract
+                ? projection?.monthlyPayment
+                  ? projection.recalculatedAtCutoff
+                    ? 'Recalculada al corte'
+                    : 'Proyección vigente'
+                  : 'Revisa los datos del préstamo'
+                : 'Contrato heredado'}
+            </small>
+          </dd>
         </div>
       </dl>
       {!loan.contract ? (
@@ -653,26 +669,49 @@ function LoanCard({
   );
 }
 
-function loanCardFinalDate(
+function loanCardProjection(
   loan: Loan,
   aggregate: LoanAggregate | undefined,
-): Readonly<{ date: string; source: 'bank' | 'contract' }> | undefined {
+): Readonly<{
+  finalDate?: Readonly<{ date: string; source: 'bank' | 'contract' }>;
+  monthlyPayment?: Money;
+  recalculatedAtCutoff: boolean;
+}> {
   const bankFinalDate = reconciledFinalDate(aggregate);
-  if (bankFinalDate) return { date: bankFinalDate, source: 'bank' };
   try {
     const estimate = estimateLoanContract(
       loan,
       aggregate ? resolveLoanProjectionContext(aggregate) : {},
     );
-    return { date: estimate.finalInstallmentDate, source: 'contract' };
+    const monthlyPayment =
+      estimate.automaticTotalPayment ??
+      estimate.projectedInitialTotalPayment ??
+      estimate.configuredTotalPayment;
+    return {
+      finalDate: {
+        date: bankFinalDate ?? estimate.finalInstallmentDate,
+        source: bankFinalDate ? 'bank' : 'contract',
+      },
+      ...(monthlyPayment ? { monthlyPayment } : {}),
+      recalculatedAtCutoff: Boolean(estimate.projectionStartDate),
+    };
   } catch {
+    if (bankFinalDate) {
+      return {
+        finalDate: { date: bankFinalDate, source: 'bank' },
+        recalculatedAtCutoff: false,
+      };
+    }
     try {
       return {
-        date: estimateLoanContract(loan).finalInstallmentDate,
-        source: 'contract',
+        finalDate: {
+          date: estimateLoanContract(loan).finalInstallmentDate,
+          source: 'contract',
+        },
+        recalculatedAtCutoff: false,
       };
     } catch {
-      return undefined;
+      return { recalculatedAtCutoff: false };
     }
   }
 }

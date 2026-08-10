@@ -876,6 +876,21 @@
         "La eliminación confirmada quita únicamente los PaymentRecord elegidos en un solo guardado atómico, no elimina conciliaciones ni ajustes, limpia la selección y anuncia el resultado; un fallo conserva los datos y la selección para reintentar.",
         "Las pruebas de interfaz cubren la separación de páginas, rutas, teclado, foco, estados vacío y de error, filtros, selección individual/visible/total, cancelación y confirmación de eliminación y preservación de conciliaciones."
       ]
+    },
+    {
+      "id": "US-059",
+      "epic": "E3 · PWA y gestión de préstamos",
+      "title": "Mostrar la cuota mensual vigente en la cartera",
+      "story": "Como persona usuaria, quiero ver en cada tarjeta la cuota recalculada desde mi posición vigente para no confundirla con la cuota original del contrato.",
+      "requirements": ["RF-001", "RF-004", "RF-013", "RF-015", "RNF-002", "RNF-008"],
+      "dependsOn": ["US-056", "US-057"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "La tarjeta usa el mismo contexto de proyección que el resumen y muestra la cuota mensual proyectada desde el saldo, corte y fecha final vigentes.",
+        "La tarjeta identifica la cifra como cuota mensual actual y comunica si fue recalculada al corte; no presenta la cuota contractual original como si fuera vigente.",
+        "Si la proyección no puede calcular una cuota actual, la tarjeta muestra un estado no disponible; un préstamo heredado identifica por separado su cuota registrada.",
+        "Una prueba de regresión usa cuotas contractual y vigente distintas y verifica que la tarjeta presenta únicamente la vigente."
+      ]
     }
   ]
 }
