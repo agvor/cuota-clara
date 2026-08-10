@@ -68,6 +68,20 @@ La PWA separa el resumen inmediato del detalle de amortización. Una resolución
 
 El resumen muestra primero saldo actual, corte, cuota vigente, fecha final aplicable y cuotas restantes. Los importes históricos, proyectados y totales permanecen disponibles mediante desglose progresivo, mientras la tabla y el gráfico viven en la tarea de Proyección. Ese límite evita trabajo visual innecesario y permite que los ejes, rango y accesibilidad del gráfico evolucionen sin acoplarlos al dominio. El formato monetario es un servicio de presentación común: el dominio entrega `Money` y la PWA decide locale y símbolos sin alterar el valor decimal.
 
+## Administración del historial de pagos
+
+La tarea Pagos concentra captura manual, importación y conciliación, pero no renderiza dentro de su flujo el registro completo. Una acción explícita abre una ruta local hija del préstamo para consultar, corregir, filtrar, seleccionar y eliminar pagos; esa ruta conserva navegación directa y mediante Atrás/Adelante sin convertir el historial en otra pestaña principal.
+
+```text
+Pagos del préstamo → registrar / importar / conciliar
+                  └→ Ver pagos registrados → filtrar / seleccionar / corregir
+                                             └→ confirmar eliminación
+                                                 → guardar agregado una vez
+                                                 → recalcular vistas derivadas
+```
+
+La selección y los filtros son estado efímero de presentación. Una eliminación confirmada construye un agregado con los `PaymentRecord` elegidos removidos y lo entrega una sola vez al puerto `LoanRepository`; el adaptador local conserva la atomicidad existente de `saveAggregate`. Las conciliaciones, fechas bancarias y ajustes no forman parte de esa selección y nunca se borran o reinterpretan como efecto lateral. Como modificar el historial puede cambiar saldos reconstruidos y proyecciones, la confirmación comunica ese efecto y recomienda revisar conciliaciones relacionadas.
+
 ## Reglas de diseño
 
 - Dependencias dirigidas hacia el dominio; los adaptadores dependen de interfaces del núcleo.
