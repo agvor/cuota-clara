@@ -1,0 +1,10 @@
+.git
+**/.env*
+**/secrets
+**/backups
+**/cloudflare.ini
+**/*.key
+**/privkey*.pem
+**/cuotaclara-respaldo-*.json
+**/node_modules
+**/dist

@@ -1,0 +1,12 @@
+name: cuota-clara
+services:
+  web:
+    image: 'cuota-clara:${RELEASE:?Set RELEASE to the approved Git commit SHA}'
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    ports:
+      - '127.0.0.1:8080:80'
+    restart: unless-stopped
+    logging:
+      driver: local

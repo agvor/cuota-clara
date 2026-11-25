@@ -16,7 +16,7 @@ Un ítem solo se marca `blocked` cuando describe la decisión o evidencia extern
 | E2 · Importación y datos locales    | CSV previsualizado, validado, idempotente y almacenamiento local abstraído.      | US-008, US-008a, US-009, US-042 a US-044 y US-051 a US-055                          |
 | E3 · PWA y gestión de préstamos     | Aplicación instalable, CRUD, captura/importación de pagos y espacio de trabajo.  | US-010 a US-012, US-035 a US-041, US-048, US-050 y US-056 a US-059                  |
 | E4 · Escenarios y resultados        | Comparación, tabla de amortización y gráfico de señales.                         | US-013, US-014, US-027 a US-028, US-030 a US-034, US-045 a US-047 y US-060 a US-061 |
-| E5 · Respaldo y publicación         | Recuperación de datos y operación offline completa.                              | US-015 a US-016 y US-049                                                            |
+| E5 · Respaldo y publicación         | Recuperación de datos, operación offline y despliegue.                           | US-015 a US-016, US-049 y US-062                                                    |
 | E6 · Contrato financiero v2         | Plazo, seguro, estimación y regla variable TBP+margen migrables.                 | US-017 a US-020                                                                     |
 | E7 · Contrato y resultados legibles | Cuota total con seguro, resumen financiero, plazo contractual y detalle visual.  | US-021 a US-026                                                                     |
 

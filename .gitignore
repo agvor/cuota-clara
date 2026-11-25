@@ -7,4 +7,10 @@ test-results/
 .env
 .env.*
 !.env.example
+secrets/
+backups/
+cloudflare.ini
+*.key
+privkey*.pem
+cuotaclara-respaldo-*.json
 *.log

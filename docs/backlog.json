@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-09",
+  "updatedAt": "2026-11-25",
   "items": [
     {
       "id": "US-001",
@@ -925,6 +925,20 @@
         "Si el interés o el principal necesarios para obtener Otros no están disponibles, la observación histórica muestra No disponible en lugar de inferir un importe; varios pagos de una fecha suman solo cuando todos sus valores son determinables.",
         "En contratos y escenarios proyectados, Otros contiene seguro más cargos explícitos; en proyecciones heredadas sin esos cargos muestra cero conocido.",
         "Pruebas de regresión cubren historial consolidado, dato incompleto, contrato con seguro, escenarios, selección persistente y nombres accesibles de ambas señales."
+      ]
+    },
+    {
+      "id": "US-062",
+      "epic": "E5 · Respaldo y publicación",
+      "title": "Desplegar la PWA con Docker Compose",
+      "story": "Como responsable del despliegue, quiero ejecutar la PWA en loopback o habilitar HTTPS privado con parámetros locales del servidor.",
+      "requirements": ["RNF-005", "RNF-009"],
+      "dependsOn": ["US-010"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "El Compose base requiere una versión de la imagen y publica HTTP solo en loopback sin certificados.",
+        "El Compose de LAN exige una IP de escucha para HTTPS y monta el certificado y la clave externos en modo de solo lectura.",
+        "Git y Docker excluyen archivos locales de configuración, claves y respaldos con el nombre predeterminado o en directorios de respaldos."
       ]
     }
   ]

@@ -1,6 +1,6 @@
 # Estado de implementación
 
-> Generado desde `docs/backlog.json` el 2026-08-09. No editar manualmente.
+> Generado desde `docs/backlog.json` el 2026-11-25. No editar manualmente.
 
 **Siguiente ítem habilitado:** ninguno; revisar dependencias o bloqueos.
 
@@ -10,7 +10,7 @@
 | E2 · Importación y datos locales | 0 | 0 | 0 | 0 | 11 |
 | E3 · PWA y gestión de préstamos | 0 | 0 | 0 | 0 | 16 |
 | E4 · Escenarios y resultados | 0 | 0 | 0 | 0 | 14 |
-| E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 2 |
+| E5 · Respaldo y publicación | 1 | 0 | 0 | 0 | 3 |
 | E6 · Contrato financiero v2 | 1 | 0 | 0 | 0 | 4 |
 | E7 · Contrato y resultados legibles | 0 | 0 | 0 | 0 | 6 |
 
@@ -80,3 +80,4 @@
 | US-059 | E3 · PWA y gestión de préstamos | Mostrar la cuota mensual vigente en la cartera | Completado | US-056, US-057 |
 | US-060 | E4 · Escenarios y resultados | Consolidar por fecha el historial del gráfico | Completado | US-026, US-045, US-051 |
 | US-061 | E4 · Escenarios y resultados | Mostrar principal ordinario y otros componentes | Completado | US-060 |
+| US-062 | E5 · Respaldo y publicación | Desplegar la PWA con Docker Compose | Completado | US-010 |

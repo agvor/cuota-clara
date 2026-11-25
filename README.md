@@ -18,6 +18,12 @@ pnpm install
 pnpm verify
 ```
 
+## Despliegue con Docker Compose
+
+Desde la raíz del repositorio, ejecuta `RELEASE=$(git rev-parse HEAD) docker compose up -d --build` para servir la app en `http://127.0.0.1:8080/`.
+
+Para habilitar HTTPS en un servidor Linux, crea `.env` a partir de [`.env.example`](.env.example) y asigna la IP privada del servidor a `CUOTA_CLARA_BIND_IP`. Este archivo activa [`compose.lan.yaml`](compose.lan.yaml) y permite usar el mismo comando. Coloca `fullchain.pem` y `privkey.pem` en `../_state/cuota-clara/tls/` antes de iniciar. Mantén credenciales, claves y respaldos reales fuera del checkout.
+
 ## Documentación
 
 - [Requisitos](docs/requirements.md)

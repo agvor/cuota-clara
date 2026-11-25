@@ -1,0 +1,19 @@
+services:
+  web:
+    ports:
+      - target: 443
+        published: '443'
+        host_ip: '${CUOTA_CLARA_BIND_IP:?Set CUOTA_CLARA_BIND_IP to the private IP of the host}'
+    volumes:
+      - type: bind
+        source: ./deploy/nginx-lan-https.conf
+        target: /etc/nginx/conf.d/lan-https.conf
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ../_state/cuota-clara/tls
+        target: /run/cuota-clara/tls
+        read_only: true
+        bind:
+          create_host_path: false
